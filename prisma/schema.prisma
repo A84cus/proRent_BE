@@ -13,3 +13,374 @@ datasource db {
   url       = env("DATABASE_URL")
   directUrl = env("DIRECT_URL")
 }
+
+enum Role {
+  USER
+  TENANT
+}
+
+enum SocialLogin {
+  NONE
+  GOOGLE
+  FACEBOOK
+  TWITTER
+}
+
+enum PaymentType {
+  MANUAL_TRANSFER
+  XENDIT
+}
+
+enum Status {
+  PENDING_PAYMENT
+  PENDING_CONFIRMATION
+  CONFIRMED
+  CANCELLED
+}
+
+enum RateType {
+  FIXED
+  PERCENTAGE
+}
+
+//Bagian User dan auth
+
+model User {
+  id                  String        @id @default(nanoid(12))
+  email               String        @unique
+  password            String?
+  role                Role          @default(USER)
+  isVerified          Boolean       @default(false)
+  socialLogin         SocialLogin   @default(NONE)
+  verificationToken   String?       @unique
+  verificationExpires DateTime?
+  resetToken          String?       @unique
+  resetExpires        DateTime?
+  profile             Profile?
+  reservations        Reservation[] @relation("UserReservation")
+  properties          Property[]    @relation("PropertyTenant")
+  createdAt           DateTime      @default(now())
+  updatedAt           DateTime      @updatedAt
+  Reviewer            Review[]      @relation("Reviewer")
+  Reviewee            Review[]      @relation("Reviewee")
+
+  @@index([email])
+  @@index([role])
+}
+
+model Profile {
+  id         String    @id @default(nanoid(12))
+  userId     String    @unique
+  firstName  String?
+  lastName   String?
+  phone      String?
+  avatarId   String?   @unique
+  avatar     Picture?  @relation(fields: [avatarId], references: [id])
+  birthDate  DateTime?
+  address    String?
+  locationId String?
+  location   Location? @relation(fields: [locationId], references: [id])
+  user       User      @relation(fields: [userId], references: [id])
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  @@index([userId])
+}
+
+model Province {
+  id        String   @id @default(nanoid(12))
+  name      String   @unique
+  cities    City[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model City {
+  id         String     @id @default(nanoid(12))
+  name       String
+  provinceId String
+  province   Province   @relation(fields: [provinceId], references: [id])
+  locations  Location[]
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+
+  @@unique([name, provinceId]) // Prevent duplicate city names in same province
+}
+
+model Location {
+  id         String     @id @default(nanoid(12))
+  name       String
+  latitude   Decimal?
+  longitude  Decimal?
+  address    String?
+  cityId     String
+  city       City       @relation(fields: [cityId], references: [id])
+  properties Property[]
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+  Profile    Profile[]
+
+  @@index([cityId])
+  @@index([latitude, longitude])
+}
+
+// Bagian management Gambar
+
+model Picture {
+  id         String   @id @default(nanoid(12))
+  url        String // e.g., Vercel Blob, Cloudinary URL
+  alt        String? // Accessibility
+  type       String? // 'profile', 'property', 'room', 'proof'
+  sizeKB     Int? // For validation tracking
+  uploadedAt DateTime @default(now())
+
+  propertyGallery PropertyPicture[]
+  roomGallery     RoomPicture[]
+  paymentProof    PaymentProof?
+
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  Profile   Profile[]
+  Property  Property[] @relation("PropertyMainPicture")
+
+  @@index([type])
+}
+
+model PropertyPicture {
+  propertyId String
+  pictureId  String
+
+  property Property @relation(fields: [propertyId], references: [id])
+  picture  Picture  @relation(fields: [pictureId], references: [id])
+
+  @@id([propertyId, pictureId])
+}
+
+model RoomPicture {
+  roomId    String
+  pictureId String
+
+  room    Room    @relation(fields: [roomId], references: [id])
+  picture Picture @relation(fields: [pictureId], references: [id])
+
+  @@id([roomId, pictureId])
+}
+
+// Bagian management Property
+
+model Category {
+  id          String     @id @default(nanoid(12))
+  name        String     @unique
+  description String?
+  properties  Property[]
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+}
+
+model Property {
+  id            String            @id @default(nanoid(12))
+  name          String
+  description   String
+  locationId    String
+  location      Location          @relation(fields: [locationId], references: [id])
+  categoryId    String
+  category      Category          @relation(fields: [categoryId], references: [id])
+  tenantId      String
+  tenant        User              @relation("PropertyTenant", fields: [tenantId], references: [id])
+  mainPicture   Picture?          @relation("PropertyMainPicture", fields: [mainPictureId], references: [id])
+  mainPictureId String?
+  gallery       PropertyPicture[]
+  rooms         Room[]
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+
+  @@index([locationId])
+  @@index([categoryId])
+  @@index([tenantId])
+}
+
+model Room {
+  id             String         @id @default(nanoid(12))
+  name           String
+  description    String?
+  basePrice      Decimal        @default(0.0) // per night
+  capacity       Int
+  propertyId     String
+  property       Property       @relation(fields: [propertyId], references: [id])
+  gallery        RoomPicture[]
+  availabilities Availability[]
+  peakRates      PeakRate[]
+  reservations   Reservation[]  @relation("RoomReservation")
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  @@index([propertyId])
+}
+
+// Bagian management Availability
+
+model Availability {
+  id          String   @id @default(nanoid(12))
+  date        DateTime
+  isAvailable Boolean  @default(true)
+  roomId      String
+  room        Room     @relation(fields: [roomId], references: [id])
+
+  @@unique([roomId, date]) // One record per room per day
+  @@index([date])
+}
+
+model PeakRate {
+  id          String   @id @default(nanoid(12))
+  roomId      String
+  room        Room     @relation(fields: [roomId], references: [id])
+  startDate   DateTime
+  endDate     DateTime
+  rateType    RateType
+  value       Decimal
+  description String?
+
+  @@index([startDate, endDate])
+  @@index([roomId])
+}
+
+//Bagian Booking dan Payment
+
+model Reservation {
+  id          String    @id @default(nanoid(12))
+  userId      String
+  roomId      String
+  startDate   DateTime
+  endDate     DateTime
+  orderStatus Status    @default(PENDING_PAYMENT)
+  expiresAt   DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime?
+
+  payment      Payment?
+  review       Review?
+  Room         Room[]        @relation("RoomReservation")
+  User         User[]        @relation("UserReservation")
+  PaymentProof PaymentProof?
+
+  @@index([userId])
+  @@index([roomId])
+  @@index([orderStatus, createdAt])
+}
+
+model Payment {
+  id                 String      @id @default(nanoid(12))
+  reservation        Reservation @relation(fields: [reservationId], references: [id])
+  reservationId      String      @unique
+  amount             Float
+  paymentStatus      Status
+  method             String
+  payerEmail         String
+  externalInvoiceUrl String?
+  paidAt             DateTime?
+  callbackStatus     String?
+  xenditCallback     Json?
+  createdAt          DateTime    @default(now())
+  updatedAt          DateTime    @updatedAt
+  deletedAt          DateTime?
+
+  logs TransactionLog[]
+
+  @@index([paymentStatus])
+  @@index([method])
+  @@index([paymentStatus, createdAt])
+}
+
+model PaymentProof {
+  id            String      @id @default(nanoid(12))
+  reservationId String      @unique
+  reservation   Reservation @relation(fields: [reservationId], references: [id])
+  pictureId     String      @unique
+  picture       Picture     @relation(fields: [pictureId], references: [id])
+  uploadedAt    DateTime    @default(now())
+}
+
+// Bagian review
+
+model Review {
+  id            String      @id @default(nanoid(12))
+  reviewerId    String
+  revieweeId    String
+  reservation   Reservation @relation(fields: [reservationId], references: [id])
+  reservationId String      @unique
+  content       String
+  rating        Int
+  visibility    Boolean     @default(true)
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  deletedAt     DateTime?
+
+  reviewer    User         @relation("Reviewer", fields: [reviewerId], references: [id])
+  reviewee    User         @relation("Reviewee", fields: [revieweeId], references: [id])
+  tenantReply TenantReply?
+
+  @@index([reviewerId])
+  @@index([revieweeId])
+}
+
+model TenantReply {
+  id         String    @id @default(nanoid(12))
+  review     Review    @relation(fields: [reviewId], references: [id])
+  reviewId   String    @unique
+  content    String
+  rating     Int
+  visibility Boolean   @default(true)
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  deletedAt  DateTime?
+}
+
+model TransactionLog {
+  id        String   @id @default(nanoid(12))
+  payment   Payment  @relation(fields: [paymentId], references: [id])
+  paymentId String
+  status    String
+  message   String
+  createdAt DateTime @default(now())
+
+  @@index([paymentId])
+}
+
+model EmailLog {
+  id        String        @id @default(nanoid(12))
+  recipient String // user.email
+  template  EmailTemplate // e.g., VERIFICATION, CONFIRMATION, REMINDER
+  status    EmailStatus   @default(PENDING)
+  subject   String
+  body      String? // or link to template
+  sentAt    DateTime?
+  error     String? // if failed
+  metadata  Json? // e.g., { reservationId, userId }
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+
+  @@index([recipient])
+  @@index([template])
+  @@index([status])
+  @@index([createdAt])
+}
+
+// Enum: Email Template Type
+enum EmailTemplate {
+  VERIFICATION
+  RESET_PASSWORD
+  BOOKING_CONFIRMATION
+  PAYMENT_CONFIRMED
+  CHECK_IN_REMINDER
+  REVIEW_REQUEST
+  PAYMENT_REJECTED
+}
+
+// Enum: Email Status
+enum EmailStatus {
+  PENDING // Queue to send
+  SENT // Successfully delivered
+  FAILED // Failed to send
+  SKIPPED // Already sent, skipped duplicate
+}
