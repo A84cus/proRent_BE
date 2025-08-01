@@ -1,0 +1,20 @@
+{
+    "keep": {
+        "days": true,
+        "amount": 14
+    },
+    "auditLog": "C:\\Users\\muhfa\\Documents\\freelance\\prorent\\proRent_BE\\proRent_BE\\src\\logs\\.71a6f1af0b518b9c1106c43e0d41cbf8c501a07e-audit.json",
+    "files": [
+        {
+            "date": 1753892237545,
+            "name": "C:\\Users\\muhfa\\Documents\\freelance\\prorent\\proRent_BE\\proRent_BE\\src\\logs\\application-2025-07-30.log",
+            "hash": "7e7ce328da4b510d138b597b756813b1a0e173f73ed62e5c8f37767f25de378d"
+        },
+        {
+            "date": 1753915494668,
+            "name": "C:\\Users\\muhfa\\Documents\\freelance\\prorent\\proRent_BE\\proRent_BE\\src\\logs\\application-2025-07-31.log",
+            "hash": "f57dbde06b32a9739a033a653215bd416cb27ed98ed6330f28ac526a9696004b"
+        }
+    ],
+    "hashType": "sha256"
+}
