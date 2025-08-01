@@ -1,18 +1,21 @@
-import Express, { Request, Response, NextFunction } from 'express';
-import cors from 'cors';
-import helmet from 'helmet';
-import logger from './utils/logger';
-import httpLogger from './middleware/loggerMwr';
-import { PORT, BASE_FE_URL } from './config';
+import Express, { Request, Response, NextFunction } from "express";
+import cors from "cors";
+import helmet from "helmet";
+import logger from "./utils/logger";
+import httpLogger from "./middleware/loggerMwr";
+import { PORT } from "./config";
+import authRoute from "./route/authRoute";
+import uploadRoute from "./route/uploadRoute";
+import utilityRoute from "./route/utilityRoute";
 
 const corsOptions = {
-   origin: BASE_FE_URL,
-   methods: [ 'GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS' ],
-   allowedHeaders: [ 'Content-Type', 'Accept', 'Authorization' ],
-   credentials: true
+  origin: "*",
+  methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Accept", "Authorization"],
+  credentials: true,
 };
 
-const express = require('express');
+const express = require("express");
 const app = express();
 
 app.use(Express.json());
@@ -21,16 +24,19 @@ app.use(helmet());
 
 app.use(httpLogger);
 
-// app.use('/api/auth'); example for import routes
+// Routes
+app.use("/api/auth", authRoute);
+app.use("/api/upload", uploadRoute);
+app.use("/api/utility", utilityRoute);
 
-app.get('/', (req: Request, res: Response) => {
-   logger.info('Homepage accessed');
-   res.send('Express on Vercel');
+app.get("/", (req: Request, res: Response) => {
+  logger.info("Homepage accessed");
+  res.send("Express on Vercel");
 });
 
 app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
-   logger.error(err.stack);
-   res.status(500).send('Something broke!');
+  logger.error(err.stack);
+  res.status(500).send("Something broke!");
 });
 
 app.listen(PORT, () => console.log(`App is running on PORT ${PORT}`));
