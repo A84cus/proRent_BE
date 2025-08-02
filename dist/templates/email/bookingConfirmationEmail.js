@@ -1,26 +1,13 @@
-import { User, Profile } from '@prisma/client';
-
-type BookingDetails = {
-   id: string;
-   propertyName: string;
-   checkIn: string;
-   checkOut: string;
-   totalAmount: number;
-   paymentStatus: string;
-};
-
-type UserWithProfile = User & {
-   profile: Profile | null;
-};
-
-export const createBookingConfirmationTemplate = (user: UserWithProfile, bookingDetails: BookingDetails): string => {
-   const firstName = user.profile?.firstName || user.profile?.lastName || 'Valued Guest';
-   const fullName =
-      user.profile?.firstName && user.profile?.lastName
-         ? `${user.profile.firstName} ${user.profile.lastName}`
-         : firstName;
-
-   return `
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.createBookingConfirmationTemplate = void 0;
+const createBookingConfirmationTemplate = (user, bookingDetails) => {
+    var _a, _b, _c, _d;
+    const firstName = ((_a = user.profile) === null || _a === void 0 ? void 0 : _a.firstName) || ((_b = user.profile) === null || _b === void 0 ? void 0 : _b.lastName) || 'Valued Guest';
+    const fullName = ((_c = user.profile) === null || _c === void 0 ? void 0 : _c.firstName) && ((_d = user.profile) === null || _d === void 0 ? void 0 : _d.lastName)
+        ? `${user.profile.firstName} ${user.profile.lastName}`
+        : firstName;
+    return `
     <!DOCTYPE html>
     <html lang="en">
     <head>
@@ -79,20 +66,16 @@ export const createBookingConfirmationTemplate = (user: UserWithProfile, booking
           border-radius: 4px;
           font-size: 12px;
           font-weight: bold;
-          background-color: ${
-             bookingDetails.paymentStatus === 'CONFIRMED'
-                ? '#d4edda'
-                : bookingDetails.paymentStatus === 'PENDING_PAYMENT'
-                ? '#fff3cd'
-                : '#f8d7da'
-          };
-          color: ${
-             bookingDetails.paymentStatus === 'CONFIRMED'
-                ? '#155724'
-                : bookingDetails.paymentStatus === 'PENDING_PAYMENT'
-                ? '#856404'
-                : '#721c24'
-          };
+          background-color: ${bookingDetails.paymentStatus === 'CONFIRMED'
+        ? '#d4edda'
+        : bookingDetails.paymentStatus === 'PENDING_PAYMENT'
+            ? '#fff3cd'
+            : '#f8d7da'};
+          color: ${bookingDetails.paymentStatus === 'CONFIRMED'
+        ? '#155724'
+        : bookingDetails.paymentStatus === 'PENDING_PAYMENT'
+            ? '#856404'
+            : '#721c24'};
         }
       </style>
     </head>
@@ -115,12 +98,10 @@ export const createBookingConfirmationTemplate = (user: UserWithProfile, booking
           <p><strong>Payment Status:</strong> <span class="status-badge">${bookingDetails.paymentStatus}</span></p>
         </div>
 
-        ${
-           bookingDetails.paymentStatus === 'PENDING_PAYMENT'
-              ? `<p>⚠️ Your booking is pending payment. Please complete your payment to secure your reservation.</p>
+        ${bookingDetails.paymentStatus === 'PENDING_PAYMENT'
+        ? `<p>⚠️ Your booking is pending payment. Please complete your payment to secure your reservation.</p>
                <a href="#" class="btn">Complete Payment</a>`
-              : `<p>Thank you for your payment. We look forward to hosting you!</p>`
-        }
+        : `<p>Thank you for your payment. We look forward to hosting you!</p>`}
 
         <p>If you have any questions, feel free to reply to this email.</p>
         
@@ -134,3 +115,4 @@ export const createBookingConfirmationTemplate = (user: UserWithProfile, booking
     </html>
   `;
 };
+exports.createBookingConfirmationTemplate = createBookingConfirmationTemplate;
