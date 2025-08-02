@@ -28,33 +28,37 @@ winston_1.default.addColors(colors);
 const format = winston_1.default.format.combine(winston_1.default.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss:ms' }), winston_1.default.format.errors({ stack: true }), winston_1.default.format.splat(), winston_1.default.format.json());
 // Define log format for console
 const consoleFormat = winston_1.default.format.combine(winston_1.default.format.colorize({ all: true }), winston_1.default.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss:ms' }), winston_1.default.format.printf(info => `${info.timestamp} ${info.level}: ${info.message}`));
-// Create transports
+// Base: Always log to console
 const transports = [
-    // Console transport
     new winston_1.default.transports.Console({
         format: consoleFormat
-    }),
+    })
+];
+// Only add file transports if NOT in production (i.e., not on Vercel)
+if (process.env.NODE_ENV !== 'production') {
+    const logDir = path_1.default.join(__dirname, '../logs');
+    transports.push(
     // File transport for errors
     new winston_1.default.transports.File({
-        filename: path_1.default.join(__dirname, '../logs/error.log'),
+        filename: path_1.default.join(logDir, 'error.log'),
         level: 'error',
         format
-    }),
+    }), 
     // Combined log file
     new winston_1.default.transports.File({
-        filename: path_1.default.join(__dirname, '../logs/combined.log'),
+        filename: path_1.default.join(logDir, 'combined.log'),
         format
-    }),
+    }), 
     // Daily rotate file transport
     new winston_1.default.transports.DailyRotateFile({
-        filename: path_1.default.join(__dirname, '../logs/application-%DATE%.log'),
+        filename: path_1.default.join(logDir, 'application-%DATE%.log'),
         datePattern: 'YYYY-MM-DD',
         zippedArchive: true,
         maxSize: '20m',
         maxFiles: '14d',
         format
-    })
-];
+    }));
+}
 // Create and export logger
 const Logger = winston_1.default.createLogger({
     level: process.env.NODE_ENV === 'production' ? 'info' : 'debug',
