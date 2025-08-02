@@ -1,0 +1,5 @@
+{"level":"http","message":"GET / - ::1","timestamp":"2025-07-30 23:17:35:1735"}
+{"level":"info","message":"Homepage accessed","timestamp":"2025-07-30 23:17:35:1735"}
+{"level":"http","message":"200 GET / - 12ms","timestamp":"2025-07-30 23:17:35:1735"}
+{"level":"http","message":"GET /favicon.ico - ::1","timestamp":"2025-07-30 23:17:35:1735"}
+{"level":"http","message":"404 GET /favicon.ico - 3ms","timestamp":"2025-07-30 23:17:35:1735"}
