@@ -38,36 +38,42 @@ const consoleFormat = winston.format.combine(
    winston.format.printf(info => `${info.timestamp} ${info.level}: ${info.message}`)
 );
 
-// Create transports
-const transports = [
-   // Console transport
+// Base: Always log to console
+const transports: winston.transport[] = [
    new winston.transports.Console({
       format: consoleFormat
-   }),
-
-   // File transport for errors
-   new winston.transports.File({
-      filename: path.join(__dirname, '../logs/error.log'),
-      level: 'error',
-      format
-   }),
-
-   // Combined log file
-   new winston.transports.File({
-      filename: path.join(__dirname, '../logs/combined.log'),
-      format
-   }),
-
-   // Daily rotate file transport
-   new winston.transports.DailyRotateFile({
-      filename: path.join(__dirname, '../logs/application-%DATE%.log'),
-      datePattern: 'YYYY-MM-DD',
-      zippedArchive: true,
-      maxSize: '20m',
-      maxFiles: '14d',
-      format
    })
 ];
+
+// Only add file transports if NOT in production (i.e., not on Vercel)
+if (process.env.NODE_ENV !== 'production') {
+   const logDir = path.join(__dirname, '../logs');
+
+   transports.push(
+      // File transport for errors
+      new winston.transports.File({
+         filename: path.join(logDir, 'error.log'),
+         level: 'error',
+         format
+      }),
+
+      // Combined log file
+      new winston.transports.File({
+         filename: path.join(logDir, 'combined.log'),
+         format
+      }),
+
+      // Daily rotate file transport
+      new winston.transports.DailyRotateFile({
+         filename: path.join(logDir, 'application-%DATE%.log'),
+         datePattern: 'YYYY-MM-DD',
+         zippedArchive: true,
+         maxSize: '20m',
+         maxFiles: '14d',
+         format
+      })
+   );
+}
 
 // Create and export logger
 const Logger = winston.createLogger({
