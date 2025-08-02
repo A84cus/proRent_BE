@@ -43,6 +43,11 @@ enum RateType {
   PERCENTAGE
 }
 
+enum PropertyRentalType {
+  WHOLE_PROPERTY // menyewakan seluruh property
+  ROOM_BY_ROOM // menyewakan kamar dalam 1 property
+}
+
 //Bagian User dan auth
 
 model User {
@@ -104,7 +109,7 @@ model City {
   createdAt  DateTime   @default(now())
   updatedAt  DateTime   @updatedAt
 
-  @@unique([name, provinceId]) // Prevent duplicate city names in same province
+  @@unique([name, provinceId]) // menghindari duplikasi data
 }
 
 model Location {
@@ -128,7 +133,7 @@ model Location {
 
 model Picture {
   id         String   @id @default(nanoid(12))
-  url        String // e.g., Vercel Blob, Cloudinary URL
+  url        String // Cloudinary URL
   alt        String? // Accessibility
   type       String? // 'profile', 'property', 'room', 'proof'
   sizeKB     Int? // For validation tracking
@@ -159,9 +164,8 @@ model PropertyPicture {
 model RoomPicture {
   roomId    String
   pictureId String
-
-  room    Room    @relation(fields: [roomId], references: [id])
-  picture Picture @relation(fields: [pictureId], references: [id])
+  room      Room    @relation(fields: [roomId], references: [id])
+  picture   Picture @relation(fields: [pictureId], references: [id])
 
   @@id([roomId, pictureId])
 }
@@ -178,39 +182,64 @@ model Category {
 }
 
 model Property {
-  id            String            @id @default(nanoid(12))
+  id            String             @id @default(nanoid(12))
   name          String
   description   String
   locationId    String
-  location      Location          @relation(fields: [locationId], references: [id])
+  location      Location           @relation(fields: [locationId], references: [id])
   categoryId    String
-  category      Category          @relation(fields: [categoryId], references: [id])
+  category      Category           @relation(fields: [categoryId], references: [id])
   tenantId      String
-  tenant        User              @relation("PropertyTenant", fields: [tenantId], references: [id])
-  mainPicture   Picture?          @relation("PropertyMainPicture", fields: [mainPictureId], references: [id])
+  tenant        User               @relation("PropertyTenant", fields: [tenantId], references: [id])
+  mainPicture   Picture?           @relation("PropertyMainPicture", fields: [mainPictureId], references: [id])
   mainPictureId String?
   gallery       PropertyPicture[]
   rooms         Room[]
-  createdAt     DateTime          @default(now())
-  updatedAt     DateTime          @updatedAt
+  roomTypes     RoomType[]
+  rentalType    PropertyRentalType @default(ROOM_BY_ROOM)
+  createdAt     DateTime           @default(now())
+  updatedAt     DateTime           @updatedAt
 
   @@index([locationId])
   @@index([categoryId])
   @@index([tenantId])
+  @@index([rentalType])
+}
+
+model RoomType {
+  id             String         @id @default(nanoid(12))
+  propertyId     String
+  property       Property       @relation(fields: [propertyId], references: [id])
+  name           String // contoh: "Standard Double Room", "Entire Luxury Villa"
+  description    String?
+  basePrice      Decimal // Harga per hari berdasarkan Tipe
+  capacity       Int // okupansi kamar maksimum
+  totalQuantity  Int // total kamar tersedia (fix 1 untuk tipe whole property)
+  isWholeUnit    Boolean        @default(false) // untuk identifikasi tipe whole property
+  rooms          Room[] // link untuk mengelompokkan kamar berdasarkan tipe (untuk management kamar dan checkin)
+  availabilities Availability[] // link untuk mengelompokkan ketersediaan berdasarkan availabilities
+  peakRates      PeakRate[] // link untuk mengelompokkan harga peak berdasarkan tipe
+  reservations   Reservation[] // link untuk mengelompokkan reservasi berdasarkan tipe
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  @@unique([propertyId, name]) // memastikan tidak ada duplikasi nama kamar
+  @@unique([propertyId, isWholeUnit]) // memastikan hada satu tipe whole property
+  @@index([propertyId])
+  @@index([isWholeUnit]) // Index untuk pencarian tipe whole property
 }
 
 model Room {
   id             String         @id @default(nanoid(12))
-  name           String
-  description    String?
-  basePrice      Decimal        @default(0.0) // per night
-  capacity       Int
+  name           String?
+  roomTypeId     String
+  roomType       RoomType       @relation(fields: [roomTypeId], references: [id])
   propertyId     String
   property       Property       @relation(fields: [propertyId], references: [id])
   gallery        RoomPicture[]
-  availabilities Availability[]
-  peakRates      PeakRate[]
   reservations   Reservation[]  @relation("RoomReservation")
+  isAvailable    Boolean        @default(true)
+  availabilities Availability[] @relation("RoomAvailability")
   createdAt      DateTime       @default(now())
   updatedAt      DateTime       @updatedAt
 
@@ -220,20 +249,25 @@ model Room {
 // Bagian management Availability
 
 model Availability {
-  id          String   @id @default(nanoid(12))
-  date        DateTime
-  isAvailable Boolean  @default(true)
-  roomId      String
-  room        Room     @relation(fields: [roomId], references: [id])
+  id             String   @id @default(nanoid(12))
+  date           DateTime
+  availableCount Int
+  roomTypeId     String
+  roomType       RoomType @relation(fields: [roomTypeId], references: [id])
+  roomId         String?
+  room           Room?    @relation("RoomAvailability", fields: [roomId], references: [id])
 
-  @@unique([roomId, date]) // One record per room per day
+  @@unique([roomTypeId, date])
+  @@unique([roomId, date]) // satu record per kamar
+  @@index([roomTypeId])
   @@index([date])
 }
 
 model PeakRate {
   id          String   @id @default(nanoid(12))
-  roomId      String
-  room        Room     @relation(fields: [roomId], references: [id])
+  name        String?
+  roomTypeId  String
+  roomType    RoomType @relation(fields: [roomTypeId], references: [id])
   startDate   DateTime
   endDate     DateTime
   rateType    RateType
@@ -241,7 +275,7 @@ model PeakRate {
   description String?
 
   @@index([startDate, endDate])
-  @@index([roomId])
+  @@index([roomTypeId])
 }
 
 //Bagian Booking dan Payment
@@ -249,10 +283,14 @@ model PeakRate {
 model Reservation {
   id          String    @id @default(nanoid(12))
   userId      String
-  roomId      String
+  propertyId  String
+  roomTypeId  String
+  roomId      String?
   startDate   DateTime
   endDate     DateTime
   orderStatus Status    @default(PENDING_PAYMENT)
+  CheckinAt   DateTime?
+  CheckoutAt  DateTime?
   expiresAt   DateTime?
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
@@ -260,11 +298,14 @@ model Reservation {
 
   payment      Payment?
   review       Review?
-  Room         Room[]        @relation("RoomReservation")
-  User         User[]        @relation("UserReservation")
+  RoomType     RoomType      @relation(fields: [roomTypeId], references: [id])
+  Room         Room?         @relation("RoomReservation", fields: [roomId], references: [id])
+  User         User          @relation("UserReservation", fields: [userId], references: [id])
   PaymentProof PaymentProof?
 
   @@index([userId])
+  @@index([propertyId])
+  @@index([roomTypeId])
   @@index([roomId])
   @@index([orderStatus, createdAt])
 }
@@ -350,13 +391,13 @@ model TransactionLog {
 model EmailLog {
   id        String        @id @default(nanoid(12))
   recipient String // user.email
-  template  EmailTemplate // e.g., VERIFICATION, CONFIRMATION, REMINDER
+  template  EmailTemplate // contoh: VERIFICATION, CONFIRMATION, REMINDER
   status    EmailStatus   @default(PENDING)
   subject   String
-  body      String? // or link to template
+  body      String? // atau link to template
   sentAt    DateTime?
-  error     String? // if failed
-  metadata  Json? // e.g., { reservationId, userId }
+  error     String? // jika gagal
+  metadata  Json? // contoh: { reservationId, userId }
   createdAt DateTime      @default(now())
   updatedAt DateTime      @updatedAt
 
@@ -379,8 +420,8 @@ enum EmailTemplate {
 
 // Enum: Email Status
 enum EmailStatus {
-  PENDING // Queue to send
-  SENT // Successfully delivered
-  FAILED // Failed to send
-  SKIPPED // Already sent, skipped duplicate
+  PENDING // antrian belum dikirim
+  SENT // sudah dikirim
+  FAILED // gagal kirim
+  SKIPPED // telah dikirim, dilewati untuk menghindari duplikasi
 }
