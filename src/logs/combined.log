@@ -1,0 +1,150 @@
+{"level":"http","message":"GET / - ::1","timestamp":"2025-07-30 23:17:35:1735"}
+{"level":"info","message":"Homepage accessed","timestamp":"2025-07-30 23:17:35:1735"}
+{"level":"http","message":"200 GET / - 12ms","timestamp":"2025-07-30 23:17:35:1735"}
+{"level":"http","message":"GET /favicon.ico - ::1","timestamp":"2025-07-30 23:17:35:1735"}
+{"level":"http","message":"404 GET /favicon.ico - 3ms","timestamp":"2025-07-30 23:17:35:1735"}
+{"level":"http","message":"POST /api/auth/register/user - ::1","timestamp":"2025-07-31 11:28:56:2856"}
+{"code":"EAUTH","command":"API","level":"error","message":"Failed to send email: Missing credentials for \"PLAIN\"","stack":"Error: Missing credentials for \"PLAIN\"\n    at SMTPConnection._formatError (C:\\Users\\muhfa\\Documents\\freelance\\prorent\\proRent_BE\\proRent_BE\\node_modules\\nodemailer\\lib\\smtp-connection\\index.js:809:19)\n    at SMTPConnection.login (C:\\Users\\muhfa\\Documents\\freelance\\prorent\\proRent_BE\\proRent_BE\\node_modules\\nodemailer\\lib\\smtp-connection\\index.js:454:38)\n    at C:\\Users\\muhfa\\Documents\\freelance\\prorent\\proRent_BE\\proRent_BE\\node_modules\\nodemailer\\lib\\smtp-transport\\index.js:272:32\n    at SMTPConnection.<anonymous> (C:\\Users\\muhfa\\Documents\\freelance\\prorent\\proRent_BE\\proRent_BE\\node_modules\\nodemailer\\lib\\smtp-connection\\index.js:215:17)\n    at Object.onceWrapper (node:events:632:28)\n    at SMTPConnection.emit (node:events:518:28)\n    at SMTPConnection.emit (node:domain:489:12)\n    at SMTPConnection._actionEHLO (C:\\Users\\muhfa\\Documents\\freelance\\prorent\\proRent_BE\\proRent_BE\\node_modules\\nodemailer\\lib\\smtp-connection\\index.js:1371:14)\n    at SMTPConnection._processResponse (C:\\Users\\muhfa\\Documents\\freelance\\prorent\\proRent_BE\\proRent_BE\\node_modules\\nodemailer\\lib\\smtp-connection\\index.js:993:20)\n    at SMTPConnection._onData (C:\\Users\\muhfa\\Documents\\freelance\\prorent\\proRent_BE\\proRent_BE\\node_modules\\nodemailer\\lib\\smtp-connection\\index.js:774:14)","timestamp":"2025-07-31 11:29:01:291"}
+{"level":"error","message":"Failed to send verification email: Failed to send email","stack":"Error: Failed to send email\n    at EmailService.<anonymous> (C:\\Users\\muhfa\\Documents\\freelance\\prorent\\proRent_BE\\proRent_BE\\src\\service\\emailService.ts:33:13)\n    at Generator.throw (<anonymous>)\n    at rejected (C:\\Users\\muhfa\\Documents\\freelance\\prorent\\proRent_BE\\proRent_BE\\src\\service\\emailService.ts:6:65)\n    at processTicksAndRejections (node:internal/process/task_queues:105:5)","timestamp":"2025-07-31 11:29:01:291"}
+{"level":"error","message":"Registration error: Failed to send verification email","stack":"Error: Failed to send verification email\n    at EmailService.<anonymous> (C:\\Users\\muhfa\\Documents\\freelance\\prorent\\proRent_BE\\proRent_BE\\src\\service\\emailService.ts:55:13)\n    at Generator.throw (<anonymous>)\n    at rejected (C:\\Users\\muhfa\\Documents\\freelance\\prorent\\proRent_BE\\proRent_BE\\src\\service\\emailService.ts:6:65)\n    at processTicksAndRejections (node:internal/process/task_queues:105:5)","timestamp":"2025-07-31 11:29:01:291"}
+{"level":"error","message":"User registration error: Failed to send verification email","stack":"Error: Failed to send verification email\n    at EmailService.<anonymous> (C:\\Users\\muhfa\\Documents\\freelance\\prorent\\proRent_BE\\proRent_BE\\src\\service\\emailService.ts:55:13)\n    at Generator.throw (<anonymous>)\n    at rejected (C:\\Users\\muhfa\\Documents\\freelance\\prorent\\proRent_BE\\proRent_BE\\src\\service\\emailService.ts:6:65)\n    at processTicksAndRejections (node:internal/process/task_queues:105:5)","timestamp":"2025-07-31 11:29:01:291"}
+{"level":"http","message":"400 POST /register/user - 4929ms","timestamp":"2025-07-31 11:29:01:291"}
+{"level":"http","message":"POST /api/auth/register/user - ::1","timestamp":"2025-07-31 11:43:15:4315"}
+{"level":"info","message":"Email sent successfully to muhfarros28@gmail.com","timestamp":"2025-07-31 11:43:20:4320"}
+{"level":"info","message":"Verification email sent to muhfarros28@gmail.com","timestamp":"2025-07-31 11:43:20:4320"}
+{"level":"info","message":"User registration initiated for email: muhfarros28@gmail.com","timestamp":"2025-07-31 11:43:20:4320"}
+{"level":"http","message":"201 POST /register/user - 5018ms","timestamp":"2025-07-31 11:43:20:4320"}
+{"level":"http","message":"POST /api/auth/register/user - ::1","timestamp":"2025-07-31 11:44:20:4420"}
+{"level":"info","message":"Email sent successfully to muhfarros@gmail.com","timestamp":"2025-07-31 11:44:24:4424"}
+{"level":"info","message":"Verification email sent to muhfarros@gmail.com","timestamp":"2025-07-31 11:44:24:4424"}
+{"level":"info","message":"User registration initiated for email: muhfarros@gmail.com","timestamp":"2025-07-31 11:44:24:4424"}
+{"level":"http","message":"201 POST /register/user - 4107ms","timestamp":"2025-07-31 11:44:24:4424"}
+{"level":"http","message":"POST /api/auth/login - ::1","timestamp":"2025-07-31 11:47:28:4728"}
+{"level":"error","message":"Login error: Password not set. Please use social login or set a password.","stack":"Error: Password not set. Please use social login or set a password.\n    at AuthService.<anonymous> (C:\\Users\\muhfa\\Documents\\freelance\\prorent\\proRent_BE\\proRent_BE\\src\\service\\authService.ts:96:17)\n    at Generator.next (<anonymous>)\n    at fulfilled (C:\\Users\\muhfa\\Documents\\freelance\\prorent\\proRent_BE\\proRent_BE\\src\\service\\authService.ts:5:58)","timestamp":"2025-07-31 11:47:28:4728"}
+{"level":"error","message":"Login error: Password not set. Please use social login or set a password.","stack":"Error: Password not set. Please use social login or set a password.\n    at AuthService.<anonymous> (C:\\Users\\muhfa\\Documents\\freelance\\prorent\\proRent_BE\\proRent_BE\\src\\service\\authService.ts:96:17)\n    at Generator.next (<anonymous>)\n    at fulfilled (C:\\Users\\muhfa\\Documents\\freelance\\prorent\\proRent_BE\\proRent_BE\\src\\service\\authService.ts:5:58)","timestamp":"2025-07-31 11:47:28:4728"}
+{"level":"http","message":"401 POST /login - 17ms","timestamp":"2025-07-31 11:47:28:4728"}
+{"level":"http","message":"GET /api/auth/verify-email - ::1","timestamp":"2025-07-31 11:52:40:5240"}
+{"level":"info","message":"Email sent successfully to muhfarros@gmail.com","timestamp":"2025-07-31 11:52:44:5244"}
+{"level":"info","message":"Welcome email sent to muhfarros@gmail.com","timestamp":"2025-07-31 11:52:44:5244"}
+{"level":"info","message":"Email verification successful","timestamp":"2025-07-31 11:52:44:5244"}
+{"level":"http","message":"200 GET /verify-email - 4335ms","timestamp":"2025-07-31 11:52:44:5244"}
+{"level":"http","message":"POST /api/auth/login - ::1","timestamp":"2025-07-31 11:53:05:535"}
+{"level":"error","message":"Login error: Password not set. Please use social login or set a password.","stack":"Error: Password not set. Please use social login or set a password.\n    at AuthService.<anonymous> (C:\\Users\\muhfa\\Documents\\freelance\\prorent\\proRent_BE\\proRent_BE\\src\\service\\authService.ts:96:17)\n    at Generator.next (<anonymous>)\n    at fulfilled (C:\\Users\\muhfa\\Documents\\freelance\\prorent\\proRent_BE\\proRent_BE\\src\\service\\authService.ts:5:58)","timestamp":"2025-07-31 11:53:05:535"}
+{"level":"error","message":"Login error: Password not set. Please use social login or set a password.","stack":"Error: Password not set. Please use social login or set a password.\n    at AuthService.<anonymous> (C:\\Users\\muhfa\\Documents\\freelance\\prorent\\proRent_BE\\proRent_BE\\src\\service\\authService.ts:96:17)\n    at Generator.next (<anonymous>)\n    at fulfilled (C:\\Users\\muhfa\\Documents\\freelance\\prorent\\proRent_BE\\proRent_BE\\src\\service\\authService.ts:5:58)","timestamp":"2025-07-31 11:53:05:535"}
+{"level":"http","message":"401 POST /login - 14ms","timestamp":"2025-07-31 11:53:05:535"}
+{"level":"http","message":"POST /api/auth/login - ::1","timestamp":"2025-07-31 11:53:09:539"}
+{"level":"error","message":"Login error: Password not set. Please use social login or set a password.","stack":"Error: Password not set. Please use social login or set a password.\n    at AuthService.<anonymous> (C:\\Users\\muhfa\\Documents\\freelance\\prorent\\proRent_BE\\proRent_BE\\src\\service\\authService.ts:96:17)\n    at Generator.next (<anonymous>)\n    at fulfilled (C:\\Users\\muhfa\\Documents\\freelance\\prorent\\proRent_BE\\proRent_BE\\src\\service\\authService.ts:5:58)","timestamp":"2025-07-31 11:53:09:539"}
+{"level":"error","message":"Login error: Password not set. Please use social login or set a password.","stack":"Error: Password not set. Please use social login or set a password.\n    at AuthService.<anonymous> (C:\\Users\\muhfa\\Documents\\freelance\\prorent\\proRent_BE\\proRent_BE\\src\\service\\authService.ts:96:17)\n    at Generator.next (<anonymous>)\n    at fulfilled (C:\\Users\\muhfa\\Documents\\freelance\\prorent\\proRent_BE\\proRent_BE\\src\\service\\authService.ts:5:58)","timestamp":"2025-07-31 11:53:09:539"}
+{"level":"http","message":"401 POST /login - 5ms","timestamp":"2025-07-31 11:53:09:539"}
+{"level":"http","message":"POST /api/auth/login - ::1","timestamp":"2025-07-31 11:53:32:5332"}
+{"level":"error","message":"Login error: Password not set. Please use social login or set a password.","stack":"Error: Password not set. Please use social login or set a password.\n    at AuthService.<anonymous> (C:\\Users\\muhfa\\Documents\\freelance\\prorent\\proRent_BE\\proRent_BE\\src\\service\\authService.ts:96:17)\n    at Generator.next (<anonymous>)\n    at fulfilled (C:\\Users\\muhfa\\Documents\\freelance\\prorent\\proRent_BE\\proRent_BE\\src\\service\\authService.ts:5:58)","timestamp":"2025-07-31 11:53:32:5332"}
+{"level":"error","message":"Login error: Password not set. Please use social login or set a password.","stack":"Error: Password not set. Please use social login or set a password.\n    at AuthService.<anonymous> (C:\\Users\\muhfa\\Documents\\freelance\\prorent\\proRent_BE\\proRent_BE\\src\\service\\authService.ts:96:17)\n    at Generator.next (<anonymous>)\n    at fulfilled (C:\\Users\\muhfa\\Documents\\freelance\\prorent\\proRent_BE\\proRent_BE\\src\\service\\authService.ts:5:58)","timestamp":"2025-07-31 11:53:32:5332"}
+{"level":"http","message":"401 POST /login - 5ms","timestamp":"2025-07-31 11:53:32:5332"}
+{"level":"http","message":"POST /api/auth/login - ::1","timestamp":"2025-07-31 11:54:47:5447"}
+{"level":"error","message":"Login error: Password not set. Please use social login or set a password.","stack":"Error: Password not set. Please use social login or set a password.\n    at AuthService.<anonymous> (C:\\Users\\muhfa\\Documents\\freelance\\prorent\\proRent_BE\\proRent_BE\\src\\service\\authService.ts:96:17)\n    at Generator.next (<anonymous>)\n    at fulfilled (C:\\Users\\muhfa\\Documents\\freelance\\prorent\\proRent_BE\\proRent_BE\\src\\service\\authService.ts:5:58)","timestamp":"2025-07-31 11:54:47:5447"}
+{"level":"error","message":"Login error: Password not set. Please use social login or set a password.","stack":"Error: Password not set. Please use social login or set a password.\n    at AuthService.<anonymous> (C:\\Users\\muhfa\\Documents\\freelance\\prorent\\proRent_BE\\proRent_BE\\src\\service\\authService.ts:96:17)\n    at Generator.next (<anonymous>)\n    at fulfilled (C:\\Users\\muhfa\\Documents\\freelance\\prorent\\proRent_BE\\proRent_BE\\src\\service\\authService.ts:5:58)","timestamp":"2025-07-31 11:54:47:5447"}
+{"level":"http","message":"401 POST /login - 5ms","timestamp":"2025-07-31 11:54:47:5447"}
+{"level":"http","message":"POST /api/auth/login - ::1","timestamp":"2025-07-31 11:54:50:5450"}
+{"level":"error","message":"Login error: Password not set. Please use social login or set a password.","stack":"Error: Password not set. Please use social login or set a password.\n    at AuthService.<anonymous> (C:\\Users\\muhfa\\Documents\\freelance\\prorent\\proRent_BE\\proRent_BE\\src\\service\\authService.ts:96:17)\n    at Generator.next (<anonymous>)\n    at fulfilled (C:\\Users\\muhfa\\Documents\\freelance\\prorent\\proRent_BE\\proRent_BE\\src\\service\\authService.ts:5:58)","timestamp":"2025-07-31 11:54:50:5450"}
+{"level":"error","message":"Login error: Password not set. Please use social login or set a password.","stack":"Error: Password not set. Please use social login or set a password.\n    at AuthService.<anonymous> (C:\\Users\\muhfa\\Documents\\freelance\\prorent\\proRent_BE\\proRent_BE\\src\\service\\authService.ts:96:17)\n    at Generator.next (<anonymous>)\n    at fulfilled (C:\\Users\\muhfa\\Documents\\freelance\\prorent\\proRent_BE\\proRent_BE\\src\\service\\authService.ts:5:58)","timestamp":"2025-07-31 11:54:50:5450"}
+{"level":"http","message":"401 POST /login - 5ms","timestamp":"2025-07-31 11:54:50:5450"}
+{"level":"http","message":"POST /api/auth/register/tenant - ::1","timestamp":"2025-07-31 11:55:12:5512"}
+{"level":"info","message":"Email sent successfully to tenant@example.com","timestamp":"2025-07-31 11:55:16:5516"}
+{"level":"info","message":"Verification email sent to tenant@example.com","timestamp":"2025-07-31 11:55:16:5516"}
+{"level":"info","message":"Tenant registration initiated for email: tenant@example.com","timestamp":"2025-07-31 11:55:16:5516"}
+{"level":"http","message":"201 POST /register/tenant - 3928ms","timestamp":"2025-07-31 11:55:16:5516"}
+{"level":"http","message":"POST /api/auth/login - ::1","timestamp":"2025-07-31 11:55:48:5548"}
+{"level":"error","message":"Login error: Password not set. Please use social login or set a password.","stack":"Error: Password not set. Please use social login or set a password.\n    at AuthService.<anonymous> (C:\\Users\\muhfa\\Documents\\freelance\\prorent\\proRent_BE\\proRent_BE\\src\\service\\authService.ts:96:17)\n    at Generator.next (<anonymous>)\n    at fulfilled (C:\\Users\\muhfa\\Documents\\freelance\\prorent\\proRent_BE\\proRent_BE\\src\\service\\authService.ts:5:58)","timestamp":"2025-07-31 11:55:48:5548"}
+{"level":"error","message":"Login error: Password not set. Please use social login or set a password.","stack":"Error: Password not set. Please use social login or set a password.\n    at AuthService.<anonymous> (C:\\Users\\muhfa\\Documents\\freelance\\prorent\\proRent_BE\\proRent_BE\\src\\service\\authService.ts:96:17)\n    at Generator.next (<anonymous>)\n    at fulfilled (C:\\Users\\muhfa\\Documents\\freelance\\prorent\\proRent_BE\\proRent_BE\\src\\service\\authService.ts:5:58)","timestamp":"2025-07-31 11:55:48:5548"}
+{"level":"http","message":"401 POST /login - 5ms","timestamp":"2025-07-31 11:55:48:5548"}
+{"level":"http","message":"POST /api/auth/register/user - ::1","timestamp":"2025-07-31 12:06:35:635"}
+{"level":"info","message":"Email sent successfully to penyewa@gmail.com","timestamp":"2025-07-31 12:06:40:640"}
+{"level":"info","message":"Verification email sent to penyewa@gmail.com","timestamp":"2025-07-31 12:06:40:640"}
+{"level":"info","message":"User registration initiated for email: penyewa@gmail.com","timestamp":"2025-07-31 12:06:40:640"}
+{"level":"http","message":"201 POST /register/user - 4370ms","timestamp":"2025-07-31 12:06:40:640"}
+{"level":"http","message":"GET /api/auth/me - ::1","timestamp":"2025-07-31 12:09:20:920"}
+{"level":"http","message":"401 GET /me - 7ms","timestamp":"2025-07-31 12:09:20:920"}
+{"level":"http","message":"POST /api/auth/register/user - ::1","timestamp":"2025-07-31 12:10:10:1010"}
+{"level":"info","message":"Email sent successfully to user@gmail.com","timestamp":"2025-07-31 12:10:15:1015"}
+{"level":"info","message":"Verification email sent to user@gmail.com","timestamp":"2025-07-31 12:10:15:1015"}
+{"level":"info","message":"User registration initiated for email: user@gmail.com","timestamp":"2025-07-31 12:10:15:1015"}
+{"level":"http","message":"201 POST /register/user - 4891ms","timestamp":"2025-07-31 12:10:15:1015"}
+{"level":"http","message":"POST /api/auth/register/tenant - ::1","timestamp":"2025-07-31 12:10:29:1029"}
+{"level":"info","message":"Email sent successfully to tenant@gmail.com","timestamp":"2025-07-31 12:10:33:1033"}
+{"level":"info","message":"Verification email sent to tenant@gmail.com","timestamp":"2025-07-31 12:10:33:1033"}
+{"level":"info","message":"Tenant registration initiated for email: tenant@gmail.com","timestamp":"2025-07-31 12:10:33:1033"}
+{"level":"http","message":"201 POST /register/tenant - 3902ms","timestamp":"2025-07-31 12:10:33:1033"}
+{"level":"http","message":"POST /api/auth/register/user - ::1","timestamp":"2025-07-31 12:12:34:1234"}
+{"level":"error","message":"Registration error: User already exists with this email","stack":"Error: User already exists with this email\n    at AuthService.<anonymous> (C:\\Users\\muhfa\\Documents\\freelance\\prorent\\proRent_BE\\proRent_BE\\src\\service\\authService.ts:20:31)\n    at Generator.next (<anonymous>)\n    at fulfilled (C:\\Users\\muhfa\\Documents\\freelance\\prorent\\proRent_BE\\proRent_BE\\src\\service\\authService.ts:5:58)","timestamp":"2025-07-31 12:12:34:1234"}
+{"level":"error","message":"User registration error: User already exists with this email","stack":"Error: User already exists with this email\n    at AuthService.<anonymous> (C:\\Users\\muhfa\\Documents\\freelance\\prorent\\proRent_BE\\proRent_BE\\src\\service\\authService.ts:20:31)\n    at Generator.next (<anonymous>)\n    at fulfilled (C:\\Users\\muhfa\\Documents\\freelance\\prorent\\proRent_BE\\proRent_BE\\src\\service\\authService.ts:5:58)","timestamp":"2025-07-31 12:12:34:1234"}
+{"level":"http","message":"400 POST /register/user - 53ms","timestamp":"2025-07-31 12:12:34:1234"}
+{"level":"http","message":"POST /api/auth/register/user - ::1","timestamp":"2025-07-31 12:12:46:1246"}
+{"level":"info","message":"No password provided or social login used for user: testpass@gmail.com","timestamp":"2025-07-31 12:12:46:1246"}
+{"email":"testpass@gmail.com","hasPassword":false,"level":"info","message":"Creating user with data:","role":"USER","socialLogin":"NONE","timestamp":"2025-07-31 12:12:46:1246"}
+{"level":"info","message":"Email sent successfully to testpass@gmail.com","timestamp":"2025-07-31 12:12:51:1251"}
+{"level":"info","message":"Verification email sent to testpass@gmail.com","timestamp":"2025-07-31 12:12:51:1251"}
+{"level":"info","message":"User registration initiated for email: testpass@gmail.com","timestamp":"2025-07-31 12:12:51:1251"}
+{"level":"http","message":"201 POST /register/user - 4190ms","timestamp":"2025-07-31 12:12:51:1251"}
+{"level":"http","message":"POST /api/auth/register/user - ::1","timestamp":"2025-07-31 12:14:16:1416"}
+{"level":"info","message":"No password provided for user: testpass2@gmail.com","timestamp":"2025-07-31 12:14:16:1416"}
+{"email":"testpass2@gmail.com","hasPassword":false,"level":"info","message":"Creating user with data:","role":"USER","socialLogin":"NONE","timestamp":"2025-07-31 12:14:16:1416"}
+{"level":"info","message":"Email sent successfully to testpass2@gmail.com","timestamp":"2025-07-31 12:14:20:1420"}
+{"level":"info","message":"Verification email sent to testpass2@gmail.com","timestamp":"2025-07-31 12:14:20:1420"}
+{"level":"info","message":"User registration initiated for email: testpass2@gmail.com","timestamp":"2025-07-31 12:14:20:1420"}
+{"level":"http","message":"201 POST /register/user - 4008ms","timestamp":"2025-07-31 12:14:20:1420"}
+{"level":"http","message":"POST /api/auth/register/user - ::1","timestamp":"2025-07-31 12:14:59:1459"}
+{"email":"testpass3@gmail.com","level":"info","message":"Raw request body:","password":"password123","role":"USER","socialLogin":"NONE","timestamp":"2025-07-31 12:14:59:1459"}
+{"email":"testpass3@gmail.com","level":"info","message":"Validated data:","password":"password123","role":"USER","socialLogin":"NONE","timestamp":"2025-07-31 12:14:59:1459"}
+{"level":"info","message":"Password hashed for user: testpass3@gmail.com","timestamp":"2025-07-31 12:15:00:150"}
+{"email":"testpass3@gmail.com","hasPassword":true,"level":"info","message":"Creating user with data:","role":"USER","socialLogin":"NONE","timestamp":"2025-07-31 12:15:00:150"}
+{"level":"info","message":"Email sent successfully to testpass3@gmail.com","timestamp":"2025-07-31 12:15:04:154"}
+{"level":"info","message":"Verification email sent to testpass3@gmail.com","timestamp":"2025-07-31 12:15:04:154"}
+{"level":"info","message":"User registration initiated for email: testpass3@gmail.com","timestamp":"2025-07-31 12:15:04:154"}
+{"level":"http","message":"201 POST /register/user - 4498ms","timestamp":"2025-07-31 12:15:04:154"}
+{"level":"http","message":"POST /api/auth/login - ::1","timestamp":"2025-07-31 12:15:49:1549"}
+{"level":"error","message":"Login error: Please verify your email before logging in","stack":"Error: Please verify your email before logging in\n    at AuthService.<anonymous> (C:\\Users\\muhfa\\Documents\\freelance\\prorent\\proRent_BE\\proRent_BE\\src\\service\\authService.ts:129:15)\n    at Generator.next (<anonymous>)\n    at fulfilled (C:\\Users\\muhfa\\Documents\\freelance\\prorent\\proRent_BE\\proRent_BE\\src\\service\\authService.ts:5:58)","timestamp":"2025-07-31 12:15:49:1549"}
+{"level":"error","message":"Login error: Please verify your email before logging in","stack":"Error: Please verify your email before logging in\n    at AuthService.<anonymous> (C:\\Users\\muhfa\\Documents\\freelance\\prorent\\proRent_BE\\proRent_BE\\src\\service\\authService.ts:129:15)\n    at Generator.next (<anonymous>)\n    at fulfilled (C:\\Users\\muhfa\\Documents\\freelance\\prorent\\proRent_BE\\proRent_BE\\src\\service\\authService.ts:5:58)","timestamp":"2025-07-31 12:15:49:1549"}
+{"level":"http","message":"401 POST /login - 283ms","timestamp":"2025-07-31 12:15:49:1549"}
+{"level":"http","message":"POST /api/auth/register/user - ::1","timestamp":"2025-07-31 12:21:05:215"}
+{"level":"info","message":"Email sent successfully to laila@gmail.com","timestamp":"2025-07-31 12:21:10:2110"}
+{"level":"info","message":"Verification email sent to laila@gmail.com","timestamp":"2025-07-31 12:21:10:2110"}
+{"level":"info","message":"User registration initiated for email: laila@gmail.com","timestamp":"2025-07-31 12:21:10:2110"}
+{"level":"http","message":"201 POST /register/user - 5347ms","timestamp":"2025-07-31 12:21:10:2110"}
+{"level":"http","message":"GET /api/auth/verify-email - ::1","timestamp":"2025-07-31 12:21:50:2150"}
+{"level":"info","message":"Email sent successfully to laila@gmail.com","timestamp":"2025-07-31 12:21:54:2154"}
+{"level":"info","message":"Welcome email sent to laila@gmail.com","timestamp":"2025-07-31 12:21:54:2154"}
+{"level":"info","message":"Email verification successful","timestamp":"2025-07-31 12:21:54:2154"}
+{"level":"http","message":"200 GET /verify-email - 4274ms","timestamp":"2025-07-31 12:21:54:2154"}
+{"level":"http","message":"POST /api/auth/login - ::1","timestamp":"2025-07-31 12:22:10:2210"}
+{"level":"info","message":"User logged in: laila@gmail.com","timestamp":"2025-07-31 12:22:11:2211"}
+{"level":"http","message":"200 POST /login - 326ms","timestamp":"2025-07-31 12:22:11:2211"}
+{"level":"http","message":"GET /api/auth/me - ::1","timestamp":"2025-07-31 12:26:05:265"}
+{"level":"http","message":"200 GET /me - 69ms","timestamp":"2025-07-31 12:26:05:265"}
+{"level":"http","message":"POST /api/auth/resend-verify - ::1","timestamp":"2025-07-31 12:28:05:285"}
+{"level":"error","message":"Resend verification error: User is already verified","stack":"Error: User is already verified\n    at AuthService.<anonymous> (C:\\Users\\muhfa\\Documents\\freelance\\prorent\\proRent_BE\\proRent_BE\\src\\service\\authService.ts:83:34)\n    at Generator.next (<anonymous>)\n    at fulfilled (C:\\Users\\muhfa\\Documents\\freelance\\prorent\\proRent_BE\\proRent_BE\\src\\service\\authService.ts:5:58)","timestamp":"2025-07-31 12:28:05:285"}
+{"level":"error","message":"Resend verification error: User is already verified","stack":"Error: User is already verified\n    at AuthService.<anonymous> (C:\\Users\\muhfa\\Documents\\freelance\\prorent\\proRent_BE\\proRent_BE\\src\\service\\authService.ts:83:34)\n    at Generator.next (<anonymous>)\n    at fulfilled (C:\\Users\\muhfa\\Documents\\freelance\\prorent\\proRent_BE\\proRent_BE\\src\\service\\authService.ts:5:58)","timestamp":"2025-07-31 12:28:05:285"}
+{"level":"http","message":"400 POST /resend-verify - 11ms","timestamp":"2025-07-31 12:28:05:285"}
+{"level":"http","message":"POST /api/auth/resend-verify - ::1","timestamp":"2025-07-31 12:28:12:2812"}
+{"level":"info","message":"Email sent successfully to muhfarros28@gmail.com","timestamp":"2025-07-31 12:28:16:2816"}
+{"level":"info","message":"Verification email sent to muhfarros28@gmail.com","timestamp":"2025-07-31 12:28:16:2816"}
+{"level":"info","message":"Verification email resent to: muhfarros28@gmail.com","timestamp":"2025-07-31 12:28:16:2816"}
+{"level":"http","message":"200 POST /resend-verify - 4683ms","timestamp":"2025-07-31 12:28:16:2816"}
+{"level":"http","message":"POST /api/auth/resend-verify - ::1","timestamp":"2025-07-31 12:28:27:2827"}
+{"level":"error","message":"Resend verification error: User is already verified","stack":"Error: User is already verified\n    at AuthService.<anonymous> (C:\\Users\\muhfa\\Documents\\freelance\\prorent\\proRent_BE\\proRent_BE\\src\\service\\authService.ts:83:34)\n    at Generator.next (<anonymous>)\n    at fulfilled (C:\\Users\\muhfa\\Documents\\freelance\\prorent\\proRent_BE\\proRent_BE\\src\\service\\authService.ts:5:58)","timestamp":"2025-07-31 12:28:27:2827"}
+{"level":"error","message":"Resend verification error: User is already verified","stack":"Error: User is already verified\n    at AuthService.<anonymous> (C:\\Users\\muhfa\\Documents\\freelance\\prorent\\proRent_BE\\proRent_BE\\src\\service\\authService.ts:83:34)\n    at Generator.next (<anonymous>)\n    at fulfilled (C:\\Users\\muhfa\\Documents\\freelance\\prorent\\proRent_BE\\proRent_BE\\src\\service\\authService.ts:5:58)","timestamp":"2025-07-31 12:28:27:2827"}
+{"level":"http","message":"400 POST /resend-verify - 4ms","timestamp":"2025-07-31 12:28:27:2827"}
+{"level":"http","message":"POST /api/auth/reset-password-request - ::1","timestamp":"2025-07-31 12:29:47:2947"}
+{"level":"info","message":"Email sent successfully to laila@gmail.com","timestamp":"2025-07-31 12:29:51:2951"}
+{"level":"info","message":"Password reset email sent to laila@gmail.com","timestamp":"2025-07-31 12:29:51:2951"}
+{"level":"info","message":"Password reset requested for: laila@gmail.com","timestamp":"2025-07-31 12:29:51:2951"}
+{"level":"http","message":"200 POST /reset-password-request - 4009ms","timestamp":"2025-07-31 12:29:51:2951"}
+{"level":"http","message":"POST /api/auth/reset-password-confirm - ::1","timestamp":"2025-07-31 12:31:37:3137"}
+{"level":"info","message":"Password reset completed successfully","timestamp":"2025-07-31 12:31:38:3138"}
+{"level":"http","message":"200 POST /reset-password-confirm - 389ms","timestamp":"2025-07-31 12:31:38:3138"}
+{"level":"http","message":"POST /api/auth/login - ::1","timestamp":"2025-07-31 12:31:50:3150"}
+{"level":"error","message":"Login error: Invalid credentials","stack":"Error: Invalid credentials\n    at AuthService.<anonymous> (C:\\Users\\muhfa\\Documents\\freelance\\prorent\\proRent_BE\\proRent_BE\\src\\service\\authService.ts:115:37)\n    at Generator.next (<anonymous>)\n    at fulfilled (C:\\Users\\muhfa\\Documents\\freelance\\prorent\\proRent_BE\\proRent_BE\\src\\service\\authService.ts:5:58)","timestamp":"2025-07-31 12:31:50:3150"}
+{"level":"error","message":"Login error: Invalid credentials","stack":"Error: Invalid credentials\n    at AuthService.<anonymous> (C:\\Users\\muhfa\\Documents\\freelance\\prorent\\proRent_BE\\proRent_BE\\src\\service\\authService.ts:115:37)\n    at Generator.next (<anonymous>)\n    at fulfilled (C:\\Users\\muhfa\\Documents\\freelance\\prorent\\proRent_BE\\proRent_BE\\src\\service\\authService.ts:5:58)","timestamp":"2025-07-31 12:31:50:3150"}
+{"level":"http","message":"401 POST /login - 323ms","timestamp":"2025-07-31 12:31:50:3150"}
+{"level":"http","message":"POST /api/auth/login - ::1","timestamp":"2025-07-31 12:32:15:3215"}
+{"level":"info","message":"User logged in: laila@gmail.com","timestamp":"2025-07-31 12:32:16:3216"}
+{"level":"http","message":"200 POST /login - 323ms","timestamp":"2025-07-31 12:32:16:3216"}
