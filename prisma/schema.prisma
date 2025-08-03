@@ -199,6 +199,7 @@ model Property {
   rentalType    PropertyRentalType @default(ROOM_BY_ROOM)
   createdAt     DateTime           @default(now())
   updatedAt     DateTime           @updatedAt
+  Reservation   Reservation[]
 
   @@index([locationId])
   @@index([categoryId])
@@ -299,6 +300,7 @@ model Reservation {
   payment      Payment?
   review       Review?
   RoomType     RoomType      @relation(fields: [roomTypeId], references: [id])
+  Property     Property      @relation(fields: [propertyId], references: [id])
   Room         Room?         @relation("RoomReservation", fields: [roomId], references: [id])
   User         User          @relation("UserReservation", fields: [userId], references: [id])
   PaymentProof PaymentProof?
@@ -318,6 +320,7 @@ model Payment {
   paymentStatus      Status
   method             String
   payerEmail         String
+  xenditInvoiceId    String?
   externalInvoiceUrl String?
   paidAt             DateTime?
   callbackStatus     String?
@@ -331,6 +334,7 @@ model Payment {
   @@index([paymentStatus])
   @@index([method])
   @@index([paymentStatus, createdAt])
+  @@index([xenditInvoiceId]) // Index untuk pencarian berdasarkan xenditInvoiceId
 }
 
 model PaymentProof {
