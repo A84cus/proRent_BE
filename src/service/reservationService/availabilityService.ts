@@ -6,10 +6,19 @@ export async function checkAvailability (roomTypeId: string, startDate: Date, en
       throw new Error('End date must be after start date');
    }
 
+   const datesToCheck: Date[] = [];
+   const currentDate = new Date(startDate);
+   const endDateExclusive = new Date(endDate);
+
+   while (currentDate < endDateExclusive) {
+      datesToCheck.push(new Date(currentDate));
+      currentDate.setDate(currentDate.getDate() + 1);
+   }
+
    const availabilityRecords = await prisma.availability.findMany({
       where: {
          roomTypeId,
-         date: { lte: endDate, gte: startDate }
+         date: { in: datesToCheck }
       },
       select: {
          date: true,
@@ -17,15 +26,18 @@ export async function checkAvailability (roomTypeId: string, startDate: Date, en
       }
    });
 
-   const numberOfStays = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
-   if (availabilityRecords.length < numberOfStays) {
-      console.warn(`Availability records for ${numberOfStays} days not found for room type ${roomTypeId}`);
-      return false;
-   }
+   const availabilityMap = new Map<string, number>();
+   availabilityRecords.forEach(record => {
+      availabilityMap.set(record.date.toISOString().split('T')[0], record.availableCount);
+   });
 
-   for (const record of availabilityRecords) {
-      if (record.availableCount < 1) {
-         return false;
+   for (const date of datesToCheck) {
+      const dateKey = date.toISOString().split('T')[0];
+
+      if (availabilityMap.has(dateKey)) {
+         if (availabilityMap.get(dateKey)! < 1) {
+            return false;
+         }
       }
    }
 
@@ -46,13 +58,13 @@ export async function validateAvailabilityRecords (
          where: {
             roomTypeId_date: {
                roomTypeId,
-               date: currentDate
+               date: new Date(currentDate)
             }
          },
          update: {},
          create: {
             roomTypeId,
-            date: currentDate,
+            date: new Date(currentDate),
             availableCount: totalQuantity
          }
       });

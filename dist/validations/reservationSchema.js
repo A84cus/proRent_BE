@@ -22,9 +22,9 @@ exports.createReservationSchema = zod_1.z
             }
         }
     }),
-    payerEmail: zod_1.z.email('Invalid email format').optional() // Optional based on payment type or user data
+    payerEmail: zod_1.z.email('Invalid email format').optional()
 })
     .refine(data => new Date(data.startDate) < new Date(data.endDate), {
     message: 'Start date must be before end date',
-    path: ['endDate'] // Error will be associated with endDate field
+    path: ['endDate']
 });

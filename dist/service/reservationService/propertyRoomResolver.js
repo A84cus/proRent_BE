@@ -16,10 +16,9 @@ exports.resolveTargetRoomTypeId = resolveTargetRoomTypeId;
 exports.validatePropertyRentalTypeRequirements = validatePropertyRentalTypeRequirements;
 // services/propertyRoomResolver.ts
 const prisma_1 = __importDefault(require("../../prisma"));
-const client_1 = require("@prisma/client"); // Make sure this enum is in your schema
+const client_1 = require("@prisma/client");
 function resolveTargetRoomTypeId(propertyId, providedRoomTypeId) {
     return __awaiter(this, void 0, void 0, function* () {
-        // 1. Fetch Property and its rooms (specifically the one marked as whole unit if needed)
         const property = yield prisma_1.default.property.findUnique({
             where: { id: propertyId },
             include: {
@@ -33,7 +32,7 @@ function resolveTargetRoomTypeId(propertyId, providedRoomTypeId) {
         }
         let targetRoomTypeId;
         if (property.rentalType === client_1.PropertyRentalType.WHOLE_PROPERTY) {
-            // --- Logic for WHOLE_PROPERTY ---
+            // logic whole property
             const wholeUnitRoom = property.roomTypes.find(r => r.isWholeUnit);
             if (!wholeUnitRoom) {
                 throw new Error('Configuration Error: Whole property unit room not found for this property.');
@@ -44,7 +43,7 @@ function resolveTargetRoomTypeId(propertyId, providedRoomTypeId) {
             }
         }
         else if (property.rentalType === client_1.PropertyRentalType.ROOM_BY_ROOM) {
-            // --- Logic for ROOM_BY_ROOM ---
+            // logic for room by room
             if (!providedRoomTypeId) {
                 throw new Error('Room ID is required for room-by-room rental type.');
             }
@@ -64,7 +63,7 @@ function validatePropertyRentalTypeRequirements(propertyId, providedRoomTypeId) 
     return __awaiter(this, void 0, void 0, function* () {
         const property = yield prisma_1.default.property.findUnique({
             where: { id: propertyId },
-            select: { rentalType: true } // Only fetch the type needed for validation
+            select: { rentalType: true }
         });
         if (!property) {
             throw new Error('Property not found');
@@ -75,7 +74,6 @@ function validatePropertyRentalTypeRequirements(propertyId, providedRoomTypeId) 
             if (!providedRoomTypeId) {
                 throw new Error('Room ID is required for room-by-room rental type.');
             }
-            // You could add more specific validations here if needed for ROOM_BY_ROOM
         }
         else {
             throw new Error(`Unsupported property rental type: ${property.rentalType}`);
