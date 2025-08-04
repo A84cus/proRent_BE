@@ -66,10 +66,12 @@ export async function decrementAvailability (tx: any, roomTypeId: string, startD
    const endDateExclusive = new Date(endDate);
 
    while (currentDate < endDateExclusive) {
-      await tx.availability.updateMany({
+      await tx.availability.update({
          where: {
-            roomTypeId,
-            date: { lte: endDate, gte: startDate }
+            roomTypeId_date: {
+               roomTypeId,
+               date: new Date(currentDate)
+            }
          },
          data: {
             availableCount: {
