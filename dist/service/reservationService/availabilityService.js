@@ -74,10 +74,12 @@ function decrementAvailability(tx, roomTypeId, startDate, endDate) {
         const currentDate = new Date(startDate);
         const endDateExclusive = new Date(endDate);
         while (currentDate < endDateExclusive) {
-            yield tx.availability.updateMany({
+            yield tx.availability.update({
                 where: {
-                    roomTypeId,
-                    date: { lte: endDate, gte: startDate }
+                    roomTypeId_date: {
+                        roomTypeId,
+                        date: new Date(currentDate)
+                    }
                 },
                 data: {
                     availableCount: {

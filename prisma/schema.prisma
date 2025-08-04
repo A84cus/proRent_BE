@@ -320,7 +320,7 @@ model Payment {
   paymentStatus      Status
   method             String
   payerEmail         String
-  xenditInvoiceId    String?
+  xenditInvoiceId    String?     @unique
   externalInvoiceUrl String?
   paidAt             DateTime?
   callbackStatus     String?
