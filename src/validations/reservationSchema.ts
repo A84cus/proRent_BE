@@ -20,11 +20,11 @@ export const createReservationSchema = z
             }
          }
       }),
-      payerEmail: z.email('Invalid email format').optional() // Optional based on payment type or user data
+      payerEmail: z.email('Invalid email format').optional()
    })
    .refine(data => new Date(data.startDate) < new Date(data.endDate), {
       message: 'Start date must be before end date',
-      path: [ 'endDate' ] // Error will be associated with endDate field
+      path: [ 'endDate' ]
    });
 
 export type CreateReservationInput = z.infer<typeof createReservationSchema>;

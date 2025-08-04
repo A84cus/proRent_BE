@@ -33,7 +33,6 @@ function createXenditInvoice(paymentId) {
                 }
             }
         });
-        // 2. Validate Payment Record
         if (!paymentRecord || paymentRecord.method !== 'XENDIT') {
             throw new Error('Invalid payment record for Xendit invoice creation.');
         }
