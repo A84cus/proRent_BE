@@ -16,7 +16,7 @@ export const createReservationController = async (req: Request, res: Response) =
       const userId = getUserIdFromRequest(req);
       const inputData = prepareInputData(req, userId);
       const result = await createReservation(inputData);
-      const isXendit = inputData.paymentType === 'XENDIT'; // Assuming string comparison based on schema
+      const isXendit = inputData.paymentType === 'XENDIT';
 
       return res.status(getSuccessStatusCode(isXendit)).json(result);
    } catch (error: any) {

@@ -224,8 +224,7 @@ model RoomType {
   createdAt      DateTime       @default(now())
   updatedAt      DateTime       @updatedAt
 
-  @@unique([propertyId, name]) // memastikan tidak ada duplikasi nama kamar
-  @@unique([propertyId, isWholeUnit]) // memastikan hada satu tipe whole property
+  @@unique([propertyId, name])
   @@index([propertyId])
   @@index([isWholeUnit]) // Index untuk pencarian tipe whole property
 }
