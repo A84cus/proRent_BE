@@ -12,6 +12,7 @@ const config_1 = require("./config");
 const authRoute_1 = __importDefault(require("./route/authRoute"));
 const uploadRoute_1 = __importDefault(require("./route/uploadRoute"));
 const utilityRoute_1 = __importDefault(require("./route/utilityRoute"));
+const userRoute_1 = __importDefault(require("./route/userRoute"));
 const corsOptions = {
     origin: "*",
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
@@ -28,6 +29,7 @@ app.use(loggerMwr_1.default);
 app.use("/api/auth", authRoute_1.default);
 app.use("/api/upload", uploadRoute_1.default);
 app.use("/api/utility", utilityRoute_1.default);
+app.use("/api/users", userRoute_1.default);
 app.get("/", (req, res) => {
     logger_1.default.info("Homepage accessed");
     res.send("Express on Vercel");

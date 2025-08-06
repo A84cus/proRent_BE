@@ -36,7 +36,9 @@ class PasswordService {
     }
 
     if (!/(?=.*[@$!%*?&])/.test(password)) {
-      errors.push("Password must contain at least one special character");
+      errors.push(
+        "Password must contain at least one special character @$!%*?&"
+      );
     }
 
     return {
