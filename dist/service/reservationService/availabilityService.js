@@ -14,23 +14,38 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.checkAvailability = checkAvailability;
 exports.validateAvailabilityRecords = validateAvailabilityRecords;
-exports.decrementAvailability = decrementAvailability;
+exports.DecrementAvailability = DecrementAvailability;
 exports.incrementAvailability = incrementAvailability;
 // services/availabilityService.ts
 const prisma_1 = __importDefault(require("../../prisma"));
-function checkAvailability(roomTypeId, startDate, endDate) {
+function getRoomTypeTotalQuantity(roomTypeId) {
     return __awaiter(this, void 0, void 0, function* () {
-        if (startDate >= endDate) {
-            throw new Error('End date must be after start date');
+        const roomType = yield prisma_1.default.roomType.findUnique({
+            where: { id: roomTypeId },
+            select: { totalQuantity: true }
+        });
+        if (!roomType) {
+            throw new Error(`RoomType with id ${roomTypeId} not found.`);
         }
-        const datesToCheck = [];
-        const currentDate = new Date(startDate);
-        const endDateExclusive = new Date(endDate);
-        while (currentDate < endDateExclusive) {
-            datesToCheck.push(new Date(currentDate));
-            currentDate.setDate(currentDate.getDate() + 1);
-        }
-        const availabilityRecords = yield prisma_1.default.availability.findMany({
+        return roomType.totalQuantity;
+    });
+}
+function generateDateRange(startDate, endDate) {
+    if (startDate >= endDate) {
+        throw new Error('End date must be after start date');
+    }
+    const dates = [];
+    const current = new Date(startDate);
+    const endExclusive = new Date(endDate);
+    while (current < endExclusive) {
+        dates.push(new Date(current)); // Push a copy
+        current.setDate(current.getDate() + 1);
+    }
+    return dates;
+}
+function getAvailabilityRecords(roomTypeId, datesToCheck) {
+    return __awaiter(this, void 0, void 0, function* () {
+        return yield prisma_1.default.availability.findMany({
             where: {
                 roomTypeId,
                 date: { in: datesToCheck }
@@ -40,19 +55,34 @@ function checkAvailability(roomTypeId, startDate, endDate) {
                 availableCount: true
             }
         });
-        const availabilityMap = new Map();
-        availabilityRecords.forEach(record => {
-            availabilityMap.set(record.date.toISOString().split('T')[0], record.availableCount);
-        });
+    });
+}
+function buildAvailabilityMap(availabilityRecords) {
+    const map = new Map();
+    availabilityRecords.forEach(record => {
+        // Consider using date formatting utilities for consistency
+        map.set(record.date.toISOString().split('T')[0], record.availableCount);
+    });
+    return map;
+}
+function isDateAvailable(date, availabilityMap, totalQuantity) {
+    const dateKey = date.toISOString().split('T')[0];
+    const availableCount = availabilityMap.has(dateKey) ? availabilityMap.get(dateKey) : totalQuantity;
+    return availableCount >= 1;
+}
+// --- Main Exported Functions ---
+function checkAvailability(roomTypeId, startDate, endDate) {
+    return __awaiter(this, void 0, void 0, function* () {
+        const totalQuantity = yield getRoomTypeTotalQuantity(roomTypeId);
+        const datesToCheck = generateDateRange(startDate, endDate);
+        const availabilityRecords = yield getAvailabilityRecords(roomTypeId, datesToCheck);
+        const availabilityMap = buildAvailabilityMap(availabilityRecords);
         for (const date of datesToCheck) {
-            const dateKey = date.toISOString().split('T')[0];
-            if (availabilityMap.has(dateKey)) {
-                if (availabilityMap.get(dateKey) < 1) {
-                    return false;
-                }
+            if (!isDateAvailable(date, availabilityMap, totalQuantity)) {
+                return false; // Fail fast if any date is unavailable
             }
         }
-        return true;
+        return true; // All dates are available
     });
 }
 function validateAvailabilityRecords(roomTypeId, startDate, endDate, totalQuantity) {
@@ -78,22 +108,30 @@ function validateAvailabilityRecords(roomTypeId, startDate, endDate, totalQuanti
         }
     });
 }
-function decrementAvailability(tx, roomTypeId, startDate, endDate) {
+// Modified decrement function that ensures record existence
+function DecrementAvailability(tx, roomTypeId, startDate, endDate) {
     return __awaiter(this, void 0, void 0, function* () {
+        const totalQuantity = yield getRoomTypeTotalQuantity(roomTypeId);
         const currentDate = new Date(startDate);
         const endDateExclusive = new Date(endDate);
         while (currentDate < endDateExclusive) {
-            yield tx.availability.update({
+            const dateForQuery = new Date(currentDate);
+            yield tx.availability.upsert({
                 where: {
                     roomTypeId_date: {
                         roomTypeId,
-                        date: new Date(currentDate)
+                        date: dateForQuery
                     }
                 },
-                data: {
+                update: {
                     availableCount: {
                         decrement: 1
                     }
+                },
+                create: {
+                    roomTypeId,
+                    date: dateForQuery,
+                    availableCount: totalQuantity - 1
                 }
             });
             currentDate.setDate(currentDate.getDate() + 1);

@@ -1,7 +1,7 @@
 // services/createReservation.ts
 import prisma from '../../prisma';
 import { calculateTotalPrice } from './pricingService';
-import { checkAvailability, decrementAvailability } from './availabilityService';
+import { checkAvailability, DecrementAvailability } from './availabilityService';
 import { resolveTargetRoomTypeId } from './propertyRoomResolver';
 import { createReservationSchema } from '../../validations/reservationSchema';
 import { Status, PaymentType } from '@prisma/client';
@@ -58,7 +58,7 @@ async function executeReservationTransaction (data: any, validationData: any) {
             }
          });
 
-         await decrementAvailability(tx, targetRoomTypeId, startDate, endDate);
+         await DecrementAvailability(tx, targetRoomTypeId, startDate, endDate);
 
          return { reservation, paymentRecordId: paymentRecord.id };
       },

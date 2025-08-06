@@ -1,21 +1,35 @@
 // services/availabilityService.ts
 import prisma from '../../prisma';
 
-export async function checkAvailability (roomTypeId: string, startDate: Date, endDate: Date) {
+async function getRoomTypeTotalQuantity (roomTypeId: string): Promise<number> {
+   const roomType = await prisma.roomType.findUnique({
+      where: { id: roomTypeId },
+      select: { totalQuantity: true }
+   });
+   if (!roomType) {
+      throw new Error(`RoomType with id ${roomTypeId} not found.`);
+   }
+   return roomType.totalQuantity;
+}
+
+function generateDateRange (startDate: Date, endDate: Date): Date[] {
    if (startDate >= endDate) {
       throw new Error('End date must be after start date');
    }
 
-   const datesToCheck: Date[] = [];
-   const currentDate = new Date(startDate);
-   const endDateExclusive = new Date(endDate);
+   const dates: Date[] = [];
+   const current = new Date(startDate);
+   const endExclusive = new Date(endDate);
 
-   while (currentDate < endDateExclusive) {
-      datesToCheck.push(new Date(currentDate));
-      currentDate.setDate(currentDate.getDate() + 1);
+   while (current < endExclusive) {
+      dates.push(new Date(current)); // Push a copy
+      current.setDate(current.getDate() + 1);
    }
+   return dates;
+}
 
-   const availabilityRecords = await prisma.availability.findMany({
+async function getAvailabilityRecords (roomTypeId: string, datesToCheck: Date[]) {
+   return await prisma.availability.findMany({
       where: {
          roomTypeId,
          date: { in: datesToCheck }
@@ -25,23 +39,39 @@ export async function checkAvailability (roomTypeId: string, startDate: Date, en
          availableCount: true
       }
    });
+}
 
-   const availabilityMap = new Map<string, number>();
+function buildAvailabilityMap (availabilityRecords: any[]) {
+   const map = new Map<string, number>();
    availabilityRecords.forEach(record => {
-      availabilityMap.set(record.date.toISOString().split('T')[0], record.availableCount);
+      // Consider using date formatting utilities for consistency
+      map.set(record.date.toISOString().split('T')[0], record.availableCount);
    });
+   return map;
+}
+
+function isDateAvailable (date: Date, availabilityMap: Map<string, number>, totalQuantity: number): boolean {
+   const dateKey = date.toISOString().split('T')[0];
+   const availableCount = availabilityMap.has(dateKey) ? availabilityMap.get(dateKey)! : totalQuantity;
+
+   return availableCount >= 1;
+}
+
+// --- Main Exported Functions ---
+
+export async function checkAvailability (roomTypeId: string, startDate: Date, endDate: Date) {
+   const totalQuantity = await getRoomTypeTotalQuantity(roomTypeId);
+   const datesToCheck = generateDateRange(startDate, endDate);
+   const availabilityRecords = await getAvailabilityRecords(roomTypeId, datesToCheck);
+   const availabilityMap = buildAvailabilityMap(availabilityRecords);
 
    for (const date of datesToCheck) {
-      const dateKey = date.toISOString().split('T')[0];
-
-      if (availabilityMap.has(dateKey)) {
-         if (availabilityMap.get(dateKey)! < 1) {
-            return false;
-         }
+      if (!isDateAvailable(date, availabilityMap, totalQuantity)) {
+         return false; // Fail fast if any date is unavailable
       }
    }
 
-   return true;
+   return true; // All dates are available
 }
 
 export async function validateAvailabilityRecords (
@@ -73,22 +103,30 @@ export async function validateAvailabilityRecords (
    }
 }
 
-export async function decrementAvailability (tx: any, roomTypeId: string, startDate: Date, endDate: Date) {
+// Modified decrement function that ensures record existence
+export async function DecrementAvailability (tx: any, roomTypeId: string, startDate: Date, endDate: Date) {
+   const totalQuantity = await getRoomTypeTotalQuantity(roomTypeId);
    const currentDate = new Date(startDate);
    const endDateExclusive = new Date(endDate);
 
    while (currentDate < endDateExclusive) {
-      await tx.availability.update({
+      const dateForQuery = new Date(currentDate);
+      await tx.availability.upsert({
          where: {
             roomTypeId_date: {
                roomTypeId,
-               date: new Date(currentDate)
+               date: dateForQuery
             }
          },
-         data: {
+         update: {
             availableCount: {
                decrement: 1
             }
+         },
+         create: {
+            roomTypeId,
+            date: dateForQuery,
+            availableCount: totalQuantity - 1
          }
       });
 

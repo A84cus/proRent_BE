@@ -67,7 +67,7 @@ function executeReservationTransaction(data, validationData) {
                     payerEmail: data.payerEmail || ''
                 }
             });
-            yield (0, availabilityService_1.decrementAvailability)(tx, targetRoomTypeId, startDate, endDate);
+            yield (0, availabilityService_1.DecrementAvailability)(tx, targetRoomTypeId, startDate, endDate);
             return { reservation, paymentRecordId: paymentRecord.id };
         }), { timeout: 30000, maxWait: 10000 });
     });
