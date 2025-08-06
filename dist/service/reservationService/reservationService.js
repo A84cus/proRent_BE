@@ -13,6 +13,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.createReservation = createReservation;
+exports.cancelReservation = cancelReservation;
 // services/createReservation.ts
 const prisma_1 = __importDefault(require("../../prisma"));
 const pricingService_1 = require("./pricingService");
@@ -109,4 +110,73 @@ function createReservation(input) {
 }
 function validateInput(input) {
     return reservationSchema_1.createReservationSchema.parse(input);
+}
+function findAndValidateReservation(reservationId, userId) {
+    return __awaiter(this, void 0, void 0, function* () {
+        const reservation = yield prisma_1.default.reservation.findUnique({
+            where: { id: reservationId },
+            include: {
+                payment: true,
+                PaymentProof: true,
+                RoomType: {
+                    select: { id: true }
+                }
+            }
+        });
+        if (!reservation) {
+            throw new Error('Reservation not found.');
+        }
+        if (reservation.userId !== userId) {
+            throw new Error('Unauthorized: You can only cancel your own reservations.');
+        }
+        if (reservation.orderStatus === client_1.Status.CANCELLED) {
+            throw new Error('Reservation is already cancelled.');
+        }
+        if (reservation.orderStatus !== client_1.Status.PENDING_PAYMENT) {
+            throw new Error('Cancellation is not allowed for reservations that are confirmed or awaiting confirmation.');
+        }
+        return reservation;
+    });
+}
+function updateReservationAndPaymentStatus(tx, reservationId) {
+    return __awaiter(this, void 0, void 0, function* () {
+        yield tx.reservation.update({
+            where: { id: reservationId },
+            data: { orderStatus: client_1.Status.CANCELLED }
+        });
+        yield tx.payment.updateMany({
+            where: { reservationId },
+            data: { paymentStatus: client_1.Status.CANCELLED }
+        });
+    });
+}
+function restoreAvailability(tx, reservation) {
+    return __awaiter(this, void 0, void 0, function* () {
+        var _a;
+        if (((_a = reservation.RoomType) === null || _a === void 0 ? void 0 : _a.id) && reservation.startDate && reservation.endDate) {
+            yield (0, availabilityService_1.incrementAvailability)(tx, reservation.RoomType.id, new Date(reservation.startDate), new Date(reservation.endDate));
+        }
+        else {
+            console.warn(`Could not restore availability for reservation ${reservation.id}: Missing RoomTypeId or dates.`);
+        }
+    });
+}
+function cancelReservation(reservationId, userId) {
+    return __awaiter(this, void 0, void 0, function* () {
+        const reservation = yield findAndValidateReservation(reservationId, userId);
+        const updatedReservation = yield prisma_1.default.$transaction((tx) => __awaiter(this, void 0, void 0, function* () {
+            yield updateReservationAndPaymentStatus(tx, reservationId);
+            yield restoreAvailability(tx, reservation);
+            return yield tx.reservation.findUnique({
+                where: { id: reservationId },
+                include: {
+                    payment: true,
+                    PaymentProof: true,
+                    RoomType: true,
+                    Property: true
+                }
+            });
+        }));
+        return updatedReservation;
+    });
 }

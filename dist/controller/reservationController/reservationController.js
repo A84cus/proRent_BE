@@ -9,7 +9,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.createReservationController = void 0;
+exports.cancelReservationController = exports.createReservationController = void 0;
 const reservationService_1 = require("../../service/reservationService/reservationService");
 const zod_1 = require("zod");
 const index_1 = require("../../config/index"); // Import your env config
@@ -32,6 +32,28 @@ const createReservationController = (req, res) => __awaiter(void 0, void 0, void
     }
 });
 exports.createReservationController = createReservationController;
+const cancelReservationController = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        // --- 1. Extract Data from Request ---
+        const userId = getUserIdFromRequest(req);
+        const { reservationId } = req.params;
+        if (!reservationId) {
+            return res.status(400).json({ error: 'Reservation ID is required in the URL path.' });
+        }
+        // --- 2. Call Service Layer ---
+        const updatedReservation = yield (0, reservationService_1.cancelReservation)(reservationId, userId);
+        // --- 3. Send Success Response ---
+        return res.status(200).json({
+            message: 'Reservation cancelled successfully.',
+            reservation: updatedReservation
+        });
+    }
+    catch (error) {
+        console.error('Error in cancelReservationController:', error);
+        handleError(res, error);
+    }
+});
+exports.cancelReservationController = cancelReservationController;
 // --- Refactored helper functions (each < 15 lines) ---
 function getUserIdFromRequest(req) {
     var _a;

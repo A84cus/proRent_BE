@@ -1,7 +1,7 @@
 // services/createReservation.ts
 import prisma from '../../prisma';
 import { calculateTotalPrice } from './pricingService';
-import { checkAvailability, DecrementAvailability } from './availabilityService';
+import { checkAvailability, DecrementAvailability, incrementAvailability } from './availabilityService';
 import { resolveTargetRoomTypeId } from './propertyRoomResolver';
 import { createReservationSchema } from '../../validations/reservationSchema';
 import { Status, PaymentType } from '@prisma/client';
@@ -102,4 +102,81 @@ export async function createReservation (input: unknown) {
 
 function validateInput (input: unknown) {
    return createReservationSchema.parse(input);
+}
+
+async function findAndValidateReservation (reservationId: string, userId: string) {
+   const reservation = await prisma.reservation.findUnique({
+      where: { id: reservationId },
+      include: {
+         payment: true,
+         PaymentProof: true,
+         RoomType: {
+            select: { id: true }
+         }
+      }
+   });
+
+   if (!reservation) {
+      throw new Error('Reservation not found.');
+   }
+   if (reservation.userId !== userId) {
+      throw new Error('Unauthorized: You can only cancel your own reservations.');
+   }
+
+   if (reservation.orderStatus === Status.CANCELLED) {
+      throw new Error('Reservation is already cancelled.');
+   }
+
+   if (reservation.orderStatus !== Status.PENDING_PAYMENT) {
+      throw new Error('Cancellation is not allowed for reservations that are confirmed or awaiting confirmation.');
+   }
+
+   return reservation;
+}
+
+async function updateReservationAndPaymentStatus (tx: any, reservationId: string) {
+   await tx.reservation.update({
+      where: { id: reservationId },
+      data: { orderStatus: Status.CANCELLED }
+   });
+
+   await tx.payment.updateMany({
+      where: { reservationId },
+      data: { paymentStatus: Status.CANCELLED }
+   });
+}
+
+async function restoreAvailability (tx: any, reservation: any) {
+   if (reservation.RoomType?.id && reservation.startDate && reservation.endDate) {
+      await incrementAvailability(
+         tx,
+         reservation.RoomType.id,
+         new Date(reservation.startDate),
+         new Date(reservation.endDate)
+      );
+   } else {
+      console.warn(`Could not restore availability for reservation ${reservation.id}: Missing RoomTypeId or dates.`);
+   }
+}
+
+export async function cancelReservation (reservationId: string, userId: string) {
+   const reservation = await findAndValidateReservation(reservationId, userId);
+
+   const updatedReservation = await prisma.$transaction(async tx => {
+      await updateReservationAndPaymentStatus(tx, reservationId);
+
+      await restoreAvailability(tx, reservation);
+
+      return await tx.reservation.findUnique({
+         where: { id: reservationId },
+         include: {
+            payment: true,
+            PaymentProof: true,
+            RoomType: true,
+            Property: true
+         }
+      });
+   });
+
+   return updatedReservation;
 }

@@ -1,6 +1,6 @@
 // controllers/reservationController.ts
 import { Request, Response } from 'express';
-import { createReservation } from '../../service/reservationService/reservationService';
+import { cancelReservation, createReservation } from '../../service/reservationService/reservationService';
 import { ZodError } from 'zod';
 import { NODE_ENV } from '../../config/index'; // Import your env config
 
@@ -20,6 +20,30 @@ export const createReservationController = async (req: Request, res: Response) =
 
       return res.status(getSuccessStatusCode(isXendit)).json(result);
    } catch (error: any) {
+      handleError(res, error);
+   }
+};
+
+export const cancelReservationController = async (req: Request, res: Response) => {
+   try {
+      // --- 1. Extract Data from Request ---
+      const userId = getUserIdFromRequest(req);
+      const { reservationId } = req.params;
+
+      if (!reservationId) {
+         return res.status(400).json({ error: 'Reservation ID is required in the URL path.' });
+      }
+
+      // --- 2. Call Service Layer ---
+      const updatedReservation = await cancelReservation(reservationId, userId);
+
+      // --- 3. Send Success Response ---
+      return res.status(200).json({
+         message: 'Reservation cancelled successfully.',
+         reservation: updatedReservation
+      });
+   } catch (error: any) {
+      console.error('Error in cancelReservationController:', error);
       handleError(res, error);
    }
 };
