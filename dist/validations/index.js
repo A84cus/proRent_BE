@@ -17,3 +17,4 @@ Object.defineProperty(exports, "__esModule", { value: true });
 // Export all validation schemas
 __exportStar(require("./authValidation"), exports);
 __exportStar(require("./utilityValidation"), exports);
+__exportStar(require("./reservationSchema"), exports);

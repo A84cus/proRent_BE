@@ -16,7 +16,7 @@ datasource db {
 
 enum Role {
   USER
-  TENANT
+  OWNER
 }
 
 enum SocialLogin {
@@ -224,8 +224,7 @@ model RoomType {
   createdAt      DateTime       @default(now())
   updatedAt      DateTime       @updatedAt
 
-  @@unique([propertyId, name]) // memastikan tidak ada duplikasi nama kamar
-  @@unique([propertyId, isWholeUnit]) // memastikan hada satu tipe whole property
+  @@unique([propertyId, name])
   @@index([propertyId])
   @@index([isWholeUnit]) // Index untuk pencarian tipe whole property
 }
@@ -320,7 +319,7 @@ model Payment {
   paymentStatus      Status
   method             String
   payerEmail         String
-  xenditInvoiceId    String?
+  xenditInvoiceId    String?     @unique
   externalInvoiceUrl String?
   paidAt             DateTime?
   callbackStatus     String?
