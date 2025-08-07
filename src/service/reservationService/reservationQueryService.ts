@@ -86,7 +86,7 @@ export async function getUserReservations (userId: string, options: Omit<Reserva
    return queryReservations({ userId, ...options });
 }
 
-export async function getTenantReservations (
+export async function getOwnerReservations (
    propertyOwnerId: string,
    options: Omit<ReservationQueryOptions, 'propertyOwnerId'> = {}
 ) {
