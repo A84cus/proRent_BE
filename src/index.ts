@@ -8,6 +8,7 @@ import authRoute from './route/authRoute';
 import uploadRoute from './route/uploadRoute';
 import utilityRoute from './route/utilityRoute';
 import reserveRoute from './route/reservationRoute';
+import userRoute from './route/userRoute';
 
 const corsOptions = {
    origin: '*',
@@ -29,6 +30,7 @@ app.use(httpLogger);
 app.use('/api/auth', authRoute);
 app.use('/api/upload', uploadRoute);
 app.use('/api/utility', utilityRoute);
+app.use('/api/users', userRoute);
 app.use('/api/reservation', reserveRoute);
 
 app.get('/', (req: Request, res: Response) => {
