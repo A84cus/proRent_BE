@@ -1,9 +1,10 @@
 // services/xenditService.ts
-import Xendit from 'xendit-node'; // Or import axios if not using SDK
+import Xendit from 'xendit-node';
 import prisma from '../../prisma'; // Adjust path
 import { Status } from '@prisma/client';
+import { BASE_FE_URL, XENDIT_SECRET_KEY } from '../../config/index'; // Assuming you use this for env vars
 
-const xenditClient = new Xendit({ secretKey: process.env.XENDIT_SECRET_KEY! });
+const xenditClient = new Xendit({ secretKey: XENDIT_SECRET_KEY! });
 const { Invoice } = xenditClient;
 
 export async function createXenditInvoice (paymentId: string) {
@@ -12,9 +13,9 @@ export async function createXenditInvoice (paymentId: string) {
       include: {
          reservation: {
             include: {
-               User: true, // Need user email
-               RoomType: true, // Need room type name for description
-               Property: true // Need property name for description
+               User: true,
+               RoomType: true,
+               Property: true
             }
          }
       }
@@ -30,33 +31,30 @@ export async function createXenditInvoice (paymentId: string) {
 
    const reservation = paymentRecord.reservation;
    const user = reservation.User;
+   const roomType = reservation.RoomType;
+   const property = reservation.Property;
 
-   // Prepare invoice data for Xendit
    const invoiceData = {
       externalId: `invoice-${paymentRecord.id}-${Date.now()}`, // Unique ID for Xendit
       amount: paymentRecord.amount,
-      payerEmail: user.email || paymentRecord.payerEmail || '', // Prefer user email
-      description: `Booking for ${reservation.RoomType?.name || 'Room'} at ${
-         reservation.Property?.name || 'Property'
+      payerEmail: user.email || paymentRecord.payerEmail || '', // Prefer user email from relation
+      description: `Booking for ${roomType?.name || 'Accommodation'} at ${
+         property?.name || 'Property'
       } from ${reservation.startDate.toLocaleDateString()} to ${reservation.endDate.toLocaleDateString()}`,
-      invoiceDuration: 60 * 60 * 24, // 24 hours in seconds (adjust as needed, relates to expiresAt)
-      successRedirectURL: `${process.env.FRONTEND_BASE_URL}/booking/success?reservationId=${reservation.id}`, // Optional
-      failureRedirectURL: `${process.env.FRONTEND_BASE_URL}/booking/failure?reservationId=${reservation.id}`, // Optional
-      callbackVirtualAccountID: undefined // Use if you have Virtual Accounts set up
-      // Add other Xendit options as needed (e.g., currency, reminder time)
+      invoiceDuration: 60 * 60 * 24, // 24 hours in seconds (adjust if needed)
+      successRedirectURL: `${BASE_FE_URL}/booking/success?reservationId=${reservation.id}`,
+      failureRedirectURL: `${BASE_FE_URL}/booking/failure?reservationId=${reservation.id}`
    };
 
    try {
       const xenditInvoice = await Invoice.createInvoice({ data: invoiceData });
       console.log('Xendit Invoice Created:', xenditInvoice.id);
 
-      // Update your Payment record with Xendit invoice details
       await prisma.payment.update({
          where: { id: paymentId },
          data: {
-            xenditInvoiceId: xenditInvoice.id, // Store Xendit's Invoice ID
-            externalInvoiceUrl: xenditInvoice.invoiceUrl // Store the payment link
-            // Optionally update other fields if needed immediately
+            xenditInvoiceId: xenditInvoice.id,
+            externalInvoiceUrl: xenditInvoice.invoiceUrl
          }
       });
 
@@ -66,7 +64,6 @@ export async function createXenditInvoice (paymentId: string) {
       };
    } catch (error: any) {
       console.error('Error creating Xendit Invoice:', error);
-      // Log error to TransactionLog or handle appropriately
       await prisma.transactionLog.create({
          data: {
             paymentId,
