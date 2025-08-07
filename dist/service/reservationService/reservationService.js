@@ -70,7 +70,7 @@ function executeReservationTransaction(data, validationData) {
             });
             yield (0, availabilityService_1.DecrementAvailability)(tx, targetRoomTypeId, startDate, endDate);
             return { reservation, paymentRecordId: paymentRecord.id };
-        }), { timeout: 30000, maxWait: 10000 });
+        }), { timeout: 30000 });
     });
 }
 function handleXenditPostProcessing(paymentRecordId, reservationId) {
@@ -116,7 +116,13 @@ function findAndValidateReservation(reservationId, userId) {
         const reservation = yield prisma_1.default.reservation.findUnique({
             where: { id: reservationId },
             include: {
-                payment: true,
+                payment: {
+                    select: {
+                        id: true,
+                        amount: true,
+                        method: true
+                    }
+                },
                 PaymentProof: true,
                 RoomType: {
                     select: { id: true }
@@ -170,13 +176,25 @@ function cancelReservation(reservationId, userId) {
             return yield tx.reservation.findUnique({
                 where: { id: reservationId },
                 include: {
-                    payment: true,
-                    PaymentProof: true,
-                    RoomType: true,
-                    Property: true
+                    payment: {
+                        select: {
+                            id: true,
+                            amount: true,
+                            method: true,
+                            paymentStatus: true,
+                            createdAt: true,
+                            updatedAt: true
+                        }
+                    },
+                    RoomType: {
+                        select: { id: true, name: true }
+                    },
+                    Property: {
+                        select: { id: true, name: true }
+                    }
                 }
             });
-        }));
+        }), { timeout: 30000 });
         return updatedReservation;
     });
 }

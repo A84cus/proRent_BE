@@ -62,7 +62,7 @@ async function executeReservationTransaction (data: any, validationData: any) {
 
          return { reservation, paymentRecordId: paymentRecord.id };
       },
-      { timeout: 30000, maxWait: 10000 }
+      { timeout: 30000 }
    );
 }
 
@@ -108,7 +108,13 @@ async function findAndValidateReservation (reservationId: string, userId: string
    const reservation = await prisma.reservation.findUnique({
       where: { id: reservationId },
       include: {
-         payment: true,
+         payment: {
+            select: {
+               id: true,
+               amount: true,
+               method: true
+            }
+         },
          PaymentProof: true,
          RoomType: {
             select: { id: true }
@@ -162,21 +168,36 @@ async function restoreAvailability (tx: any, reservation: any) {
 export async function cancelReservation (reservationId: string, userId: string) {
    const reservation = await findAndValidateReservation(reservationId, userId);
 
-   const updatedReservation = await prisma.$transaction(async tx => {
-      await updateReservationAndPaymentStatus(tx, reservationId);
+   const updatedReservation = await prisma.$transaction(
+      async tx => {
+         await updateReservationAndPaymentStatus(tx, reservationId);
 
-      await restoreAvailability(tx, reservation);
+         await restoreAvailability(tx, reservation);
 
-      return await tx.reservation.findUnique({
-         where: { id: reservationId },
-         include: {
-            payment: true,
-            PaymentProof: true,
-            RoomType: true,
-            Property: true
-         }
-      });
-   });
+         return await tx.reservation.findUnique({
+            where: { id: reservationId },
+            include: {
+               payment: {
+                  select: {
+                     id: true,
+                     amount: true,
+                     method: true,
+                     paymentStatus: true,
+                     createdAt: true,
+                     updatedAt: true
+                  }
+               },
+               RoomType: {
+                  select: { id: true, name: true }
+               },
+               Property: {
+                  select: { id: true, name: true }
+               }
+            }
+         });
+      },
+      { timeout: 30000 }
+   );
 
    return updatedReservation;
 }
