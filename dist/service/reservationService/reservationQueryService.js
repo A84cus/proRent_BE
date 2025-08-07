@@ -14,7 +14,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.queryReservations = queryReservations;
 exports.getUserReservations = getUserReservations;
-exports.getTenantReservations = getTenantReservations;
+exports.getOwnerReservations = getOwnerReservations;
 exports.getPropertyReservations = getPropertyReservations;
 // services/reservationService.ts
 const prisma_1 = __importDefault(require("../../prisma"));
@@ -64,7 +64,7 @@ function getUserReservations(userId_1) {
         return queryReservations(Object.assign({ userId }, options));
     });
 }
-function getTenantReservations(propertyOwnerId_1) {
+function getOwnerReservations(propertyOwnerId_1) {
     return __awaiter(this, arguments, void 0, function* (propertyOwnerId, options = {}) {
         return queryReservations(Object.assign({ propertyOwnerId }, options));
     });

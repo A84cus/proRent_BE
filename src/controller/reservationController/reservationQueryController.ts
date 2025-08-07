@@ -2,7 +2,7 @@ import { Request, Response } from 'express';
 import {
    queryReservations,
    getUserReservations,
-   getTenantReservations,
+   getOwnerReservations,
    getPropertyReservations
 } from '../../service/reservationService/reservationQueryService';
 
@@ -122,7 +122,7 @@ export async function getUserReservationsHandler (req: Request, res: Response) {
 }
 
 // Get reservations for a property owner (tenant)
-export async function getTenantReservationsHandler (req: Request, res: Response) {
+export async function getOwnerReservationsHandler (req: Request, res: Response) {
    try {
       const propertyOwnerId = req.params.propertyOwnerId || (req.user?.userId as string);
       if (!propertyOwnerId) {
@@ -170,7 +170,7 @@ export async function getTenantReservationsHandler (req: Request, res: Response)
          filters
       };
 
-      const result = await getTenantReservations(propertyOwnerId, options);
+      const result = await getOwnerReservations(propertyOwnerId, options);
       return res.json(result);
    } catch (error) {
       console.error('Error fetching tenant reservations:', error);

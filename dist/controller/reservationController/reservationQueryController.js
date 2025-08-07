@@ -11,7 +11,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.getReservations = getReservations;
 exports.getUserReservationsHandler = getUserReservationsHandler;
-exports.getTenantReservationsHandler = getTenantReservationsHandler;
+exports.getOwnerReservationsHandler = getOwnerReservationsHandler;
 exports.getPropertyReservationsHandler = getPropertyReservationsHandler;
 const reservationQueryService_1 = require("../../service/reservationService/reservationQueryService");
 // Main query endpoint
@@ -103,7 +103,7 @@ function getUserReservationsHandler(req, res) {
     });
 }
 // Get reservations for a property owner (tenant)
-function getTenantReservationsHandler(req, res) {
+function getOwnerReservationsHandler(req, res) {
     return __awaiter(this, void 0, void 0, function* () {
         var _a;
         try {
@@ -138,7 +138,7 @@ function getTenantReservationsHandler(req, res) {
                 sortOrder: sortOrder,
                 filters
             };
-            const result = yield (0, reservationQueryService_1.getTenantReservations)(propertyOwnerId, options);
+            const result = yield (0, reservationQueryService_1.getOwnerReservations)(propertyOwnerId, options);
             return res.json(result);
         }
         catch (error) {
