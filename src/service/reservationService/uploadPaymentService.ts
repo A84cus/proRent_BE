@@ -1,14 +1,13 @@
-// services/uploadPaymentProofService.ts
-import prisma from '../../prisma';
-import UploadService from '../uploadService';
+// src/services/uploadPaymentProofService.ts
+import { Express } from 'express';
+import prisma from '../../prisma'; // Adjust path to your Prisma client
 import { Status } from '@prisma/client';
+import { uploadImage } from './Image.service'; // Adjust path to your cloudinary utility
+import { paymentProofFileSchema, PaymentProofFileInput } from '../../validations/paymentProofValidation'; // Adjust path
+import { ZodError } from 'zod';
 
-export async function uploadPaymentProof (
-   reservationId: string,
-   userId: string,
-   fileBuffer: Buffer,
-   originalFilename: string
-) {
+export async function uploadPaymentProof (reservationId: string, userId: string, file: Express.Multer.File) {
+   // --- 1. Authorization & Initial Reservation Validation ---
    const reservation = await prisma.reservation.findUnique({
       where: { id: reservationId },
       include: {
@@ -17,7 +16,9 @@ export async function uploadPaymentProof (
             include: {
                picture: true
             }
-         }
+         },
+         RoomType: true, // Include for potential use (e.g., alt text generation)
+         Property: true // Include for potential use
       }
    });
 
@@ -33,7 +34,6 @@ export async function uploadPaymentProof (
       throw new Error('Payment proof can only be uploaded for reservations pending payment.');
    }
 
-   // Check if the payment method is MANUAL_TRANSFER
    if (reservation.payment?.method !== 'MANUAL_TRANSFER') {
       throw new Error('Payment proof upload is only allowed for manual transfer payments.');
    }
@@ -42,47 +42,54 @@ export async function uploadPaymentProof (
       throw new Error('Payment proof already uploaded for this reservation.');
    }
 
-   const fileExtension = originalFilename.split('.').pop()?.toLowerCase();
-   const allowedExtensions = [ 'jpg', 'jpeg', 'png' ]; // Requirement
-   const maxFileSizeBytes = 1 * 1024 * 1024; // 1MB in bytes // Requirement
+   // --- 2. Zod Validation of File Metadata ---
+   const fileValidationData: PaymentProofFileInput = {
+      originalname: file.originalname,
+      size: file.size,
+      type: 'proof'
+   };
 
-   if (!fileExtension || !allowedExtensions.includes(fileExtension)) {
-      throw new Error('Invalid file type. Only .jpg and .png files are allowed.');
+   const validationResult = paymentProofFileSchema.safeParse(fileValidationData);
+   if (!validationResult.success) {
+      const errorMessages = validationResult.error.issues.map(e => e.message).join(', ');
+
+      throw new Error(`File validation failed: ${errorMessages}`);
    }
 
-   if (fileBuffer.length > maxFileSizeBytes) {
-      throw new Error('File size exceeds the maximum allowed size of 1MB.');
-   }
-
-   let uploadServiceResult;
+   let cloudinaryUrl: string;
    try {
-      uploadServiceResult = await UploadService.processFileUpload({
-         buffer: fileBuffer,
-         originalname: originalFilename,
-         type: 'proof',
-         alt: `Payment proof for reservation ${reservationId}`
-      });
-      console.log('File uploaded via UploadService:', uploadServiceResult.id); // This should be the Picture ID
+      cloudinaryUrl = await uploadImage(file, 'payment_proofs'); // Specify Cloudinary folder
+      if (!cloudinaryUrl) {
+         throw new Error('Cloudinary upload did not return a URL.');
+      }
    } catch (uploadError: any) {
-      console.error('Error uploading file via UploadService:', uploadError);
-
-      throw new Error(`Failed to upload payment proof: ${uploadError.message}`);
+      console.error('Error uploading file to Cloudinary:', uploadError);
+      throw new Error(`Failed to upload payment proof to storage: ${uploadError.message || uploadError}`);
    }
 
-   const pictureId = uploadServiceResult.id;
-   if (!pictureId) {
-      // Defensive check
-      throw new Error('Failed to retrieve Picture ID after upload.');
-   }
-
+   // --- 4. Database Transaction ---
    return await prisma.$transaction(async tx => {
-      await tx.paymentProof.create({
+      // a. Create the Picture record
+      const pictureRecord = await tx.picture.create({
          data: {
-            reservationId: reservation.id,
-            pictureId
+            url: cloudinaryUrl,
+            alt:
+               validationResult.data.alt || `Payment proof for ${reservation.Property?.name || 'property'} reservation`, // Generate alt if not provided
+            type: 'proof',
+            sizeKB: Math.round(file.size / 1024), // Store size in KB
+            uploadedAt: new Date()
          }
       });
 
+      // b. Create the PaymentProof record linking Reservation and Picture
+      await tx.paymentProof.create({
+         data: {
+            reservationId: reservation.id,
+            pictureId: pictureRecord.id
+         }
+      });
+
+      // c. Update Reservation status
       const updatedReservation = await tx.reservation.update({
          where: { id: reservation.id },
          data: {
@@ -100,9 +107,10 @@ export async function uploadPaymentProof (
          }
       });
 
+      // d. Update Payment status
       if (reservation.payment?.id) {
          await tx.payment.update({
-            where: { id: reservation.payment?.id },
+            where: { id: reservation.payment.id },
             data: {
                paymentStatus: Status.PENDING_CONFIRMATION
             }
