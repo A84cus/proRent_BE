@@ -25,18 +25,18 @@ class AuthController {
                 logger_1.default.info(`User registration initiated for email: ${validatedData.email}`);
                 res.status(201).json({
                     success: true,
-                    message: "Registration successful. Please check your email for verification.",
+                    message: 'Registration successful. Please check your email for verification.',
                     data: {
                         userId: result.user.id,
                         email: result.user.email,
                         role: result.user.role,
                         requiresPassword: result.requiresPassword,
-                        isVerified: result.user.isVerified,
-                    },
+                        isVerified: result.user.isVerified
+                    }
                 });
             }
             catch (error) {
-                (0, errorHandler_1.handleError)(res, error, "User registration");
+                (0, errorHandler_1.handleError)(res, error, 'User registration');
             }
         });
     }
@@ -48,17 +48,17 @@ class AuthController {
                 logger_1.default.info(`Tenant registration initiated for email: ${validatedData.email}`);
                 res.status(201).json({
                     success: true,
-                    message: "Tenant registration successful. Please check your email for verification.",
+                    message: 'Tenant registration successful. Please check your email for verification.',
                     data: {
                         userId: user.id,
                         email: user.email,
                         role: user.role,
-                        isVerified: user.isVerified,
-                    },
+                        isVerified: user.isVerified
+                    }
                 });
             }
             catch (error) {
-                (0, errorHandler_1.handleError)(res, error, "Tenant registration");
+                (0, errorHandler_1.handleError)(res, error, 'Tenant registration');
             }
         });
     }
@@ -68,7 +68,7 @@ class AuthController {
                 const validatedData = authValidation_1.verifyEmailSchema.parse(req.query);
                 const result = yield authService_1.default.verifyEmail(validatedData.token);
                 if (result.success) {
-                    logger_1.default.info("Email verification successful");
+                    logger_1.default.info('Email verification successful');
                     res.status(200).json({ success: true, message: result.message });
                 }
                 else {
@@ -76,7 +76,7 @@ class AuthController {
                 }
             }
             catch (error) {
-                (0, errorHandler_1.handleError)(res, error, "Email verification");
+                (0, errorHandler_1.handleError)(res, error, 'Email verification');
             }
         });
     }
@@ -88,11 +88,11 @@ class AuthController {
                 logger_1.default.info(`Verification email resent to: ${validatedData.email}`);
                 res.status(200).json({
                     success: true,
-                    message: "Verification email sent successfully",
+                    message: 'Verification email sent successfully'
                 });
             }
             catch (error) {
-                (0, errorHandler_1.handleError)(res, error, "Resend verification");
+                (0, errorHandler_1.handleError)(res, error, 'Resend verification');
             }
         });
     }
@@ -102,24 +102,24 @@ class AuthController {
                 const validatedData = authValidation_1.loginSchema.parse(req.body);
                 const result = yield authService_1.default.loginUser(validatedData);
                 logger_1.default.info(`User logged in: ${validatedData.email}`);
-                const redirectUrl = result.user.role === "TENANT" ? "/dashboard/tenant" : "/dashboard/user";
+                const redirectUrl = result.user.role === 'OWNER' ? '/dashboard/tenant' : '/dashboard/user';
                 res.status(200).json({
                     success: true,
-                    message: "Login successful",
+                    message: 'Login successful',
                     data: {
                         user: {
                             id: result.user.id,
                             email: result.user.email,
                             role: result.user.role,
-                            isVerified: result.user.isVerified,
+                            isVerified: result.user.isVerified
                         },
                         token: result.token,
-                        redirectUrl,
-                    },
+                        redirectUrl
+                    }
                 });
             }
             catch (error) {
-                (0, errorHandler_1.handleAuthError)(res, error, "Login");
+                (0, errorHandler_1.handleAuthError)(res, error, 'Login');
             }
         });
     }
@@ -131,11 +131,11 @@ class AuthController {
                 logger_1.default.info(`Password reset requested for: ${validatedData.email}`);
                 res.status(200).json({
                     success: true,
-                    message: "If an account with that email exists, a password reset link has been sent.",
+                    message: 'If an account with that email exists, a password reset link has been sent.'
                 });
             }
             catch (error) {
-                (0, errorHandler_1.handleError)(res, error, "Password reset request");
+                (0, errorHandler_1.handleError)(res, error, 'Password reset request');
             }
         });
     }
@@ -144,14 +144,14 @@ class AuthController {
             try {
                 const validatedData = authValidation_1.resetPasswordConfirmSchema.parse(req.body);
                 yield authService_1.default.confirmPasswordReset(validatedData);
-                logger_1.default.info("Password reset completed successfully");
+                logger_1.default.info('Password reset completed successfully');
                 res.status(200).json({
                     success: true,
-                    message: "Password reset successful. You can now login with your new password.",
+                    message: 'Password reset successful. You can now login with your new password.'
                 });
             }
             catch (error) {
-                (0, errorHandler_1.handleError)(res, error, "Password reset confirm");
+                (0, errorHandler_1.handleError)(res, error, 'Password reset confirm');
             }
         });
     }
@@ -159,15 +159,11 @@ class AuthController {
         return __awaiter(this, void 0, void 0, function* () {
             try {
                 if (!req.user) {
-                    return res
-                        .status(401)
-                        .json({ success: false, message: "Unauthorized" });
+                    return res.status(401).json({ success: false, message: 'Unauthorized' });
                 }
                 const user = yield authService_1.default.getUserById(req.user.userId);
                 if (!user) {
-                    return res
-                        .status(404)
-                        .json({ success: false, message: "User not found" });
+                    return res.status(404).json({ success: false, message: 'User not found' });
                 }
                 res.status(200).json({
                     success: true,
@@ -177,12 +173,12 @@ class AuthController {
                         role: user.role,
                         isVerified: user.isVerified,
                         socialLogin: user.socialLogin,
-                        createdAt: user.createdAt,
-                    },
+                        createdAt: user.createdAt
+                    }
                 });
             }
             catch (error) {
-                (0, errorHandler_1.handleError)(res, error, "Get current user");
+                (0, errorHandler_1.handleError)(res, error, 'Get current user');
             }
         });
     }

@@ -21,10 +21,10 @@ const prisma = new client_1.PrismaClient();
 const authenticate = (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const authHeader = req.headers.authorization;
-        if (!authHeader || !authHeader.startsWith("Bearer ")) {
+        if (!authHeader || !authHeader.startsWith('Bearer ')) {
             return res.status(401).json({
                 success: false,
-                message: "Access denied. No token provided.",
+                message: 'Access denied. No token provided.'
             });
         }
         const token = authHeader.substring(7); // Remove 'Bearer ' prefix
@@ -34,26 +34,26 @@ const authenticate = (req, res, next) => __awaiter(void 0, void 0, void 0, funct
         if (!user) {
             return res.status(401).json({
                 success: false,
-                message: "Access denied. User not found.",
+                message: 'Access denied. User not found.'
             });
         }
         if (!user.isVerified) {
             return res.status(401).json({
                 success: false,
-                message: "Access denied. Please verify your email.",
+                message: 'Access denied. Please verify your email.'
             });
         }
         req.user = {
             userId: user.id,
-            role: user.role,
+            role: user.role
         };
         next();
     }
     catch (error) {
-        logger_1.default.error("Authentication error:", error);
+        logger_1.default.error('Authentication error:', error);
         return res.status(401).json({
             success: false,
-            message: "Access denied. Invalid token.",
+            message: 'Access denied. Invalid token.'
         });
     }
 });
@@ -64,13 +64,13 @@ const authorize = (...roles) => {
         if (!req.user) {
             return res.status(401).json({
                 success: false,
-                message: "Access denied. Please authenticate first.",
+                message: 'Access denied. Please authenticate first.'
             });
         }
         if (!roles.includes(req.user.role)) {
             return res.status(403).json({
                 success: false,
-                message: "Access denied. Insufficient permissions.",
+                message: 'Access denied. Insufficient permissions.'
             });
         }
         next();
@@ -78,6 +78,6 @@ const authorize = (...roles) => {
 };
 exports.authorize = authorize;
 // Combined middleware for auth.role:user and auth.role:tenant
-exports.authUser = [exports.authenticate, (0, exports.authorize)("USER")];
-exports.authTenant = [exports.authenticate, (0, exports.authorize)("TENANT")];
+exports.authUser = [exports.authenticate, (0, exports.authorize)('USER')];
+exports.authTenant = [exports.authenticate, (0, exports.authorize)('OWNER')];
 exports.authAny = [exports.authenticate]; // Any authenticated user
