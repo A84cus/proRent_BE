@@ -15,7 +15,7 @@ const uploadFile = memoryUploader().single('file');
 
 // POST /reservation - Create a new reservation
 router.post('/', authUser, createReservationController);
-router.post('/cancel', authUser, cancelReservationController);
+router.post('/:reservationId/cancel', authUser, cancelReservationController);
 router.post('/:reservationId/upload-payment', authUser, uploadFile, uploadPayment);
 
 export default router;
