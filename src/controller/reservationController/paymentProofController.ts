@@ -1,103 +1,79 @@
-// // controllers/paymentProofController.ts
-// import { Request, Response } from 'express';
-// import { uploadPaymentProof } from '../../service/reservationService/uploadPaymentService';
-// import { handleError } from "../../helpers/errorHandler";
+// src/controllers/uploadPaymentProofController.ts
+import { Request, Response, NextFunction } from 'express';
+import { uploadPaymentProof } from '../../service/reservationService/uploadPaymentService'; // Adjust path
+import { ZodError } from 'zod';
+import { NODE_ENV } from '../../config'; // Adjust path to your env config
 
-// export async function uploadPaymentProofController(req: Request, res: Response) {
-//    try {
-//       const validationResult = validateUploadRequest(req);
-//       if (!validationResult.isValid) {
-//          return res.status(400).json({
-//             success: false,
-//             message: validationResult.error
-//          });
-//       }
+export const uploadPayment = async (req: Request, res: Response, next: NextFunction) => {
+   try {
+      const userId = getUserIdFromRequest(req);
+      const { reservationId } = req.params;
 
-//       const { reservationId, file } = validationResult.data;
-//       const userId = req.user?.userId;
+      if (!reservationId) {
+         res.status(400).json({ error: 'Reservation ID is required in the URL path.' });
+         return;
+      }
 
-//       const result = await uploadPaymentProof(
-//          reservationId,
-//          userId,
-//          file.buffer,
-//          file.originalname
-//       );
+      const uploadedFile = req.file;
+      if (!uploadedFile) {
+         res.status(400).json({ error: 'No file uploaded. Please provide a payment proof image.' });
+         return;
+      }
 
-//       return res.status(200).json({
-//          success: true,
-//          message: 'Payment proof uploaded successfully',
-//          data: formatResponse(result)
-//       });
+      // --- 2. Call the Service Layer ---
+      // The service handles detailed validation, upload, and database updates.
+      const updatedReservation = await uploadPaymentProof(reservationId, userId, uploadedFile);
 
-//    } catch (error) {
-//       return handleError(error, res);
-//    }
-// }
+      // --- 3. Send Success Response ---
+      res.status(200).json({
+         message: 'Payment proof uploaded successfully.',
+         reservation: updatedReservation // Include updated details
+      });
+      return;
+   } catch (error: any) {
+      console.error('Error in uploadPaymentProofController:', error);
 
-// interface ValidationResult {
-//    isValid: boolean;
-//    error?: string;
-//    data?: {
-//       reservationId: string;
-//       file: Express.Multer.File;
-//    };
-// }
+      // --- 4. Handle Errors ---
 
-// function validateUploadRequest(req: Request): ValidationResult {
-//    const reservationId = req.params.reservationId;
-//    const file = req.file;
+      if (isServiceAuthorizationOrStateError(error.message)) {
+         res.status(400).json({ error: error.message });
+         return;
+      }
 
-//    if (!reservationId) {
-//       return {
-//          isValid: false,
-//          error: 'Reservation ID is required'
-//       };
-//    }
+      if (error.message?.startsWith('File validation failed:')) {
+         // Error message formatted by the service from Zod issues
+         res.status(400).json({ error: error.message });
+         return;
+      }
 
-//    if (!file) {
-//       return {
-//          isValid: false,
-//          error: 'Payment proof file is required'
-//       };
-//    }
+      if (error.message?.startsWith('Failed to upload payment proof')) {
+         // Error during Cloudinary interaction
+         res.status(500).json({ error: error.message });
+         return;
+      }
 
-//    if (!req.user?.userId) {
-//       return {
-//          isValid: false,
-//          error: 'User authentication required'
-//       };
-//    }
+      // Handle unexpected errors
+      res.status(500).json({
+         error: 'An unexpected error occurred while uploading the payment proof.'
+      });
+   }
+};
 
-//    return {
-//       isValid: true,
-//       data: {
-//          reservationId,
-//          file
-//       }
-//    };
-// }
+function getUserIdFromRequest (req: Request): string {
+   const userId = req.user?.userId;
+   if (!userId) {
+      throw new Error('AUTH_REQUIRED');
+   }
+   return userId;
+}
 
-// function formatResponse(reservation: any) {
-//    return {
-//       reservation: {
-//          id: reservation.id,
-//          orderStatus: reservation.orderStatus,
-//          startDate: reservation.startDate,
-//          endDate: reservation.endDate,
-//          roomType: {
-//             name: reservation.RoomType?.name
-//          },
-//          property: {
-//             name: reservation.Property?.name
-//          },
-//          paymentProof: reservation.PaymentProof ? {
-//             id: reservation.PaymentProof.id,
-//             picture: {
-//                id: reservation.PaymentProof.picture?.id,
-//                url: reservation.PaymentProof.picture?.url,
-//                alt: reservation.PaymentProof.picture?.alt
-//             }
-//          } : null
-//       }
-//    };
-// }
+function isServiceAuthorizationOrStateError (message: string): boolean {
+   return (
+      message.includes('Reservation not found') ||
+      message.includes('Unauthorized') ||
+      message.includes('can only upload proof for your own') ||
+      message.includes('Payment proof can only be uploaded for') ||
+      message.includes('Payment proof upload is only allowed for') ||
+      message.includes('Payment proof already uploaded')
+   );
+}
