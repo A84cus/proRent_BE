@@ -63,7 +63,7 @@ model User {
   resetExpires        DateTime?
   profile             Profile?
   reservations        Reservation[] @relation("UserReservation")
-  properties          Property[]    @relation("PropertyTenant")
+  properties          Property[]    @relation("PropertyOwner")
   createdAt           DateTime      @default(now())
   updatedAt           DateTime      @updatedAt
   Reviewer            Review[]      @relation("Reviewer")
@@ -189,8 +189,8 @@ model Property {
   location      Location           @relation(fields: [locationId], references: [id])
   categoryId    String
   category      Category           @relation(fields: [categoryId], references: [id])
-  tenantId      String
-  tenant        User               @relation("PropertyTenant", fields: [tenantId], references: [id])
+  OwnerId       String
+  Owner         User               @relation("PropertyOwner", fields: [OwnerId], references: [id])
   mainPicture   Picture?           @relation("PropertyMainPicture", fields: [mainPictureId], references: [id])
   mainPictureId String?
   gallery       PropertyPicture[]
@@ -203,7 +203,7 @@ model Property {
 
   @@index([locationId])
   @@index([categoryId])
-  @@index([tenantId])
+  @@index([OwnerId])
   @@index([rentalType])
 }
 
@@ -360,15 +360,15 @@ model Review {
   updatedAt     DateTime    @updatedAt
   deletedAt     DateTime?
 
-  reviewer    User         @relation("Reviewer", fields: [reviewerId], references: [id])
-  reviewee    User         @relation("Reviewee", fields: [revieweeId], references: [id])
-  tenantReply TenantReply?
+  reviewer   User        @relation("Reviewer", fields: [reviewerId], references: [id])
+  reviewee   User        @relation("Reviewee", fields: [revieweeId], references: [id])
+  OwnerReply OwnerReply?
 
   @@index([reviewerId])
   @@index([revieweeId])
 }
 
-model TenantReply {
+model OwnerReply {
   id         String    @id @default(nanoid(12))
   review     Review    @relation(fields: [reviewId], references: [id])
   reviewId   String    @unique

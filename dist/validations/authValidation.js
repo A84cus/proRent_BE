@@ -4,37 +4,36 @@ exports.resetPasswordConfirmSchema = exports.resetPasswordRequestSchema = export
 const zod_1 = require("zod");
 // Authentication validation schemas
 exports.registerUserSchema = zod_1.z.object({
-    email: zod_1.z.string().email("Invalid email format"),
-    role: zod_1.z.enum(["USER", "TENANT"]),
-    password: zod_1.z
-        .string()
-        .min(8, "Password must be at least 8 characters long")
-        .optional(),
-    socialLogin: zod_1.z.enum(["GOOGLE", "FACEBOOK", "TWITTER", "NONE"]).optional(),
+    email: zod_1.z.email('Invalid email format'),
+    role: zod_1.z.enum(['USER', 'OWNER']),
+    password: zod_1.z.string().min(8, 'Password must be at least 8 characters long').optional(),
+    socialLogin: zod_1.z.enum(['GOOGLE', 'FACEBOOK', 'TWITTER', 'NONE']).optional()
 });
 exports.registerTenantSchema = zod_1.z.object({
-    email: zod_1.z.string().email("Invalid email format"),
+    email: zod_1.z.email('Invalid email format')
 });
 exports.verifyEmailSchema = zod_1.z.object({
-    token: zod_1.z.string().min(1, "Token is required"),
+    token: zod_1.z.string().min(1, 'Token is required')
 });
 exports.resendVerificationSchema = zod_1.z.object({
-    email: zod_1.z.string().email("Invalid email format"),
+    email: zod_1.z.string().email('Invalid email format')
 });
 exports.loginSchema = zod_1.z
     .object({
-    email: zod_1.z.string().email("Invalid email format"),
+    email: zod_1.z.email('Invalid email format'),
     password: zod_1.z.string().optional(),
-    socialLogin: zod_1.z.enum(["GOOGLE", "FACEBOOK", "TWITTER", "NONE"]).optional(),
+    socialLogin: zod_1.z.enum(['GOOGLE', 'FACEBOOK', 'TWITTER', 'NONE']).optional()
 })
-    .refine((data) => data.password || (data.socialLogin && data.socialLogin !== "NONE"), { message: "Either password or social login method must be provided" });
+    .refine(data => data.password || (data.socialLogin && data.socialLogin !== 'NONE'), {
+    message: 'Either password or social login method must be provided'
+});
 exports.resetPasswordRequestSchema = zod_1.z.object({
-    email: zod_1.z.string().email("Invalid email format"),
+    email: zod_1.z.email('Invalid email format')
 });
 exports.resetPasswordConfirmSchema = zod_1.z.object({
-    token: zod_1.z.string().min(1, "Token is required"),
+    token: zod_1.z.string().min(1, 'Token is required'),
     newPassword: zod_1.z
         .string()
-        .min(8, "Password must be at least 8 characters long")
-        .regex(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/, "Password must contain at least one lowercase letter, one uppercase letter, and one number"),
+        .min(8, 'Password must be at least 8 characters long')
+        .regex(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/, 'Password must contain at least one lowercase letter, one uppercase letter, and one number')
 });
