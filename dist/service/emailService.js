@@ -80,7 +80,7 @@ class EmailService {
     sendWelcome(user) {
         return __awaiter(this, void 0, void 0, function* () {
             try {
-                const dashboardUrl = user.role === 'TENANT'
+                const dashboardUrl = user.role === 'OWNER'
                     ? `${email_1.emailConfig.frontendUrl}/dashboard/tenant`
                     : `${email_1.emailConfig.frontendUrl}/dashboard/user`;
                 const htmlContent = (0, email_2.createWelcomeEmailTemplate)(user, dashboardUrl);

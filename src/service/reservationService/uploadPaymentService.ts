@@ -58,7 +58,7 @@ export async function uploadPaymentProof (reservationId: string, userId: string,
 
    let cloudinaryUrl: string;
    try {
-      cloudinaryUrl = await uploadImage(file, 'payment_proofs'); // Specify Cloudinary folder
+      cloudinaryUrl = await uploadImage(file, 'payment_proofs');
       if (!cloudinaryUrl) {
          throw new Error('Cloudinary upload did not return a URL.');
       }
@@ -76,12 +76,11 @@ export async function uploadPaymentProof (reservationId: string, userId: string,
             alt:
                validationResult.data.alt || `Payment proof for ${reservation.Property?.name || 'property'} reservation`, // Generate alt if not provided
             type: 'proof',
-            sizeKB: Math.round(file.size / 1024), // Store size in KB
+            sizeKB: Math.round(file.size / 1024),
             uploadedAt: new Date()
          }
       });
 
-      // b. Create the PaymentProof record linking Reservation and Picture
       await tx.paymentProof.create({
          data: {
             reservationId: reservation.id,
@@ -89,7 +88,6 @@ export async function uploadPaymentProof (reservationId: string, userId: string,
          }
       });
 
-      // c. Update Reservation status
       const updatedReservation = await tx.reservation.update({
          where: { id: reservation.id },
          data: {
@@ -107,7 +105,6 @@ export async function uploadPaymentProof (reservationId: string, userId: string,
          }
       });
 
-      // d. Update Payment status
       if (reservation.payment?.id) {
          await tx.payment.update({
             where: { id: reservation.payment.id },

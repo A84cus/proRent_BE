@@ -72,11 +72,10 @@ class EmailService {
       }
    }
 
-   // Send welcome email after verification
    async sendWelcome (user: User): Promise<void> {
       try {
          const dashboardUrl =
-            user.role === 'TENANT'
+            user.role === 'OWNER'
                ? `${emailConfig.frontendUrl}/dashboard/tenant`
                : `${emailConfig.frontendUrl}/dashboard/user`;
 
@@ -91,15 +90,10 @@ class EmailService {
          logger.info(`Welcome email sent to ${user.email}`);
       } catch (error) {
          logger.error('Failed to send welcome email:', error);
-         // Don't throw error for welcome email as it's not critical
       }
    }
 
-   // Send booking confirmation email
-   async sendBookingConfirmation (
-      user: UserWithProfile, // ✅ Now requires profile
-      bookingDetails: BookingDetails
-   ): Promise<void> {
+   async sendBookingConfirmation (user: UserWithProfile, bookingDetails: BookingDetails): Promise<void> {
       try {
          const htmlContent = createBookingConfirmationTemplate(user, bookingDetails);
 

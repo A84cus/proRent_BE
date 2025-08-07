@@ -22,11 +22,12 @@ class AuthService {
         return __awaiter(this, void 0, void 0, function* () {
             try {
                 const existingUser = yield userRepository_1.default.findByEmail(data.email);
-                if (existingUser)
-                    throw new Error("User already exists with this email");
+                if (existingUser) {
+                    throw new Error('User already exists with this email');
+                }
                 const { token, hashedToken, expires } = tokenService_1.default.generateVerificationToken();
                 // Hash password if provided
-                let hashedPassword = undefined;
+                let hashedPassword;
                 if (data.password) {
                     hashedPassword = yield passwordService_1.default.hashPassword(data.password);
                 }
@@ -34,24 +35,24 @@ class AuthService {
                     email: data.email,
                     role: data.role,
                     password: hashedPassword,
-                    socialLogin: data.socialLogin || "NONE",
+                    socialLogin: data.socialLogin || 'NONE',
                     verificationToken: hashedToken,
                     verificationExpires: expires,
-                    isVerified: false,
+                    isVerified: false
                 });
                 yield authNotificationService_1.default.sendVerificationEmail(user, token);
-                const requiresPassword = !data.socialLogin || data.socialLogin === "NONE";
+                const requiresPassword = !data.socialLogin || data.socialLogin === 'NONE';
                 return { user, requiresPassword };
             }
             catch (error) {
-                logger_1.default.error("Registration error:", error);
+                logger_1.default.error('Registration error:', error);
                 throw error;
             }
         });
     }
     registerTenant(email) {
         return __awaiter(this, void 0, void 0, function* () {
-            return this.registerUser({ email, role: "TENANT" }).then((result) => result.user);
+            return this.registerUser({ email, role: 'OWNER' }).then(result => result.user);
         });
     }
     verifyEmail(token) {
@@ -62,17 +63,17 @@ class AuthService {
                 if (!user) {
                     return {
                         success: false,
-                        message: "Invalid or expired verification token",
+                        message: 'Invalid or expired verification token'
                     };
                 }
                 // Mark user as verified
                 yield userRepository_1.default.update(user.id, { isVerified: true });
                 yield userRepository_1.default.clearVerificationToken(user.id);
                 yield authNotificationService_1.default.sendWelcomeEmail(user);
-                return { success: true, message: "Email verified successfully" };
+                return { success: true, message: 'Email verified successfully' };
             }
             catch (error) {
-                logger_1.default.error("Email verification error:", error);
+                logger_1.default.error('Email verification error:', error);
                 throw error;
             }
         });
@@ -81,16 +82,18 @@ class AuthService {
         return __awaiter(this, void 0, void 0, function* () {
             try {
                 const user = yield userRepository_1.default.findByEmail(email);
-                if (!user)
-                    throw new Error("User not found");
-                if (user.isVerified)
-                    throw new Error("User is already verified");
+                if (!user) {
+                    throw new Error('User not found');
+                }
+                if (user.isVerified) {
+                    throw new Error('User is already verified');
+                }
                 const { token, hashedToken, expires } = tokenService_1.default.generateVerificationToken();
                 yield userRepository_1.default.setVerificationToken(user.id, hashedToken, expires);
                 yield authNotificationService_1.default.sendVerificationEmail(user, token);
             }
             catch (error) {
-                logger_1.default.error("Resend verification error:", error);
+                logger_1.default.error('Resend verification error:', error);
                 throw error;
             }
         });
@@ -99,31 +102,36 @@ class AuthService {
         return __awaiter(this, void 0, void 0, function* () {
             try {
                 const user = yield userRepository_1.default.findByEmail(data.email, {
-                    profile: true,
+                    profile: true
                 });
-                if (!user)
-                    throw new Error("Invalid credentials");
-                if (data.socialLogin && data.socialLogin !== "NONE") {
-                    if (user.socialLogin !== data.socialLogin)
-                        throw new Error("Invalid social login method");
+                if (!user) {
+                    throw new Error('Invalid credentials');
+                }
+                if (data.socialLogin && data.socialLogin !== 'NONE') {
+                    if (user.socialLogin !== data.socialLogin) {
+                        throw new Error('Invalid social login method');
+                    }
                 }
                 else {
                     if (!user.password) {
-                        throw new Error("Password not set. Please use social login or set a password.");
+                        throw new Error('Password not set. Please use social login or set a password.');
                     }
-                    if (!data.password)
-                        throw new Error("Password is required");
+                    if (!data.password) {
+                        throw new Error('Password is required');
+                    }
                     const isPasswordValid = yield passwordService_1.default.verifyPassword(data.password, user.password);
-                    if (!isPasswordValid)
-                        throw new Error("Invalid credentials");
+                    if (!isPasswordValid) {
+                        throw new Error('Invalid credentials');
+                    }
                 }
-                if (!user.isVerified)
-                    throw new Error("Please verify your email before logging in");
+                if (!user.isVerified) {
+                    throw new Error('Please verify your email before logging in');
+                }
                 const token = tokenService_1.default.generateJWTToken(user.id, user.role);
                 return { user, token };
             }
             catch (error) {
-                logger_1.default.error("Login error:", error);
+                logger_1.default.error('Login error:', error);
                 throw error;
             }
         });
@@ -136,15 +144,15 @@ class AuthService {
                     logger_1.default.info(`Password reset requested for non-existent email: ${email}`);
                     return;
                 }
-                if (user.socialLogin !== "NONE") {
-                    throw new Error("Password reset not available for social login accounts");
+                if (user.socialLogin !== 'NONE') {
+                    throw new Error('Password reset not available for social login accounts');
                 }
                 const { token, hashedToken, expires } = tokenService_1.default.generateVerificationToken();
                 yield userRepository_1.default.setResetToken(user.id, hashedToken, expires);
                 yield authNotificationService_1.default.sendPasswordResetEmail(user, token);
             }
             catch (error) {
-                logger_1.default.error("Password reset request error:", error);
+                logger_1.default.error('Password reset request error:', error);
                 throw error;
             }
         });
@@ -154,14 +162,15 @@ class AuthService {
             try {
                 const hashedToken = tokenService_1.default.hashToken(data.token);
                 const user = yield userRepository_1.default.findByResetToken(hashedToken);
-                if (!user)
-                    throw new Error("Invalid or expired reset token");
+                if (!user) {
+                    throw new Error('Invalid or expired reset token');
+                }
                 const hashedPassword = yield passwordService_1.default.hashPassword(data.newPassword);
                 yield userRepository_1.default.updatePassword(user.id, hashedPassword);
                 yield userRepository_1.default.clearResetToken(user.id);
             }
             catch (error) {
-                logger_1.default.error("Password reset confirmation error:", error);
+                logger_1.default.error('Password reset confirmation error:', error);
                 throw error;
             }
         });
@@ -177,17 +186,17 @@ class AuthService {
                                 include: {
                                     city: {
                                         include: {
-                                            province: true,
-                                        },
-                                    },
-                                },
-                            },
-                        },
-                    },
+                                            province: true
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
                 });
             }
             catch (error) {
-                logger_1.default.error("Get user error:", error);
+                logger_1.default.error('Get user error:', error);
                 throw error;
             }
         });

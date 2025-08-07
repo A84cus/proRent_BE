@@ -62,7 +62,7 @@ function uploadPaymentProof(reservationId, userId, file) {
         }
         let cloudinaryUrl;
         try {
-            cloudinaryUrl = yield (0, Image_service_1.uploadImage)(file, 'payment_proofs'); // Specify Cloudinary folder
+            cloudinaryUrl = yield (0, Image_service_1.uploadImage)(file, 'payment_proofs');
             if (!cloudinaryUrl) {
                 throw new Error('Cloudinary upload did not return a URL.');
             }
@@ -80,18 +80,16 @@ function uploadPaymentProof(reservationId, userId, file) {
                     url: cloudinaryUrl,
                     alt: validationResult.data.alt || `Payment proof for ${((_a = reservation.Property) === null || _a === void 0 ? void 0 : _a.name) || 'property'} reservation`, // Generate alt if not provided
                     type: 'proof',
-                    sizeKB: Math.round(file.size / 1024), // Store size in KB
+                    sizeKB: Math.round(file.size / 1024),
                     uploadedAt: new Date()
                 }
             });
-            // b. Create the PaymentProof record linking Reservation and Picture
             yield tx.paymentProof.create({
                 data: {
                     reservationId: reservation.id,
                     pictureId: pictureRecord.id
                 }
             });
-            // c. Update Reservation status
             const updatedReservation = yield tx.reservation.update({
                 where: { id: reservation.id },
                 data: {
@@ -108,7 +106,6 @@ function uploadPaymentProof(reservationId, userId, file) {
                     Property: true
                 }
             });
-            // d. Update Payment status
             if ((_b = reservation.payment) === null || _b === void 0 ? void 0 : _b.id) {
                 yield tx.payment.update({
                     where: { id: reservation.payment.id },
