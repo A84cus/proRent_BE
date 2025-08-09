@@ -1,4 +1,4 @@
-import { User } from "@prisma/client";
+import { User, Role } from "@prisma/client";
 import logger from "../utils/logger";
 import userRepository from "../repository/userRepository";
 import tokenService from "./tokenService";
@@ -8,7 +8,6 @@ import {
   LoginData,
   RegisterUserData,
   ResetPasswordData,
-  Role,
 } from "../interfaces/auth.interface";
 
 class AuthService {
@@ -17,13 +16,15 @@ class AuthService {
   ): Promise<{ user: User; requiresPassword: boolean }> {
     try {
       const existingUser = await userRepository.findByEmail(data.email);
-      if (existingUser) throw new Error("User already exists with this email");
+      if (existingUser) {
+        throw new Error("User already exists with this email");
+      }
 
       const { token, hashedToken, expires } =
         tokenService.generateVerificationToken();
 
       // Hash password if provided
-      let hashedPassword = undefined;
+      let hashedPassword;
       if (data.password) {
         hashedPassword = await passwordService.hashPassword(data.password);
       }
@@ -47,11 +48,18 @@ class AuthService {
     }
   }
 
+  async registerTenant(email: string): Promise<User> {
+    return this.registerUser({ email, role: "OWNER" }).then(
+      (result) => result.user
+    );
+  }
+
   async registerOwner(email: string, password: string): Promise<User> {
     return this.registerUser({ email, role: "OWNER", password }).then(
       (result) => result.user
     );
   }
+
   async verifyEmail(
     token: string
   ): Promise<{ success: boolean; message: string }> {
@@ -76,11 +84,16 @@ class AuthService {
       throw error;
     }
   }
+
   async resendVerificationEmail(email: string): Promise<void> {
     try {
       const user = await userRepository.findByEmail(email);
-      if (!user) throw new Error("User not found");
-      if (user.isVerified) throw new Error("User is already verified");
+      if (!user) {
+        throw new Error("User not found");
+      }
+      if (user.isVerified) {
+        throw new Error("User is already verified");
+      }
 
       const { token, hashedToken, expires } =
         tokenService.generateVerificationToken();
@@ -91,32 +104,41 @@ class AuthService {
       throw error;
     }
   }
+
   async loginUser(data: LoginData): Promise<{ user: User; token: string }> {
     try {
       const user = await userRepository.findByEmail(data.email, {
         profile: true,
       });
-      if (!user) throw new Error("Invalid credentials");
+      if (!user) {
+        throw new Error("Invalid credentials");
+      }
 
       if (data.socialLogin && data.socialLogin !== "NONE") {
-        if (user.socialLogin !== data.socialLogin)
+        if (user.socialLogin !== data.socialLogin) {
           throw new Error("Invalid social login method");
+        }
       } else {
         if (!user.password) {
           throw new Error(
             "Password not set. Please use social login or set a password."
           );
         }
-        if (!data.password) throw new Error("Password is required");
+        if (!data.password) {
+          throw new Error("Password is required");
+        }
         const isPasswordValid = await passwordService.verifyPassword(
           data.password,
           user.password
         );
-        if (!isPasswordValid) throw new Error("Invalid credentials");
+        if (!isPasswordValid) {
+          throw new Error("Invalid credentials");
+        }
       }
 
-      if (!user.isVerified)
+      if (!user.isVerified) {
         throw new Error("Please verify your email before logging in");
+      }
 
       const token = tokenService.generateJWTToken(user.id, user.role);
       return { user, token };
@@ -125,6 +147,7 @@ class AuthService {
       throw error;
     }
   }
+
   async requestPasswordReset(email: string): Promise<void> {
     try {
       const user = await userRepository.findByEmail(email);
@@ -150,12 +173,15 @@ class AuthService {
       throw error;
     }
   }
+
   async confirmPasswordReset(data: ResetPasswordData): Promise<void> {
     try {
       const hashedToken = tokenService.hashToken(data.token);
       const user = await userRepository.findByResetToken(hashedToken);
 
-      if (!user) throw new Error("Invalid or expired reset token");
+      if (!user) {
+        throw new Error("Invalid or expired reset token");
+      }
 
       const hashedPassword = await passwordService.hashPassword(
         data.newPassword
@@ -167,6 +193,7 @@ class AuthService {
       throw error;
     }
   }
+
   async getUserById(userId: string): Promise<User | null> {
     try {
       return await userRepository.findById(userId, {

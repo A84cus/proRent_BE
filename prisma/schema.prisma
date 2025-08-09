@@ -189,8 +189,13 @@ model Property {
   location      Location           @relation(fields: [locationId], references: [id])
   categoryId    String
   category      Category           @relation(fields: [categoryId], references: [id])
+<<<<<<< HEAD
   ownerId      String
   owner        User               @relation("PropertyOwner", fields: [ownerId], references: [id])
+=======
+  OwnerId       String
+  Owner         User               @relation("PropertyOwner", fields: [OwnerId], references: [id])
+>>>>>>> e5aee09f905eadbba2f45a60016b8ef41b7ffeaa
   mainPicture   Picture?           @relation("PropertyMainPicture", fields: [mainPictureId], references: [id])
   mainPictureId String?
   gallery       PropertyPicture[]
@@ -199,10 +204,15 @@ model Property {
   rentalType    PropertyRentalType @default(ROOM_BY_ROOM)
   createdAt     DateTime           @default(now())
   updatedAt     DateTime           @updatedAt
+  Reservation   Reservation[]
 
   @@index([locationId])
   @@index([categoryId])
+<<<<<<< HEAD
   @@index([ownerId])
+=======
+  @@index([OwnerId])
+>>>>>>> e5aee09f905eadbba2f45a60016b8ef41b7ffeaa
   @@index([rentalType])
 }
 
@@ -223,8 +233,7 @@ model RoomType {
   createdAt      DateTime       @default(now())
   updatedAt      DateTime       @updatedAt
 
-  @@unique([propertyId, name]) // memastikan tidak ada duplikasi nama kamar
-  @@unique([propertyId, isWholeUnit]) // memastikan hada satu tipe whole property
+  @@unique([propertyId, name])
   @@index([propertyId])
   @@index([isWholeUnit]) // Index untuk pencarian tipe whole property
 }
@@ -299,6 +308,7 @@ model Reservation {
   payment      Payment?
   review       Review?
   RoomType     RoomType      @relation(fields: [roomTypeId], references: [id])
+  Property     Property      @relation(fields: [propertyId], references: [id])
   Room         Room?         @relation("RoomReservation", fields: [roomId], references: [id])
   User         User          @relation("UserReservation", fields: [userId], references: [id])
   PaymentProof PaymentProof?
@@ -318,6 +328,7 @@ model Payment {
   paymentStatus      Status
   method             String
   payerEmail         String
+  xenditInvoiceId    String?     @unique
   externalInvoiceUrl String?
   paidAt             DateTime?
   callbackStatus     String?
@@ -331,6 +342,7 @@ model Payment {
   @@index([paymentStatus])
   @@index([method])
   @@index([paymentStatus, createdAt])
+  @@index([xenditInvoiceId]) // Index untuk pencarian berdasarkan xenditInvoiceId
 }
 
 model PaymentProof {
@@ -357,9 +369,15 @@ model Review {
   updatedAt     DateTime    @updatedAt
   deletedAt     DateTime?
 
+<<<<<<< HEAD
   reviewer    User         @relation("Reviewer", fields: [reviewerId], references: [id])
   reviewee    User         @relation("Reviewee", fields: [revieweeId], references: [id])
   ownerReply OwnerReply?
+=======
+  reviewer   User        @relation("Reviewer", fields: [reviewerId], references: [id])
+  reviewee   User        @relation("Reviewee", fields: [revieweeId], references: [id])
+  OwnerReply OwnerReply?
+>>>>>>> e5aee09f905eadbba2f45a60016b8ef41b7ffeaa
 
   @@index([reviewerId])
   @@index([revieweeId])

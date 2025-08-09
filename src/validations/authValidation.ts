@@ -1,7 +1,8 @@
-import { z } from "zod";
+import { z } from 'zod';
 
 // Authentication validation schemas
 export const registerUserSchema = z.object({
+<<<<<<< HEAD
   email: z.string().email("Invalid email format"),
   role: z.enum(["USER", "OWNER"]),
   password: z
@@ -20,39 +21,47 @@ export const registerOwnerSchema = z.object({
       /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/,
       "Password must contain at least one lowercase letter, one uppercase letter, and one number"
     ),
+=======
+   email: z.email('Invalid email format'),
+   role: z.enum([ 'USER', 'OWNER' ]),
+   password: z.string().min(8, 'Password must be at least 8 characters long').optional(),
+   socialLogin: z.enum([ 'GOOGLE', 'FACEBOOK', 'TWITTER', 'NONE' ]).optional()
+});
+
+export const registerTenantSchema = z.object({
+   email: z.email('Invalid email format')
+>>>>>>> e5aee09f905eadbba2f45a60016b8ef41b7ffeaa
 });
 
 export const verifyEmailSchema = z.object({
-  token: z.string().min(1, "Token is required"),
+   token: z.string().min(1, 'Token is required')
 });
 
 export const resendVerificationSchema = z.object({
-  email: z.string().email("Invalid email format"),
+   email: z.string().email('Invalid email format')
 });
 
 export const loginSchema = z
-  .object({
-    email: z.string().email("Invalid email format"),
-    password: z.string().optional(),
-    socialLogin: z.enum(["GOOGLE", "FACEBOOK", "TWITTER", "NONE"]).optional(),
-  })
-  .refine(
-    (data) =>
-      data.password || (data.socialLogin && data.socialLogin !== "NONE"),
-    { message: "Either password or social login method must be provided" }
-  );
+   .object({
+      email: z.email('Invalid email format'),
+      password: z.string().optional(),
+      socialLogin: z.enum([ 'GOOGLE', 'FACEBOOK', 'TWITTER', 'NONE' ]).optional()
+   })
+   .refine(data => data.password || (data.socialLogin && data.socialLogin !== 'NONE'), {
+      message: 'Either password or social login method must be provided'
+   });
 
 export const resetPasswordRequestSchema = z.object({
-  email: z.string().email("Invalid email format"),
+   email: z.email('Invalid email format')
 });
 
 export const resetPasswordConfirmSchema = z.object({
-  token: z.string().min(1, "Token is required"),
-  newPassword: z
-    .string()
-    .min(8, "Password must be at least 8 characters long")
-    .regex(
-      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/,
-      "Password must contain at least one lowercase letter, one uppercase letter, and one number"
-    ),
+   token: z.string().min(1, 'Token is required'),
+   newPassword: z
+      .string()
+      .min(8, 'Password must be at least 8 characters long')
+      .regex(
+         /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/,
+         'Password must contain at least one lowercase letter, one uppercase letter, and one number'
+      )
 });

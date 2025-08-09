@@ -79,6 +79,7 @@ class EmailService {
     }
   }
 
+<<<<<<< HEAD
   // Send welcome email after verification
   async sendWelcome(user: User): Promise<void> {
     try {
@@ -86,6 +87,14 @@ class EmailService {
         user.role === "OWNER"
           ? `${emailConfig.frontendUrl}/dashboard/owner`
           : `${emailConfig.frontendUrl}/dashboard/user`;
+=======
+   async sendWelcome (user: User): Promise<void> {
+      try {
+         const dashboardUrl =
+            user.role === 'OWNER'
+               ? `${emailConfig.frontendUrl}/dashboard/tenant`
+               : `${emailConfig.frontendUrl}/dashboard/user`;
+>>>>>>> e5aee09f905eadbba2f45a60016b8ef41b7ffeaa
 
       const htmlContent = createWelcomeEmailTemplate(user, dashboardUrl);
 
@@ -95,6 +104,7 @@ class EmailService {
         html: htmlContent,
       });
 
+<<<<<<< HEAD
       logger.info(`Welcome email sent to ${user.email}`);
     } catch (error) {
       logger.error("Failed to send welcome email:", error);
@@ -112,6 +122,17 @@ class EmailService {
         user,
         bookingDetails
       );
+=======
+         logger.info(`Welcome email sent to ${user.email}`);
+      } catch (error) {
+         logger.error('Failed to send welcome email:', error);
+      }
+   }
+
+   async sendBookingConfirmation (user: UserWithProfile, bookingDetails: BookingDetails): Promise<void> {
+      try {
+         const htmlContent = createBookingConfirmationTemplate(user, bookingDetails);
+>>>>>>> e5aee09f905eadbba2f45a60016b8ef41b7ffeaa
 
       await this.sendEmail({
         to: user.email,

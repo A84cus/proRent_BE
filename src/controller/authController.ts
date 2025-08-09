@@ -106,7 +106,7 @@ class AuthController {
       logger.info(`User logged in: ${validatedData.email}`);
 
       const redirectUrl =
-        result.user.role === "OWNER" ? "/dashboard/owner" : "/dashboard/user";
+        result.user.role === "OWNER" ? "/dashboard/tenant" : "/dashboard/user";
 
       res.status(200).json({
         success: true,

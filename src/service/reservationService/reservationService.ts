@@ -1,69 +1,203 @@
 // services/createReservation.ts
 import prisma from '../../prisma';
 import { calculateTotalPrice } from './pricingService';
-import { checkAvailability, decrementAvailability } from './availabilityService';
+import { checkAvailability, DecrementAvailability, incrementAvailability } from './availabilityService';
 import { resolveTargetRoomTypeId } from './propertyRoomResolver';
-import { createReservationSchema } from '../../schema/reservationSchema';
-import { Status } from '@prisma/client';
+import { createReservationSchema } from '../../validations/reservationSchema';
+import { Status, PaymentType } from '@prisma/client';
+import { createXenditInvoice } from './xenditService';
 
-export async function createReservation (input: unknown) {
-   const data = validateInput(input);
-   // 1. Resolve the correct Room ID using the new service
-   //    This encapsulates all the property/room type logic
+async function validateBooking (data: any) {
    const targetRoomTypeId = await resolveTargetRoomTypeId(data.propertyId, data.roomTypeId);
+   const startDate = new Date(data.startDate);
+   const endDate = new Date(data.endDate);
 
-   // 2. Validate availability for the determined target room
-   await validateRoomTypeAvailability(targetRoomTypeId, new Date(data.startDate), new Date(data.endDate));
+   const isAvailable = await checkAvailability(targetRoomTypeId, startDate, endDate);
+   if (!isAvailable) {
+      throw new Error('The selected accommodation type is not available for the chosen dates.');
+   }
 
-   // 3. Calculate price based on the target room
-   const totalPrice = await calculateTotalPrice(targetRoomTypeId, new Date(data.startDate), new Date(data.endDate));
-
-   // 4. Set expiration time (1 hour as per requirement)
+   const totalPrice = await calculateTotalPrice(targetRoomTypeId, startDate, endDate);
    const expiresAt = new Date(Date.now() + 1 * 60 * 60 * 1000); // 1 hour
-
-   // 5. Determine initial order status (Always PENDING_PAYMENT upon creation)
    const initialOrderStatus: Status = Status.PENDING_PAYMENT;
 
-   // 6. Perform database transaction
+   return {
+      targetRoomTypeId,
+      totalPrice,
+      expiresAt,
+      initialOrderStatus,
+      startDate,
+      endDate
+   };
+}
+
+async function executeReservationTransaction (data: any, validationData: any) {
+   const { targetRoomTypeId, totalPrice, expiresAt, initialOrderStatus, startDate, endDate } = validationData;
+
    return await prisma.$transaction(
       async tx => {
-         // a. Create the reservation with the determined room ID and status
          const reservation = await tx.reservation.create({
             data: {
                userId: data.userId,
-               roomTypeId: targetRoomTypeId, // Use the resolved room ID
+               roomTypeId: targetRoomTypeId,
                propertyId: data.propertyId,
-               startDate: data.startDate,
-               endDate: data.endDate,
-               orderStatus: initialOrderStatus, // Use the determined status
+               startDate,
+               endDate,
+               orderStatus: initialOrderStatus,
                expiresAt
             }
          });
 
-         // b. Create Payment record (for tracking, even for manual transfers)
-         await tx.payment.create({
+         const paymentRecord = await tx.payment.create({
             data: {
                reservationId: reservation.id,
                amount: totalPrice,
-               method: data.paymentType, // Store the actual payment type selected
-               paymentStatus: Status.PENDING_PAYMENT, // Payment itself starts pending
-               payerEmail: data.payerEmail || '' // Get email from input or user lookup if needed
+               method: data.paymentType,
+               paymentStatus: Status.PENDING_PAYMENT,
+               payerEmail: data.payerEmail || ''
             }
          });
 
-         return reservation;
+         await DecrementAvailability(tx, targetRoomTypeId, startDate, endDate);
+
+         return { reservation, paymentRecordId: paymentRecord.id };
       },
       { timeout: 30000 }
    );
+}
+
+async function handleXenditPostProcessing (paymentRecordId: string, reservationId: string) {
+   try {
+      const xenditInvoiceDetails = await createXenditInvoice(paymentRecordId);
+      return {
+         reservationId,
+         paymentUrl: xenditInvoiceDetails.invoiceUrl,
+         message: 'Reservation created, redirecting to payment.'
+      };
+   } catch (xenditError: any) {
+      console.error('Error creating Xendit invoice after reservation:', xenditError);
+      throw new Error(`Reservation created, but Xendit payment setup failed: ${xenditError.message}`);
+   }
+}
+
+function handleManualPostProcessing (reservation: any) {
+   return {
+      reservation,
+      message: 'Reservation created. Please upload payment proof.'
+   };
+}
+
+export async function createReservation (input: unknown) {
+   const data = validateInput(input);
+   const validationData = await validateBooking(data);
+
+   const { reservation, paymentRecordId } = await executeReservationTransaction(data, validationData);
+
+   if (data.paymentType === PaymentType.XENDIT) {
+      return await handleXenditPostProcessing(paymentRecordId, reservation.id);
+   } else {
+      return handleManualPostProcessing(reservation);
+   }
 }
 
 function validateInput (input: unknown) {
    return createReservationSchema.parse(input);
 }
 
-async function validateRoomTypeAvailability (roomId: string, startDate: Date, endDate: Date) {
-   const isAvailable = await checkAvailability(roomId, startDate, endDate);
-   if (!isAvailable) {
-      throw new Error('Room is not available for selected dates');
+async function findAndValidateReservation (reservationId: string, userId: string) {
+   const reservation = await prisma.reservation.findUnique({
+      where: { id: reservationId },
+      include: {
+         payment: {
+            select: {
+               id: true,
+               amount: true,
+               method: true
+            }
+         },
+         PaymentProof: true,
+         RoomType: {
+            select: { id: true }
+         }
+      }
+   });
+
+   if (!reservation) {
+      throw new Error('Reservation not found.');
    }
+   if (reservation.userId !== userId) {
+      throw new Error('Unauthorized: You can only cancel your own reservations.');
+   }
+
+   if (reservation.orderStatus === Status.CANCELLED) {
+      throw new Error('Reservation is already cancelled.');
+   }
+
+   if (reservation.orderStatus !== Status.PENDING_PAYMENT) {
+      throw new Error('Cancellation is not allowed for reservations that are confirmed or awaiting confirmation.');
+   }
+
+   return reservation;
+}
+
+async function updateReservationAndPaymentStatus (tx: any, reservationId: string) {
+   await tx.reservation.update({
+      where: { id: reservationId },
+      data: { orderStatus: Status.CANCELLED }
+   });
+
+   await tx.payment.updateMany({
+      where: { reservationId },
+      data: { paymentStatus: Status.CANCELLED }
+   });
+}
+
+async function restoreAvailability (tx: any, reservation: any) {
+   if (reservation.RoomType?.id && reservation.startDate && reservation.endDate) {
+      await incrementAvailability(
+         tx,
+         reservation.RoomType.id,
+         new Date(reservation.startDate),
+         new Date(reservation.endDate)
+      );
+   } else {
+      console.warn(`Could not restore availability for reservation ${reservation.id}: Missing RoomTypeId or dates.`);
+   }
+}
+
+export async function cancelReservation (reservationId: string, userId: string) {
+   const reservation = await findAndValidateReservation(reservationId, userId);
+
+   const updatedReservation = await prisma.$transaction(
+      async tx => {
+         await updateReservationAndPaymentStatus(tx, reservationId);
+
+         await restoreAvailability(tx, reservation);
+
+         return await tx.reservation.findUnique({
+            where: { id: reservationId },
+            include: {
+               payment: {
+                  select: {
+                     id: true,
+                     amount: true,
+                     method: true,
+                     paymentStatus: true,
+                     createdAt: true,
+                     updatedAt: true
+                  }
+               },
+               RoomType: {
+                  select: { id: true, name: true }
+               },
+               Property: {
+                  select: { id: true, name: true }
+               }
+            }
+         });
+      },
+      { timeout: 30000 }
+   );
+
+   return updatedReservation;
 }

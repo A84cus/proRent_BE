@@ -6,6 +6,7 @@ import httpLogger from "./middleware/loggerMwr";
 import { PORT } from "./config";
 import authRoute from "./route/authRoute";
 import uploadRoute from "./route/uploadRoute";
+import reserveRoute from "./route/reservationRoute";
 import utilityRoute from "./route/utilityRoute";
 import userRoute from "./route/userRoute";
 
@@ -30,6 +31,7 @@ app.use("/api/auth", authRoute);
 app.use("/api/upload", uploadRoute);
 app.use("/api/utility", utilityRoute);
 app.use("/api/users", userRoute);
+app.use("/api/reservation", reserveRoute);
 
 app.get("/", (req: Request, res: Response) => {
   logger.info("Homepage accessed");
