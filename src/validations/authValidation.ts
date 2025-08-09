@@ -3,7 +3,7 @@ import { z } from "zod";
 // Authentication validation schemas
 export const registerUserSchema = z.object({
   email: z.string().email("Invalid email format"),
-  role: z.enum(["USER", "TENANT"]),
+  role: z.enum(["USER", "OWNER"]),
   password: z
     .string()
     .min(8, "Password must be at least 8 characters long")
@@ -11,7 +11,7 @@ export const registerUserSchema = z.object({
   socialLogin: z.enum(["GOOGLE", "FACEBOOK", "TWITTER", "NONE"]).optional(),
 });
 
-export const registerTenantSchema = z.object({
+export const registerOwnerSchema = z.object({
   email: z.string().email("Invalid email format"),
   password: z
     .string()
