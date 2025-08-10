@@ -133,7 +133,7 @@ export function buildOrderByClause (
 export function buildIncludeFields (propertyOwnerId?: string, propertyId?: string) {
    const includeFields: any = {
       RoomType: buildRoomTypeInclude(propertyOwnerId),
-      Payment: buildPaymentsInclude()
+      payment: buildPaymentsInclude()
    };
 
    if (propertyOwnerId || propertyId) {
