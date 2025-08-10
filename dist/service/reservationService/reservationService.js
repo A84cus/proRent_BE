@@ -22,6 +22,7 @@ const propertyRoomResolver_1 = require("./propertyRoomResolver");
 const reservationSchema_1 = require("../../validations/reservationSchema");
 const client_1 = require("@prisma/client");
 const xenditService_1 = require("./xenditService");
+const invoiceNumberService_1 = require("./invoiceNumberService");
 function validateBooking(data) {
     return __awaiter(this, void 0, void 0, function* () {
         const targetRoomTypeId = yield (0, propertyRoomResolver_1.resolveTargetRoomTypeId)(data.propertyId, data.roomTypeId);
@@ -61,6 +62,7 @@ function executeReservationTransaction(data, validationData) {
             });
             const paymentRecord = yield tx.payment.create({
                 data: {
+                    invoiceNumber: yield (0, invoiceNumberService_1.generateInvoiceNumber)(tx),
                     reservationId: reservation.id,
                     amount: totalPrice,
                     method: data.paymentType,

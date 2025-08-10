@@ -6,6 +6,7 @@ import { resolveTargetRoomTypeId } from './propertyRoomResolver';
 import { createReservationSchema } from '../../validations/reservationSchema';
 import { Status, PaymentType } from '@prisma/client';
 import { createXenditInvoice } from './xenditService';
+import { generateInvoiceNumber } from './invoiceNumberService';
 
 async function validateBooking (data: any) {
    const targetRoomTypeId = await resolveTargetRoomTypeId(data.propertyId, data.roomTypeId);
@@ -50,6 +51,7 @@ async function executeReservationTransaction (data: any, validationData: any) {
 
          const paymentRecord = await tx.payment.create({
             data: {
+               invoiceNumber: await generateInvoiceNumber(tx),
                reservationId: reservation.id,
                amount: totalPrice,
                method: data.paymentType,
