@@ -24,8 +24,8 @@ function buildWhereConditions(options) {
 function buildPropertyOwnerFilter(ownerId) {
     return {
         property: {
-            ownerId
-        }
+            ownerId,
+        },
     };
 }
 function buildStatusFilter(status) {
@@ -38,12 +38,12 @@ function buildDateRangeFilter(startDate, endDate) {
     const conditions = { AND: [] };
     if (startDate) {
         conditions.AND.push({
-            OR: [{ startDate: { gte: startDate } }, { endDate: { gte: startDate } }]
+            OR: [{ startDate: { gte: startDate } }, { endDate: { gte: startDate } }],
         });
     }
     if (endDate) {
         conditions.AND.push({
-            OR: [{ startDate: { lte: endDate } }, { endDate: { lte: endDate } }]
+            OR: [{ startDate: { lte: endDate } }, { endDate: { lte: endDate } }],
         });
     }
     return conditions;
@@ -54,10 +54,10 @@ function buildSearchFilter(search) {
     }
     return {
         OR: [
-            { id: { contains: search, mode: 'insensitive' } },
-            { user: { name: { contains: search, mode: 'insensitive' } } },
-            { user: { email: { contains: search, mode: 'insensitive' } } }
-        ]
+            { id: { contains: search, mode: "insensitive" } },
+            { user: { name: { contains: search, mode: "insensitive" } } },
+            { user: { email: { contains: search, mode: "insensitive" } } },
+        ],
     };
 }
 function buildAmountFilter(minAmount, maxAmount) {
@@ -76,16 +76,16 @@ function buildAmountFilter(minAmount, maxAmount) {
 function buildOrderByClause(sortBy, sortOrder) {
     const orderBy = {};
     switch (sortBy) {
-        case 'reservationNumber':
+        case "reservationNumber":
             orderBy.id = sortOrder;
             break;
-        case 'startDate':
+        case "startDate":
             orderBy.startDate = sortOrder;
             break;
-        case 'endDate':
+        case "endDate":
             orderBy.endDate = sortOrder;
             break;
-        case 'totalAmount':
+        case "totalAmount":
             orderBy.payments = { _count: sortOrder };
             break;
         default:
@@ -96,7 +96,7 @@ function buildOrderByClause(sortBy, sortOrder) {
 function buildIncludeFields(propertyOwnerId, propertyId) {
     const includeFields = {
         RoomType: buildRoomTypeInclude(propertyOwnerId),
-        payment: buildPaymentsInclude()
+        payment: buildPaymentsInclude(),
     };
     if (propertyOwnerId || propertyId) {
         includeFields.user = buildUserInclude();
@@ -109,9 +109,9 @@ function buildRoomTypeInclude(propertyOwnerId) {
             name: true,
             basePrice: true,
             property: {
-                select: Object.assign({ id: true, name: true, location: true }, (propertyOwnerId && { ownerId: true }))
-            }
-        }
+                select: Object.assign({ id: true, name: true, location: true }, (propertyOwnerId && { ownerId: true })),
+            },
+        },
     };
 }
 function buildPaymentsInclude() {
@@ -121,8 +121,8 @@ function buildPaymentsInclude() {
             amount: true,
             method: true,
             paymentStatus: true,
-            createdAt: true
-        }
+            createdAt: true,
+        },
     };
 }
 function buildUserInclude() {
@@ -131,7 +131,7 @@ function buildUserInclude() {
             id: true,
             name: true,
             email: true,
-            phone: true
-        }
+            phone: true,
+        },
     };
 }
