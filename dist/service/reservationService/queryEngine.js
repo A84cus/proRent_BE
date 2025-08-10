@@ -96,7 +96,7 @@ function buildOrderByClause(sortBy, sortOrder) {
 function buildIncludeFields(propertyOwnerId, propertyId) {
     const includeFields = {
         RoomType: buildRoomTypeInclude(propertyOwnerId),
-        Payments: buildPaymentsInclude()
+        Payment: buildPaymentsInclude()
     };
     if (propertyOwnerId || propertyId) {
         includeFields.user = buildUserInclude();
