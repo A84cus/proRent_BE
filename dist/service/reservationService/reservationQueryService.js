@@ -16,6 +16,7 @@ exports.queryReservations = queryReservations;
 exports.getUserReservations = getUserReservations;
 exports.getOwnerReservations = getOwnerReservations;
 exports.getPropertyReservations = getPropertyReservations;
+exports.getReservationWithPayment = getReservationWithPayment;
 // services/reservationService.ts
 const prisma_1 = __importDefault(require("../../prisma"));
 const queryEngine_1 = require("./queryEngine");
@@ -23,13 +24,13 @@ const reservationQueryHelper_1 = require("./reservationQueryHelper");
 function queryReservations(options) {
     return __awaiter(this, void 0, void 0, function* () {
         const validatedOptions = (0, reservationQueryHelper_1.validateQueryOptions)(options);
-        const { userId, propertyOwnerId, propertyId, page = validatedOptions.page, limit = validatedOptions.limit, sortBy = 'createdAt', sortOrder = 'desc', filters = {} } = options;
+        const { userId, propertyOwnerId, propertyId, page = validatedOptions.page, limit = validatedOptions.limit, sortBy = "createdAt", sortOrder = "desc", filters = {}, } = options;
         const skip = (page - 1) * limit;
         const whereConditions = (0, queryEngine_1.buildWhereConditions)({
             userId,
             propertyOwnerId,
             propertyId,
-            filters
+            filters,
         });
         const orderBy = (0, queryEngine_1.buildOrderByClause)(sortBy, sortOrder);
         const includeFields = (0, queryEngine_1.buildIncludeFields)(propertyOwnerId, propertyId);
@@ -44,17 +45,16 @@ function executeReservationQuery(whereConditions, orderBy, includeFields, skip, 
                 include: includeFields,
                 orderBy,
                 skip,
-                take: limit
+                take: limit,
             }),
             prisma_1.default.reservation.count({
-                where: whereConditions
-            })
+                where: whereConditions,
+            }),
         ]);
-        const reservationsWithTotals = (0, reservationQueryHelper_1.addTotalAmounts)(reservations);
         const pagination = (0, reservationQueryHelper_1.calculatePagination)(page, limit, totalCount);
         return {
-            reservations: reservationsWithTotals,
-            pagination
+            reservations: reservations,
+            pagination,
         };
     });
 }
@@ -72,5 +72,23 @@ function getOwnerReservations(propertyOwnerId_1) {
 function getPropertyReservations(propertyId_1) {
     return __awaiter(this, arguments, void 0, function* (propertyId, options = {}) {
         return queryReservations(Object.assign({ propertyId }, options));
+    });
+}
+function getReservationWithPayment(reservationId) {
+    return __awaiter(this, void 0, void 0, function* () {
+        try {
+            const includeFields = (0, queryEngine_1.buildIncludeFields)();
+            const reservationWithPayment = yield prisma_1.default.reservation.findUnique({
+                where: {
+                    id: reservationId,
+                },
+                include: includeFields,
+            });
+            return reservationWithPayment;
+        }
+        catch (error) {
+            console.error(`Error fetching reservation with payment for ID ${reservationId}:`, error);
+            throw error;
+        }
     });
 }

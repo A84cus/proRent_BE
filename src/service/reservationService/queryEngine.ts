@@ -151,7 +151,7 @@ export function buildIncludeFields(
   };
 
   if (propertyOwnerId || propertyId) {
-    includeFields.user = buildUserInclude();
+    includeFields.User = buildUserInclude();
   }
 
   return includeFields;
@@ -178,6 +178,7 @@ function buildPaymentsInclude() {
   return {
     select: {
       id: true,
+      invoiceNumber: true,
       amount: true,
       method: true,
       paymentStatus: true,
@@ -190,9 +191,14 @@ function buildUserInclude() {
   return {
     select: {
       id: true,
-      name: true,
+      profile: {
+        select: {
+          firstName: true,
+          lastName: true,
+          phone: true,
+        },
+      },
       email: true,
-      phone: true,
     },
   };
 }
