@@ -52,7 +52,9 @@ function buildStatusFilter (status?: Status) {
 }
 
 function buildDateRangeFilter (startDate?: Date, endDate?: Date) {
-   if (!startDate && !endDate) {return {};}
+   if (!startDate && !endDate) {
+      return {};
+   }
 
    const conditions: any = { AND: [] };
 
@@ -72,7 +74,9 @@ function buildDateRangeFilter (startDate?: Date, endDate?: Date) {
 }
 
 function buildSearchFilter (search?: string) {
-   if (!search) {return {};}
+   if (!search) {
+      return {};
+   }
 
    return {
       OR: [
@@ -87,8 +91,12 @@ function buildAmountFilter (minAmount?: number, maxAmount?: number) {
    const amountConditions: any = {};
 
    if (minAmount || maxAmount) {
-      if (minAmount) {amountConditions.amount = { ...amountConditions.amount, gte: minAmount };}
-      if (maxAmount) {amountConditions.amount = { ...amountConditions.amount, lte: maxAmount };}
+      if (minAmount) {
+         amountConditions.amount = { ...amountConditions.amount, gte: minAmount };
+      }
+      if (maxAmount) {
+         amountConditions.amount = { ...amountConditions.amount, lte: maxAmount };
+      }
 
       return { payments: amountConditions };
    }
@@ -124,7 +132,7 @@ export function buildOrderByClause (
 
 export function buildIncludeFields (propertyOwnerId?: string, propertyId?: string) {
    const includeFields: any = {
-      roomType: buildRoomTypeInclude(propertyOwnerId),
+      RoomType: buildRoomTypeInclude(propertyOwnerId),
       payments: buildPaymentsInclude()
    };
 
