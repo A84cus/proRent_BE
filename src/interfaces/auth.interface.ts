@@ -12,6 +12,11 @@ export interface RegisterUserData {
   socialLogin?: "GOOGLE" | "FACEBOOK" | "TWITTER" | "NONE";
 }
 
+export interface RegisterTenantData {
+  email: string;
+  password: string;
+}
+
 export interface LoginData {
   email: string;
   password?: string;

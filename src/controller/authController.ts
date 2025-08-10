@@ -42,7 +42,10 @@ class AuthController {
   async registerTenant(req: Request, res: Response) {
     try {
       const validatedData = registerTenantSchema.parse(req.body);
-      const user = await authService.registerTenant(validatedData.email);
+      const user = await authService.registerTenant(
+        validatedData.email,
+        validatedData.password
+      );
 
       logger.info(
         `Tenant registration initiated for email: ${validatedData.email}`

@@ -47,8 +47,8 @@ class AuthService {
     }
   }
 
-  async registerTenant(email: string): Promise<User> {
-    return this.registerUser({ email, role: "TENANT" }).then(
+  async registerTenant(email: string, password: string): Promise<User> {
+    return this.registerUser({ email, role: "TENANT", password }).then(
       (result) => result.user
     );
   }
