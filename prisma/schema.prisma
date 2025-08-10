@@ -189,13 +189,8 @@ model Property {
   location      Location           @relation(fields: [locationId], references: [id])
   categoryId    String
   category      Category           @relation(fields: [categoryId], references: [id])
-<<<<<<< HEAD
-  ownerId      String
-  owner        User               @relation("PropertyOwner", fields: [ownerId], references: [id])
-=======
   OwnerId       String
   Owner         User               @relation("PropertyOwner", fields: [OwnerId], references: [id])
->>>>>>> e5aee09f905eadbba2f45a60016b8ef41b7ffeaa
   mainPicture   Picture?           @relation("PropertyMainPicture", fields: [mainPictureId], references: [id])
   mainPictureId String?
   gallery       PropertyPicture[]
@@ -208,11 +203,7 @@ model Property {
 
   @@index([locationId])
   @@index([categoryId])
-<<<<<<< HEAD
-  @@index([ownerId])
-=======
   @@index([OwnerId])
->>>>>>> e5aee09f905eadbba2f45a60016b8ef41b7ffeaa
   @@index([rentalType])
 }
 
@@ -369,15 +360,9 @@ model Review {
   updatedAt     DateTime    @updatedAt
   deletedAt     DateTime?
 
-<<<<<<< HEAD
-  reviewer    User         @relation("Reviewer", fields: [reviewerId], references: [id])
-  reviewee    User         @relation("Reviewee", fields: [revieweeId], references: [id])
-  ownerReply OwnerReply?
-=======
   reviewer   User        @relation("Reviewer", fields: [reviewerId], references: [id])
   reviewee   User        @relation("Reviewee", fields: [revieweeId], references: [id])
   OwnerReply OwnerReply?
->>>>>>> e5aee09f905eadbba2f45a60016b8ef41b7ffeaa
 
   @@index([reviewerId])
   @@index([revieweeId])

@@ -4,11 +4,7 @@ import authService from '../service/authService';
 import logger from '../utils/logger';
 
 const prisma = new PrismaClient();
-<<<<<<< HEAD
-type Role = "USER" | "OWNER";
-=======
 type Role = 'USER' | 'OWNER';
->>>>>>> e5aee09f905eadbba2f45a60016b8ef41b7ffeaa
 
 // Extend Request interface to include user
 declare global {
@@ -91,14 +87,7 @@ export const authorize = (...roles: Role[]) => {
    };
 };
 
-<<<<<<< HEAD
-// Combined middleware for auth.role:user and auth.role:owner
-export const authUser = [authenticate, authorize("USER")];
-export const authOwner = [authenticate, authorize("OWNER")];
-export const authAny = [authenticate]; // Any authenticated user
-=======
 // Combined middleware for auth.role:user and auth.role:tenant
 export const authUser = [ authenticate, authorize('USER') ];
 export const authTenant = [ authenticate, authorize('OWNER') ];
 export const authAny = [ authenticate ]; // Any authenticated user
->>>>>>> e5aee09f905eadbba2f45a60016b8ef41b7ffeaa

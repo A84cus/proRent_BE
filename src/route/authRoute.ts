@@ -9,8 +9,8 @@ const router = express.Router();
 // POST /auth/register/user - Register a new User (calon penyewa)
 router.post("/register/user", authController.registerUser);
 
-// POST /auth/register/owner - Register a new Owner (pemilik penginapan)
-router.post("/register/owner", authController.registerOwner);
+// POST /auth/register/tenant - Register a new Tenant (pemilik penginapan)
+router.post("/register/tenant", authController.registerTenant);
 
 // GET /auth/verify-email?token=... - Verify email and set password (1-hour expiry)
 router.get("/verify-email", authController.verifyEmail);

@@ -1,10 +1,7 @@
-import { User } from "@prisma/client";
+import { User } from '@prisma/client';
 
-export const createWelcomeEmailTemplate = (
-  user: User,
-  dashboardUrl: string
-): string => {
-  return `
+export const createWelcomeEmailTemplate = (user: User, dashboardUrl: string): string => {
+   return `
     <!DOCTYPE html>
     <html lang="en">
     <head>
@@ -37,8 +34,8 @@ export const createWelcomeEmailTemplate = (
         <div class="features">
           <h3>🚀 What you can do now:</h3>
           ${
-            user.role === "OWNER"
-              ? `
+             user.role === 'OWNER'
+                ? `
             <ul>
               <li><strong>List Properties:</strong> Add your properties and rooms for rent</li>
               <li><strong>Manage Bookings:</strong> Handle reservations and guest communications</li>
@@ -46,7 +43,7 @@ export const createWelcomeEmailTemplate = (
               <li><strong>Property Analytics:</strong> View performance insights</li>
             </ul>
           `
-              : `
+                : `
             <ul>
               <li><strong>Browse Properties:</strong> Explore available rentals in your area</li>
               <li><strong>Make Reservations:</strong> Book your perfect accommodation</li>
@@ -65,7 +62,7 @@ export const createWelcomeEmailTemplate = (
         </ul>
         
         <p>Thank you for choosing ProRent. We're here to make your ${
-          user.role === "OWNER" ? "property rental" : "accommodation search"
+           user.role === 'OWNER' ? 'property rental' : 'accommodation search'
         } experience amazing!</p>
         
         <p>Best regards,<br>The ProRent Team</p>
