@@ -4,7 +4,7 @@ import logger from "../utils/logger";
 import { handleError, handleAuthError } from "../helpers/errorHandler";
 import {
   registerUserSchema,
-  registerTenantSchema,
+  registerOwnerSchema,
   verifyEmailSchema,
   resendVerificationSchema,
   loginSchema,
@@ -39,22 +39,22 @@ class AuthController {
     }
   }
 
-  async registerTenant(req: Request, res: Response) {
+  async registerOwner(req: Request, res: Response) {
     try {
-      const validatedData = registerTenantSchema.parse(req.body);
-      const user = await authService.registerTenant(
+      const validatedData = registerOwnerSchema.parse(req.body);
+      const user = await authService.registerOwner(
         validatedData.email,
         validatedData.password
       );
 
       logger.info(
-        `Tenant registration initiated for email: ${validatedData.email}`
+        `Owner registration initiated for email: ${validatedData.email}`
       );
 
       res.status(201).json({
         success: true,
         message:
-          "Tenant registration successful. Please check your email for verification.",
+          "Owner registration successful. Please check your email for verification.",
         data: {
           userId: user.id,
           email: user.email,
@@ -63,7 +63,7 @@ class AuthController {
         },
       });
     } catch (error) {
-      handleError(res, error, "Tenant registration");
+      handleError(res, error, "Owner registration");
     }
   }
 
@@ -106,7 +106,7 @@ class AuthController {
       logger.info(`User logged in: ${validatedData.email}`);
 
       const redirectUrl =
-        result.user.role === "TENANT" ? "/dashboard/tenant" : "/dashboard/user";
+        result.user.role === "OWNER" ? "/dashboard/owner" : "/dashboard/user";
 
       res.status(200).json({
         success: true,

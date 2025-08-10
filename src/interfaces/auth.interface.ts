@@ -3,7 +3,7 @@
  * Contains all types related to authentication and authorization
  */
 
-export type Role = "USER" | "TENANT";
+export type Role = "USER" | "OWNER";
 
 export interface RegisterUserData {
   email: string;
@@ -12,7 +12,7 @@ export interface RegisterUserData {
   socialLogin?: "GOOGLE" | "FACEBOOK" | "TWITTER" | "NONE";
 }
 
-export interface RegisterTenantData {
+export interface RegisterOwnerData {
   email: string;
   password: string;
 }
