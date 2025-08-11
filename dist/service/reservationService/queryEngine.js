@@ -66,36 +66,37 @@ function buildSearchFilter(search) {
 }
 function buildAmountFilter(minAmount, maxAmount) {
     const amountConditions = {};
-    if (minAmount || maxAmount) {
-        if (minAmount) {
+    if (minAmount !== undefined || maxAmount !== undefined) {
+        if (minAmount !== undefined) {
             amountConditions.amount = Object.assign(Object.assign({}, amountConditions.amount), { gte: minAmount });
         }
-        if (maxAmount) {
+        if (maxAmount !== undefined) {
             amountConditions.amount = Object.assign(Object.assign({}, amountConditions.amount), { lte: maxAmount });
         }
-        return { payments: amountConditions };
+        return { payment: amountConditions };
     }
     return {};
 }
 function buildOrderByClause(sortBy, sortOrder) {
-    const orderBy = {};
+    const orderBy = [];
     switch (sortBy) {
         case 'reservationNumber':
-            orderBy.id = sortOrder;
+            orderBy.push({ id: sortOrder });
             break;
         case 'startDate':
-            orderBy.startDate = sortOrder;
+            orderBy.push({ startDate: sortOrder });
             break;
         case 'endDate':
-            orderBy.endDate = sortOrder;
+            orderBy.push({ endDate: sortOrder });
             break;
         case 'totalAmount':
-            orderBy.payments = { _count: sortOrder };
+            orderBy.push({ payment: { amount: sortOrder } });
             break;
         default:
-            orderBy[sortBy] = sortOrder;
+            orderBy.push({ [sortBy]: sortOrder });
+            break;
     }
-    return [orderBy];
+    return orderBy;
 }
 function buildIncludeFields(propertyOwnerId, propertyId) {
     const includeFields = {

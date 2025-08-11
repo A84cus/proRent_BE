@@ -18,19 +18,15 @@ interface QueryOptions {
 export function buildWhereConditions (options: QueryOptions): any {
    const { userId, propertyOwnerId, propertyId, filters = {} } = options;
    const whereConditions: any = {};
-
    if (userId) {
       whereConditions.userId = userId;
    }
-
    if (propertyOwnerId) {
       whereConditions.RoomType = buildPropertyOwnerFilter(propertyOwnerId);
    }
-
    if (propertyId) {
       whereConditions.propertyId = propertyId;
    }
-
    Object.assign(whereConditions, buildStatusFilter(filters.status));
    Object.assign(whereConditions, buildDateRangeFilter(filters.startDate, filters.endDate));
    Object.assign(whereConditions, buildSearchFilter(filters.search));
@@ -94,17 +90,15 @@ function buildSearchFilter (search?: string) {
 function buildAmountFilter (minAmount?: number, maxAmount?: number) {
    const amountConditions: any = {};
 
-   if (minAmount || maxAmount) {
-      if (minAmount) {
+   if (minAmount !== undefined || maxAmount !== undefined) {
+      if (minAmount !== undefined) {
          amountConditions.amount = { ...amountConditions.amount, gte: minAmount };
       }
-      if (maxAmount) {
+      if (maxAmount !== undefined) {
          amountConditions.amount = { ...amountConditions.amount, lte: maxAmount };
       }
-
-      return { payments: amountConditions };
+      return { payment: amountConditions };
    }
-
    return {};
 }
 
@@ -112,26 +106,26 @@ export function buildOrderByClause (
    sortBy: 'createdAt' | 'startDate' | 'endDate' | 'totalAmount' | 'reservationNumber',
    sortOrder: 'asc' | 'desc'
 ): any {
-   const orderBy: any = {};
-
+   const orderBy: any[] = [];
    switch (sortBy) {
       case 'reservationNumber':
-         orderBy.id = sortOrder;
+         orderBy.push({ id: sortOrder });
          break;
       case 'startDate':
-         orderBy.startDate = sortOrder;
+         orderBy.push({ startDate: sortOrder });
          break;
       case 'endDate':
-         orderBy.endDate = sortOrder;
+         orderBy.push({ endDate: sortOrder });
          break;
       case 'totalAmount':
-         orderBy.payments = { _count: sortOrder };
+         orderBy.push({ payment: { amount: sortOrder } });
          break;
       default:
-         orderBy[sortBy] = sortOrder;
+         orderBy.push({ [sortBy]: sortOrder });
+         break;
    }
 
-   return [ orderBy ];
+   return orderBy;
 }
 
 export function buildIncludeFields (propertyOwnerId?: string, propertyId?: string) {
