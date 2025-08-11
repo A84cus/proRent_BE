@@ -8,7 +8,7 @@ export const emailConfig: EmailConfig = {
   user: process.env.SMTP_USER || "5afc643591b70e",
   pass: process.env.SMTP_PASS || "c3ffe7e5804c14",
   from: process.env.SMTP_FROM || "proprerent@gmail.com",
-  frontendUrl: process.env.FRONTEND_URL || "http://localhost:3000",
+  frontendUrl: process.env.FRONTEND_URL || "https://pro-rentbe.vercel.app",
 };
 
 export const createEmailTransporter = () => {
