@@ -81,8 +81,8 @@ function buildSearchFilter (search?: string) {
    return {
       OR: [
          { id: { contains: search, mode: 'insensitive' } },
-         { user: { name: { contains: search, mode: 'insensitive' } } },
-         { user: { email: { contains: search, mode: 'insensitive' } } }
+         { User: { name: { contains: search, mode: 'insensitive' } } },
+         { User: { email: { contains: search, mode: 'insensitive' } } }
       ]
    };
 }
