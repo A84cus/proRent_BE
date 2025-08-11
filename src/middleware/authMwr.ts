@@ -87,7 +87,7 @@ export const authorize = (...roles: Role[]) => {
    };
 };
 
-// Combined middleware for auth.role:user and auth.role:tenant
+// Combined middleware for auth.role:user and auth.role:owner
 export const authUser = [ authenticate, authorize('USER') ];
-export const authTenant = [ authenticate, authorize('OWNER') ];
+export const authOwner = [ authenticate, authorize('OWNER') ];
 export const authAny = [ authenticate ]; // Any authenticated user

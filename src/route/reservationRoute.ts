@@ -5,11 +5,12 @@ import {
 } from '../controller/reservationController/reservationController';
 
 import { uploadPayment } from '../controller/reservationController/paymentProofController';
-import { authUser } from '../middleware/authMwr';
+import { authUser, authOwner, authAny } from '../middleware/authMwr';
 import { multipleFileDiffField, multipleFileSameField, memoryUploader, validateImageFile } from '../utils/uploader';
 import {
    getPropertyReservationsHandler,
    getReservations,
+   getReservationWithPaymentHandler,
    getOwnerReservationsHandler,
    getUserReservationsHandler
 } from '../controller/reservationController/reservationQueryController';
@@ -20,12 +21,13 @@ const uploadFile = memoryUploader().single('file');
 
 // Reservation routes
 router.get('/', getReservations);
-router.get('/user/:userId', getUserReservationsHandler);
-router.get('/owner/:propertyOwnerId', getOwnerReservationsHandler);
+router.get('/user', authUser, getUserReservationsHandler);
+router.get('/owner', authOwner, getOwnerReservationsHandler);
+router.get('/:id', authAny, getReservationWithPaymentHandler);
 router.get('/property/:propertyId', getPropertyReservationsHandler);
 // POST /reservation - Create a new reservation
 router.post('/', authUser, createReservationController);
 router.post('/:reservationId/cancel', authUser, cancelReservationController);
-router.post('/:reservationId/upload-payment', authUser, uploadFile, uploadPayment);
+router.patch('/:reservationId/upload-payment', authUser, uploadFile, uploadPayment);
 
 export default router;

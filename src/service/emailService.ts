@@ -72,20 +72,13 @@ class EmailService {
       }
    }
 
+   // Send welcome email after verification
    async sendWelcome (user: User): Promise<void> {
       try {
          const dashboardUrl =
             user.role === 'OWNER'
-               ? `${emailConfig.frontendUrl}/dashboard/tenant`
+               ? `${emailConfig.frontendUrl}/dashboard/owner`
                : `${emailConfig.frontendUrl}/dashboard/user`;
-
-      const htmlContent = createWelcomeEmailTemplate(user, dashboardUrl);
-
-      await this.sendEmail({
-        to: user.email,
-        subject: "Welcome to ProRent - Your Account is Active!",
-        html: htmlContent,
-      });
 
          const htmlContent = createWelcomeEmailTemplate(user, dashboardUrl);
 
@@ -98,37 +91,17 @@ class EmailService {
          logger.info(`Welcome email sent to ${user.email}`);
       } catch (error) {
          logger.error('Failed to send welcome email:', error);
+         // Don't throw error for welcome email as it's not critical
       }
    }
 
-   async sendBookingConfirmation (user: UserWithProfile, bookingDetails: BookingDetails): Promise<void> {
+   // Send booking confirmation email
+   async sendBookingConfirmation (
+      user: UserWithProfile, // ✅ Now requires profile
+      bookingDetails: BookingDetails
+   ): Promise<void> {
       try {
          const htmlContent = createBookingConfirmationTemplate(user, bookingDetails);
-
-      await this.sendEmail({
-        to: user.email,
-        subject: "Booking Confirmation - ProRent",
-        html: htmlContent,
-      });
-
-      logger.info(`Booking confirmation email sent to ${user.email}`);
-    } catch (error) {
-      logger.error("Failed to send booking confirmation email:", error);
-      throw new Error("Failed to send booking confirmation email");
-    }
-  }
-
-  // Test email connection
-  async testConnection(): Promise<boolean> {
-    try {
-      await this.transporter.verify();
-      logger.info("Email service connection verified successfully");
-      return true;
-    } catch (error) {
-      logger.error("Email service connection failed:", error);
-      return false;
-    }
-  }
 
          await this.sendEmail({
             to: user.email,

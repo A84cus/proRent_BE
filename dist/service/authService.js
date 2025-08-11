@@ -50,9 +50,9 @@ class AuthService {
             }
         });
     }
-    registerTenant(email) {
+    registerOwner(email, password) {
         return __awaiter(this, void 0, void 0, function* () {
-            return this.registerUser({ email, role: 'OWNER' }).then(result => result.user);
+            return this.registerUser({ email, role: 'OWNER', password }).then(result => result.user);
         });
     }
     verifyEmail(token) {

@@ -24,7 +24,7 @@ export function buildWhereConditions (options: QueryOptions): any {
    }
 
    if (propertyOwnerId) {
-      whereConditions.roomType = buildPropertyOwnerFilter(propertyOwnerId);
+      whereConditions.RoomType = buildPropertyOwnerFilter(propertyOwnerId);
    }
 
    if (propertyId) {
@@ -39,10 +39,10 @@ export function buildWhereConditions (options: QueryOptions): any {
    return whereConditions;
 }
 
-function buildPropertyOwnerFilter (ownerId: string) {
+function buildPropertyOwnerFilter (OwnerId: string) {
    return {
       property: {
-         ownerId
+         OwnerId
       }
    };
 }
@@ -52,7 +52,9 @@ function buildStatusFilter (status?: Status) {
 }
 
 function buildDateRangeFilter (startDate?: Date, endDate?: Date) {
-   if (!startDate && !endDate) {return {};}
+   if (!startDate && !endDate) {
+      return {};
+   }
 
    const conditions: any = { AND: [] };
 
@@ -72,7 +74,9 @@ function buildDateRangeFilter (startDate?: Date, endDate?: Date) {
 }
 
 function buildSearchFilter (search?: string) {
-   if (!search) {return {};}
+   if (!search) {
+      return {};
+   }
 
    return {
       OR: [
@@ -87,8 +91,12 @@ function buildAmountFilter (minAmount?: number, maxAmount?: number) {
    const amountConditions: any = {};
 
    if (minAmount || maxAmount) {
-      if (minAmount) {amountConditions.amount = { ...amountConditions.amount, gte: minAmount };}
-      if (maxAmount) {amountConditions.amount = { ...amountConditions.amount, lte: maxAmount };}
+      if (minAmount) {
+         amountConditions.amount = { ...amountConditions.amount, gte: minAmount };
+      }
+      if (maxAmount) {
+         amountConditions.amount = { ...amountConditions.amount, lte: maxAmount };
+      }
 
       return { payments: amountConditions };
    }
@@ -124,12 +132,12 @@ export function buildOrderByClause (
 
 export function buildIncludeFields (propertyOwnerId?: string, propertyId?: string) {
    const includeFields: any = {
-      roomType: buildRoomTypeInclude(propertyOwnerId),
-      payments: buildPaymentsInclude()
+      RoomType: buildRoomTypeInclude(propertyOwnerId),
+      payment: buildPaymentsInclude()
    };
 
    if (propertyOwnerId || propertyId) {
-      includeFields.user = buildUserInclude();
+      includeFields.User = buildUserInclude();
    }
 
    return includeFields;
@@ -145,7 +153,7 @@ function buildRoomTypeInclude (propertyOwnerId?: string) {
                id: true,
                name: true,
                location: true,
-               ...(propertyOwnerId && { ownerId: true })
+               ...(propertyOwnerId && { OwnerId: true })
             }
          }
       }
@@ -156,6 +164,7 @@ function buildPaymentsInclude () {
    return {
       select: {
          id: true,
+         invoiceNumber: true,
          amount: true,
          method: true,
          paymentStatus: true,
@@ -168,9 +177,14 @@ function buildUserInclude () {
    return {
       select: {
          id: true,
-         name: true,
-         email: true,
-         phone: true
+         profile: {
+            select: {
+               firstName: true,
+               lastName: true,
+               phone: true
+            }
+         },
+         email: true
       }
    };
 }
