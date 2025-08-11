@@ -21,10 +21,10 @@ function buildWhereConditions(options) {
     Object.assign(whereConditions, buildAmountFilter(filters.minAmount, filters.maxAmount));
     return whereConditions;
 }
-function buildPropertyOwnerFilter(ownerId) {
+function buildPropertyOwnerFilter(OwnerId) {
     return {
         property: {
-            ownerId
+            OwnerId
         }
     };
 }
@@ -109,7 +109,7 @@ function buildRoomTypeInclude(propertyOwnerId) {
             name: true,
             basePrice: true,
             property: {
-                select: Object.assign({ id: true, name: true, location: true }, (propertyOwnerId && { ownerId: true }))
+                select: Object.assign({ id: true, name: true, location: true }, (propertyOwnerId && { OwnerId: true }))
             }
         }
     };

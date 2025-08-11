@@ -39,10 +39,10 @@ export function buildWhereConditions (options: QueryOptions): any {
    return whereConditions;
 }
 
-function buildPropertyOwnerFilter (ownerId: string) {
+function buildPropertyOwnerFilter (OwnerId: string) {
    return {
       property: {
-         ownerId
+         OwnerId
       }
    };
 }
@@ -153,7 +153,7 @@ function buildRoomTypeInclude (propertyOwnerId?: string) {
                id: true,
                name: true,
                location: true,
-               ...(propertyOwnerId && { ownerId: true })
+               ...(propertyOwnerId && { OwnerId: true })
             }
          }
       }
