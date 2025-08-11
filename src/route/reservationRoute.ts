@@ -5,7 +5,7 @@ import {
 } from '../controller/reservationController/reservationController';
 
 import { uploadPayment } from '../controller/reservationController/paymentProofController';
-import { authUser, authTenant, authAny } from '../middleware/authMwr';
+import { authUser, authOwner, authAny } from '../middleware/authMwr';
 import { multipleFileDiffField, multipleFileSameField, memoryUploader, validateImageFile } from '../utils/uploader';
 import {
    getPropertyReservationsHandler,
@@ -22,7 +22,7 @@ const uploadFile = memoryUploader().single('file');
 // Reservation routes
 router.get('/', getReservations);
 router.get('/user', authUser, getUserReservationsHandler);
-router.get('/owner', authTenant, getOwnerReservationsHandler);
+router.get('/owner', authOwner, getOwnerReservationsHandler);
 router.get('/:id', authAny, getReservationWithPaymentHandler);
 router.get('/property/:propertyId', getPropertyReservationsHandler);
 // POST /reservation - Create a new reservation

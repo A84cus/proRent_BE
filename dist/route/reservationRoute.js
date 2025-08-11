@@ -14,7 +14,7 @@ const uploadFile = (0, uploader_1.memoryUploader)().single('file');
 // Reservation routes
 router.get('/', reservationQueryController_1.getReservations);
 router.get('/user', authMwr_1.authUser, reservationQueryController_1.getUserReservationsHandler);
-router.get('/owner', authMwr_1.authTenant, reservationQueryController_1.getOwnerReservationsHandler);
+router.get('/owner', authMwr_1.authOwner, reservationQueryController_1.getOwnerReservationsHandler);
 router.get('/:id', authMwr_1.authAny, reservationQueryController_1.getReservationWithPaymentHandler);
 router.get('/property/:propertyId', reservationQueryController_1.getPropertyReservationsHandler);
 // POST /reservation - Create a new reservation
