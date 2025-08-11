@@ -10,7 +10,7 @@ function buildWhereConditions(options) {
         whereConditions.userId = userId;
     }
     if (propertyOwnerId) {
-        whereConditions.roomType = buildPropertyOwnerFilter(propertyOwnerId);
+        whereConditions.RoomType = buildPropertyOwnerFilter(propertyOwnerId);
     }
     if (propertyId) {
         whereConditions.propertyId = propertyId;
@@ -21,10 +21,10 @@ function buildWhereConditions(options) {
     Object.assign(whereConditions, buildAmountFilter(filters.minAmount, filters.maxAmount));
     return whereConditions;
 }
-function buildPropertyOwnerFilter(ownerId) {
+function buildPropertyOwnerFilter(OwnerId) {
     return {
         property: {
-            ownerId
+            OwnerId
         }
     };
 }
@@ -95,11 +95,11 @@ function buildOrderByClause(sortBy, sortOrder) {
 }
 function buildIncludeFields(propertyOwnerId, propertyId) {
     const includeFields = {
-        roomType: buildRoomTypeInclude(propertyOwnerId),
-        payments: buildPaymentsInclude()
+        RoomType: buildRoomTypeInclude(propertyOwnerId),
+        payment: buildPaymentsInclude()
     };
     if (propertyOwnerId || propertyId) {
-        includeFields.user = buildUserInclude();
+        includeFields.User = buildUserInclude();
     }
     return includeFields;
 }
@@ -109,7 +109,7 @@ function buildRoomTypeInclude(propertyOwnerId) {
             name: true,
             basePrice: true,
             property: {
-                select: Object.assign({ id: true, name: true, location: true }, (propertyOwnerId && { ownerId: true }))
+                select: Object.assign({ id: true, name: true, location: true }, (propertyOwnerId && { OwnerId: true }))
             }
         }
     };
@@ -118,6 +118,7 @@ function buildPaymentsInclude() {
     return {
         select: {
             id: true,
+            invoiceNumber: true,
             amount: true,
             method: true,
             paymentStatus: true,
@@ -129,9 +130,14 @@ function buildUserInclude() {
     return {
         select: {
             id: true,
-            name: true,
-            email: true,
-            phone: true
+            profile: {
+                select: {
+                    firstName: true,
+                    lastName: true,
+                    phone: true
+                }
+            },
+            email: true
         }
     };
 }

@@ -311,8 +311,16 @@ model Reservation {
   @@index([orderStatus, createdAt])
 }
 
+model invoiceCounter {
+  dateKey   String   @id // Format: YYYY-MM-DD
+  counter   Int      @default(0) // Counter untuk tanggal tersebut
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
 model Payment {
   id                 String      @id @default(nanoid(12))
+  invoiceNumber      String
   reservation        Reservation @relation(fields: [reservationId], references: [id])
   reservationId      String      @unique
   amount             Float

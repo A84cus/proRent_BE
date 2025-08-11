@@ -96,14 +96,46 @@ function uploadPaymentProof(reservationId, userId, file) {
                     orderStatus: client_1.Status.PENDING_CONFIRMATION
                 },
                 include: {
-                    payment: true,
-                    PaymentProof: {
-                        include: {
-                            picture: true
+                    payment: {
+                        select: {
+                            id: true,
+                            amount: true,
+                            method: true,
+                            paymentStatus: true,
+                            payerEmail: true,
+                            createdAt: true,
+                            updatedAt: true
                         }
                     },
-                    RoomType: true,
-                    Property: true
+                    PaymentProof: {
+                        select: {
+                            id: true,
+                            pictureId: true,
+                            picture: {
+                                select: {
+                                    id: true,
+                                    url: true,
+                                    alt: true,
+                                    type: true,
+                                    sizeKB: true,
+                                    uploadedAt: true
+                                }
+                            }
+                        }
+                    },
+                    RoomType: {
+                        select: {
+                            id: true,
+                            name: true
+                        }
+                    },
+                    Property: {
+                        select: {
+                            id: true,
+                            name: true,
+                            location: true
+                        }
+                    }
                 }
             });
             if ((_b = reservation.payment) === null || _b === void 0 ? void 0 : _b.id) {

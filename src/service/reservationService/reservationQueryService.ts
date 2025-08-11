@@ -72,11 +72,10 @@ async function executeReservationQuery (
       })
    ]);
 
-   const reservationsWithTotals = addTotalAmounts(reservations);
    const pagination = calculatePagination(page, limit, totalCount);
 
    return {
-      reservations: reservationsWithTotals,
+      reservations,
       pagination
    };
 }
@@ -98,4 +97,23 @@ export async function getPropertyReservations (
    options: Omit<ReservationQueryOptions, 'propertyId'> = {}
 ) {
    return queryReservations({ propertyId, ...options });
+}
+
+export async function getReservationWithPayment (reservationId: string) {
+   try {
+      const includeFields = buildIncludeFields();
+
+      const reservationWithPayment = await prisma.reservation.findUnique({
+         where: {
+            id: reservationId
+         },
+         include: includeFields
+      });
+
+      return reservationWithPayment;
+   } catch (error) {
+      console.error(`Error fetching reservation with payment for ID ${reservationId}:`, error);
+
+      throw error;
+   }
 }

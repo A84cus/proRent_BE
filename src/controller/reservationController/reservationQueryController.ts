@@ -3,7 +3,8 @@ import {
    queryReservations,
    getUserReservations,
    getOwnerReservations,
-   getPropertyReservations
+   getPropertyReservations,
+   getReservationWithPayment
 } from '../../service/reservationService/reservationQueryService';
 
 // Main query endpoint
@@ -57,19 +58,23 @@ export async function getReservations (req: Request, res: Response) {
       };
 
       const result = await queryReservations(options);
-      return res.json(result);
+      res.json(result);
+      return;
    } catch (error) {
       console.error('Error fetching reservations:', error);
-      return res.status(500).json({ message: 'Internal server error' });
+      res.status(500).json({ message: 'Internal server error' });
    }
 }
 
 // Get reservations by user ID
 export async function getUserReservationsHandler (req: Request, res: Response) {
    try {
-      const userId = req.params.userId || (req.user?.userId as string);
+      const userId = req.user?.userId as string;
+
+      // Remove the parameter check since we always expect userId from token
       if (!userId) {
-         return res.status(400).json({ message: 'User ID is required' });
+         res.status(400).json({ message: 'User ID is required' });
+         return;
       }
 
       const {
@@ -114,9 +119,10 @@ export async function getUserReservationsHandler (req: Request, res: Response) {
       };
 
       const result = await getUserReservations(userId, options);
-      return res.json(result);
+      res.json(result);
+      return;
    } catch (error) {
-      console.error('Error fetching user reservations:', error);
+      console.error('Error in controller:', error);
       return res.status(500).json({ message: 'Internal server error' });
    }
 }
@@ -124,9 +130,10 @@ export async function getUserReservationsHandler (req: Request, res: Response) {
 // Get reservations for a property owner (tenant)
 export async function getOwnerReservationsHandler (req: Request, res: Response) {
    try {
-      const propertyOwnerId = req.params.propertyOwnerId || (req.user?.userId as string);
+      const propertyOwnerId = req.user?.userId as string;
       if (!propertyOwnerId) {
-         return res.status(400).json({ message: 'Property owner ID is required' });
+         res.status(400).json({ message: 'Property owner ID is required' });
+         return;
       }
 
       const {
@@ -171,10 +178,11 @@ export async function getOwnerReservationsHandler (req: Request, res: Response) 
       };
 
       const result = await getOwnerReservations(propertyOwnerId, options);
-      return res.json(result);
+      res.json(result);
+      return;
    } catch (error) {
       console.error('Error fetching tenant reservations:', error);
-      return res.status(500).json({ message: 'Internal server error' });
+      res.status(500).json({ message: 'Internal server error' });
    }
 }
 
@@ -183,7 +191,8 @@ export async function getPropertyReservationsHandler (req: Request, res: Respons
    try {
       const propertyId = req.params.propertyId;
       if (!propertyId) {
-         return res.status(400).json({ message: 'Property ID is required' });
+         res.status(400).json({ message: 'Property ID is required' });
+         return;
       }
 
       const {
@@ -228,9 +237,38 @@ export async function getPropertyReservationsHandler (req: Request, res: Respons
       };
 
       const result = await getPropertyReservations(propertyId, options);
-      return res.json(result);
+      res.json(result);
+      return;
    } catch (error) {
       console.error('Error fetching property reservations:', error);
-      return res.status(500).json({ message: 'Internal server error' });
+      res.status(500).json({ message: 'Internal server error' });
+   }
+}
+
+export async function getReservationWithPaymentHandler (req: Request, res: Response) {
+   try {
+      const reservationId = req.params.id;
+
+      if (!reservationId) {
+         res.status(400).json({ message: 'Reservation ID is required' });
+         return;
+      }
+
+      const reservationWithPayment = await getReservationWithPayment(reservationId);
+
+      if (!reservationWithPayment) {
+         res.status(404).json({ message: 'Reservation not found' });
+         return;
+      }
+
+      res.json(reservationWithPayment);
+      return;
+   } catch (error) {
+      console.error('Error fetching reservation with payment:', error);
+
+      res.status(500).json({ message: 'Internal server error' });
+
+      // Atau jika ingin lebih spesifik (hati-hati dengan informasi sensitif):
+      // return res.status(500).json({ message: 'Failed to fetch reservation details', error: error.message });
    }
 }
