@@ -81,8 +81,12 @@ function buildSearchFilter (search?: string) {
    return {
       OR: [
          { id: { contains: search, mode: 'insensitive' } },
-         { User: { name: { contains: search, mode: 'insensitive' } } },
-         { User: { email: { contains: search, mode: 'insensitive' } } }
+         { RoomType: { name: { contains: search, mode: 'insensitive' } } },
+         { RoomType: { property: { name: { contains: search, mode: 'insensitive' } } } },
+         { payment: { invoiceNumber: { contains: search, mode: 'insensitive' } } },
+         { User: { email: { contains: search, mode: 'insensitive' } } },
+         { User: { profile: { firstName: { contains: search, mode: 'insensitive' } } } },
+         { User: { profile: { lastName: { contains: search, mode: 'insensitive' } } } }
       ]
    };
 }
