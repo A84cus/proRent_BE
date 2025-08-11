@@ -10,7 +10,9 @@ class AuthService {
    async registerUser (data: RegisterUserData): Promise<{ user: User; requiresPassword: boolean }> {
       try {
          const existingUser = await userRepository.findByEmail(data.email);
-         if (existingUser) {throw new Error('User already exists with this email');}
+         if (existingUser) {
+            throw new Error('User already exists with this email');
+         }
 
          const { token, hashedToken, expires } = tokenService.generateVerificationToken();
 
@@ -39,8 +41,8 @@ class AuthService {
       }
    }
 
-   async registerTenant (email: string): Promise<User> {
-      return this.registerUser({ email, role: 'OWNER' }).then(result => result.user);
+   async registerOwner (email: string, password: string): Promise<User> {
+      return this.registerUser({ email, role: 'OWNER', password }).then(result => result.user);
    }
    async verifyEmail (token: string): Promise<{ success: boolean; message: string }> {
       try {
@@ -67,8 +69,12 @@ class AuthService {
    async resendVerificationEmail (email: string): Promise<void> {
       try {
          const user = await userRepository.findByEmail(email);
-         if (!user) {throw new Error('User not found');}
-         if (user.isVerified) {throw new Error('User is already verified');}
+         if (!user) {
+            throw new Error('User not found');
+         }
+         if (user.isVerified) {
+            throw new Error('User is already verified');
+         }
 
          const { token, hashedToken, expires } = tokenService.generateVerificationToken();
          await userRepository.setVerificationToken(user.id, hashedToken, expires);
@@ -83,20 +89,30 @@ class AuthService {
          const user = await userRepository.findByEmail(data.email, {
             profile: true
          });
-         if (!user) {throw new Error('Invalid credentials');}
+         if (!user) {
+            throw new Error('Invalid credentials');
+         }
 
          if (data.socialLogin && data.socialLogin !== 'NONE') {
-            if (user.socialLogin !== data.socialLogin) {throw new Error('Invalid social login method');}
+            if (user.socialLogin !== data.socialLogin) {
+               throw new Error('Invalid social login method');
+            }
          } else {
             if (!user.password) {
                throw new Error('Password not set. Please use social login or set a password.');
             }
-            if (!data.password) {throw new Error('Password is required');}
+            if (!data.password) {
+               throw new Error('Password is required');
+            }
             const isPasswordValid = await passwordService.verifyPassword(data.password, user.password);
-            if (!isPasswordValid) {throw new Error('Invalid credentials');}
+            if (!isPasswordValid) {
+               throw new Error('Invalid credentials');
+            }
          }
 
-         if (!user.isVerified) {throw new Error('Please verify your email before logging in');}
+         if (!user.isVerified) {
+            throw new Error('Please verify your email before logging in');
+         }
 
          const token = tokenService.generateJWTToken(user.id, user.role);
          return { user, token };
@@ -130,7 +146,9 @@ class AuthService {
          const hashedToken = tokenService.hashToken(data.token);
          const user = await userRepository.findByResetToken(hashedToken);
 
-         if (!user) {throw new Error('Invalid or expired reset token');}
+         if (!user) {
+            throw new Error('Invalid or expired reset token');
+         }
 
          const hashedPassword = await passwordService.hashPassword(data.newPassword);
          await userRepository.updatePassword(user.id, hashedPassword);

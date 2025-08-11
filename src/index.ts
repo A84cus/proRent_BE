@@ -17,7 +17,7 @@ const corsOptions = {
    credentials: true
 };
 
-const express = require("express");
+const express = require('express');
 const app = express();
 
 app.use(Express.json());
@@ -33,14 +33,14 @@ app.use('/api/utility', utilityRoute);
 app.use('/api/users', userRoute);
 app.use('/api/reservation', reserveRoute);
 
-app.get("/", (req: Request, res: Response) => {
-  logger.info("Homepage accessed");
-  res.send("Express on Vercel");
+app.get('/', (req: Request, res: Response) => {
+   logger.info('Homepage accessed');
+   res.send('Express on Vercel');
 });
 
 app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
-  logger.error(err.stack);
-  res.status(500).send("Something broke!");
+   logger.error(err.stack);
+   res.status(500).send('Something broke!');
 });
 
 app.listen(PORT, () => console.log(`App is running on PORT ${PORT}`));

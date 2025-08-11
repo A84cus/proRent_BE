@@ -1,5 +1,5 @@
 -- CreateEnum
-CREATE TYPE "Role" AS ENUM ('USER', 'TENANT');
+CREATE TYPE "Role" AS ENUM ('USER', 'OWNER');
 
 -- CreateEnum
 CREATE TYPE "SocialLogin" AS ENUM ('NONE', 'GOOGLE', 'FACEBOOK', 'TWITTER');
@@ -137,7 +137,7 @@ CREATE TABLE "Property" (
     "description" TEXT NOT NULL,
     "locationId" TEXT NOT NULL,
     "categoryId" TEXT NOT NULL,
-    "tenantId" TEXT NOT NULL,
+    "ownerId" TEXT NOT NULL,
     "mainPictureId" TEXT,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
@@ -244,7 +244,7 @@ CREATE TABLE "Review" (
 );
 
 -- CreateTable
-CREATE TABLE "TenantReply" (
+CREATE TABLE "OwnerReply" (
     "id" TEXT NOT NULL,
     "reviewId" TEXT NOT NULL,
     "content" TEXT NOT NULL,
@@ -254,7 +254,7 @@ CREATE TABLE "TenantReply" (
     "updatedAt" TIMESTAMP(3) NOT NULL,
     "deletedAt" TIMESTAMP(3),
 
-    CONSTRAINT "TenantReply_pkey" PRIMARY KEY ("id")
+    CONSTRAINT "OwnerReply_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -350,7 +350,7 @@ CREATE INDEX "Property_locationId_idx" ON "Property"("locationId");
 CREATE INDEX "Property_categoryId_idx" ON "Property"("categoryId");
 
 -- CreateIndex
-CREATE INDEX "Property_tenantId_idx" ON "Property"("tenantId");
+CREATE INDEX "Property_ownerId_idx" ON "Property"("ownerId");
 
 -- CreateIndex
 CREATE INDEX "Room_propertyId_idx" ON "Room"("propertyId");
@@ -404,7 +404,7 @@ CREATE INDEX "Review_reviewerId_idx" ON "Review"("reviewerId");
 CREATE INDEX "Review_revieweeId_idx" ON "Review"("revieweeId");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "TenantReply_reviewId_key" ON "TenantReply"("reviewId");
+CREATE UNIQUE INDEX "OwnerReply_reviewId_key" ON "OwnerReply"("reviewId");
 
 -- CreateIndex
 CREATE INDEX "TransactionLog_paymentId_idx" ON "TransactionLog"("paymentId");
@@ -461,7 +461,7 @@ ALTER TABLE "Property" ADD CONSTRAINT "Property_locationId_fkey" FOREIGN KEY ("l
 ALTER TABLE "Property" ADD CONSTRAINT "Property_categoryId_fkey" FOREIGN KEY ("categoryId") REFERENCES "Category"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "Property" ADD CONSTRAINT "Property_tenantId_fkey" FOREIGN KEY ("tenantId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "Property" ADD CONSTRAINT "Property_ownerId_fkey" FOREIGN KEY ("ownerId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "Property" ADD CONSTRAINT "Property_mainPictureId_fkey" FOREIGN KEY ("mainPictureId") REFERENCES "Picture"("id") ON DELETE SET NULL ON UPDATE CASCADE;
@@ -494,7 +494,7 @@ ALTER TABLE "Review" ADD CONSTRAINT "Review_reviewerId_fkey" FOREIGN KEY ("revie
 ALTER TABLE "Review" ADD CONSTRAINT "Review_revieweeId_fkey" FOREIGN KEY ("revieweeId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "TenantReply" ADD CONSTRAINT "TenantReply_reviewId_fkey" FOREIGN KEY ("reviewId") REFERENCES "Review"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "OwnerReply" ADD CONSTRAINT "OwnerReply_reviewId_fkey" FOREIGN KEY ("reviewId") REFERENCES "Review"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "TransactionLog" ADD CONSTRAINT "TransactionLog_paymentId_fkey" FOREIGN KEY ("paymentId") REFERENCES "Payment"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
