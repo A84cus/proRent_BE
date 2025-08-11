@@ -20,7 +20,7 @@ class BaseController {
             return responseHelper_1.default.error(res, specificError.message, undefined, specificError.statusCode);
         }
         // Default error
-        return responseHelper_1.default.error(res, "Internal server error", undefined, 500);
+        return responseHelper_1.default.error(res, 'Internal server error', undefined, 500);
     }
     // Common authentication error
     handleAuthError(res, error) {
@@ -32,7 +32,7 @@ class BaseController {
         return responseHelper_1.default.error(res, message, Array.isArray(error) ? error : undefined, 400);
     }
     // Common not found error
-    handleNotFoundError(res, resource = "Resource") {
+    handleNotFoundError(res, resource = 'Resource') {
         return responseHelper_1.default.error(res, `${resource} not found`, undefined, 404);
     }
     // Common success response

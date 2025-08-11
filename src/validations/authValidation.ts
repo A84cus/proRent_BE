@@ -2,14 +2,21 @@ import { z } from 'zod';
 
 // Authentication validation schemas
 export const registerUserSchema = z.object({
-   email: z.email('Invalid email format'),
+   email: z.string().email('Invalid email format'),
    role: z.enum([ 'USER', 'OWNER' ]),
    password: z.string().min(8, 'Password must be at least 8 characters long').optional(),
    socialLogin: z.enum([ 'GOOGLE', 'FACEBOOK', 'TWITTER', 'NONE' ]).optional()
 });
 
-export const registerTenantSchema = z.object({
-   email: z.email('Invalid email format')
+export const registerOwnerSchema = z.object({
+   email: z.string().email('Invalid email format'),
+   password: z
+      .string()
+      .min(8, 'Password must be at least 8 characters long')
+      .regex(
+         /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/,
+         'Password must contain at least one lowercase letter, one uppercase letter, and one number'
+      )
 });
 
 export const verifyEmailSchema = z.object({

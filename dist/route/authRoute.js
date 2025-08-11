@@ -10,8 +10,8 @@ const router = express_1.default.Router();
 // Authentication routes
 // POST /auth/register/user - Register a new User (calon penyewa)
 router.post("/register/user", authController_1.default.registerUser);
-// POST /auth/register/tenant - Register a new Tenant (pemilik penginapan)
-router.post("/register/tenant", authController_1.default.registerTenant);
+// POST /auth/register/owner - Register a new Owner (pemilik penginapan)
+router.post("/register/owner", authController_1.default.registerOwner);
 // GET /auth/verify-email?token=... - Verify email and set password (1-hour expiry)
 router.get("/verify-email", authController_1.default.verifyEmail);
 // POST /auth/resend-verify - Resend verification email if not verified

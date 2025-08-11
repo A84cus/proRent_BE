@@ -76,11 +76,12 @@ class EmailService {
             }
         });
     }
+    // Send welcome email after verification
     sendWelcome(user) {
         return __awaiter(this, void 0, void 0, function* () {
             try {
                 const dashboardUrl = user.role === 'OWNER'
-                    ? `${email_1.emailConfig.frontendUrl}/dashboard/tenant`
+                    ? `${email_1.emailConfig.frontendUrl}/dashboard/owner`
                     : `${email_1.emailConfig.frontendUrl}/dashboard/user`;
                 const htmlContent = (0, email_2.createWelcomeEmailTemplate)(user, dashboardUrl);
                 yield this.sendEmail({
@@ -92,10 +93,13 @@ class EmailService {
             }
             catch (error) {
                 logger_1.default.error('Failed to send welcome email:', error);
+                // Don't throw error for welcome email as it's not critical
             }
         });
     }
-    sendBookingConfirmation(user, bookingDetails) {
+    // Send booking confirmation email
+    sendBookingConfirmation(user, // ✅ Now requires profile
+    bookingDetails) {
         return __awaiter(this, void 0, void 0, function* () {
             try {
                 const htmlContent = (0, email_2.createBookingConfirmationTemplate)(user, bookingDetails);

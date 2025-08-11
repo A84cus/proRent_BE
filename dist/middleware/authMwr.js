@@ -12,7 +12,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.authAny = exports.authTenant = exports.authUser = exports.authorize = exports.authenticate = void 0;
+exports.authAny = exports.authOwner = exports.authUser = exports.authorize = exports.authenticate = void 0;
 const client_1 = require("@prisma/client");
 const authService_1 = __importDefault(require("../service/authService"));
 const logger_1 = __importDefault(require("../utils/logger"));
@@ -77,7 +77,7 @@ const authorize = (...roles) => {
     };
 };
 exports.authorize = authorize;
-// Combined middleware for auth.role:user and auth.role:tenant
+// Combined middleware for auth.role:user and auth.role:owner
 exports.authUser = [exports.authenticate, (0, exports.authorize)('USER')];
-exports.authTenant = [exports.authenticate, (0, exports.authorize)('OWNER')];
+exports.authOwner = [exports.authenticate, (0, exports.authorize)('OWNER')];
 exports.authAny = [exports.authenticate]; // Any authenticated user

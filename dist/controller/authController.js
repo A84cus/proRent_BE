@@ -40,15 +40,15 @@ class AuthController {
             }
         });
     }
-    registerTenant(req, res) {
+    registerOwner(req, res) {
         return __awaiter(this, void 0, void 0, function* () {
             try {
-                const validatedData = authValidation_1.registerTenantSchema.parse(req.body);
-                const user = yield authService_1.default.registerTenant(validatedData.email);
-                logger_1.default.info(`Tenant registration initiated for email: ${validatedData.email}`);
+                const validatedData = authValidation_1.registerOwnerSchema.parse(req.body);
+                const user = yield authService_1.default.registerOwner(validatedData.email, validatedData.password);
+                logger_1.default.info(`Owner registration initiated for email: ${validatedData.email}`);
                 res.status(201).json({
                     success: true,
-                    message: 'Tenant registration successful. Please check your email for verification.',
+                    message: 'Owner registration successful. Please check your email for verification.',
                     data: {
                         userId: user.id,
                         email: user.email,
@@ -58,7 +58,7 @@ class AuthController {
                 });
             }
             catch (error) {
-                (0, errorHandler_1.handleError)(res, error, 'Tenant registration');
+                (0, errorHandler_1.handleError)(res, error, 'Owner registration');
             }
         });
     }
@@ -102,7 +102,7 @@ class AuthController {
                 const validatedData = authValidation_1.loginSchema.parse(req.body);
                 const result = yield authService_1.default.loginUser(validatedData);
                 logger_1.default.info(`User logged in: ${validatedData.email}`);
-                const redirectUrl = result.user.role === 'OWNER' ? '/dashboard/tenant' : '/dashboard/user';
+                const redirectUrl = result.user.role === 'OWNER' ? '/dashboard/owner' : '/dashboard/user';
                 res.status(200).json({
                     success: true,
                     message: 'Login successful',
