@@ -24,13 +24,13 @@ const reservationQueryHelper_1 = require("./reservationQueryHelper");
 function queryReservations(options) {
     return __awaiter(this, void 0, void 0, function* () {
         const validatedOptions = (0, reservationQueryHelper_1.validateQueryOptions)(options);
-        const { userId, propertyOwnerId, propertyId, page = validatedOptions.page, limit = validatedOptions.limit, sortBy = "createdAt", sortOrder = "desc", filters = {}, } = options;
+        const { userId, propertyOwnerId, propertyId, page = validatedOptions.page, limit = validatedOptions.limit, sortBy = 'createdAt', sortOrder = 'desc', filters = {} } = options;
         const skip = (page - 1) * limit;
         const whereConditions = (0, queryEngine_1.buildWhereConditions)({
             userId,
             propertyOwnerId,
             propertyId,
-            filters,
+            filters
         });
         const orderBy = (0, queryEngine_1.buildOrderByClause)(sortBy, sortOrder);
         const includeFields = (0, queryEngine_1.buildIncludeFields)(propertyOwnerId, propertyId);
@@ -45,16 +45,16 @@ function executeReservationQuery(whereConditions, orderBy, includeFields, skip, 
                 include: includeFields,
                 orderBy,
                 skip,
-                take: limit,
+                take: limit
             }),
             prisma_1.default.reservation.count({
-                where: whereConditions,
-            }),
+                where: whereConditions
+            })
         ]);
         const pagination = (0, reservationQueryHelper_1.calculatePagination)(page, limit, totalCount);
         return {
-            reservations: reservations,
-            pagination,
+            reservations,
+            pagination
         };
     });
 }
@@ -80,9 +80,9 @@ function getReservationWithPayment(reservationId) {
             const includeFields = (0, queryEngine_1.buildIncludeFields)();
             const reservationWithPayment = yield prisma_1.default.reservation.findUnique({
                 where: {
-                    id: reservationId,
+                    id: reservationId
                 },
-                include: includeFields,
+                include: includeFields
             });
             return reservationWithPayment;
         }

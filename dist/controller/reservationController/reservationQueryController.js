@@ -19,7 +19,7 @@ const reservationQueryService_1 = require("../../service/reservationService/rese
 function getReservations(req, res) {
     return __awaiter(this, void 0, void 0, function* () {
         try {
-            const { userId, propertyOwnerId, propertyId, page = "1", limit = "10", sortBy = "createdAt", sortOrder = "desc", status, startDate, endDate, search, minAmount, maxAmount, } = req.query;
+            const { userId, propertyOwnerId, propertyId, page = '1', limit = '10', sortBy = 'createdAt', sortOrder = 'desc', status, startDate, endDate, search, minAmount, maxAmount } = req.query;
             const filters = {};
             if (status) {
                 filters.status = status;
@@ -47,14 +47,15 @@ function getReservations(req, res) {
                 limit: parseInt(limit, 10),
                 sortBy: sortBy,
                 sortOrder: sortOrder,
-                filters,
+                filters
             };
             const result = yield (0, reservationQueryService_1.queryReservations)(options);
-            return res.json(result);
+            res.json(result);
+            return;
         }
         catch (error) {
-            console.error("Error fetching reservations:", error);
-            return res.status(500).json({ message: "Internal server error" });
+            console.error('Error fetching reservations:', error);
+            res.status(500).json({ message: 'Internal server error' });
         }
     });
 }
@@ -63,11 +64,13 @@ function getUserReservationsHandler(req, res) {
     return __awaiter(this, void 0, void 0, function* () {
         var _a;
         try {
-            const userId = req.params.userId || ((_a = req.user) === null || _a === void 0 ? void 0 : _a.userId);
+            const userId = (_a = req.user) === null || _a === void 0 ? void 0 : _a.userId;
+            // Remove the parameter check since we always expect userId from token
             if (!userId) {
-                return res.status(400).json({ message: "User ID is required" });
+                res.status(400).json({ message: 'User ID is required' });
+                return;
             }
-            const { page = "1", limit = "10", sortBy = "createdAt", sortOrder = "desc", status, startDate, endDate, search, minAmount, maxAmount, } = req.query;
+            const { page = '1', limit = '10', sortBy = 'createdAt', sortOrder = 'desc', status, startDate, endDate, search, minAmount, maxAmount } = req.query;
             const filters = {};
             if (status) {
                 filters.status = status;
@@ -92,14 +95,15 @@ function getUserReservationsHandler(req, res) {
                 limit: parseInt(limit, 10),
                 sortBy: sortBy,
                 sortOrder: sortOrder,
-                filters,
+                filters
             };
             const result = yield (0, reservationQueryService_1.getUserReservations)(userId, options);
-            return res.json(result);
+            res.json(result);
+            return;
         }
         catch (error) {
-            console.error("Error fetching user reservations:", error);
-            return res.status(500).json({ message: "Internal server error" });
+            console.error('Error in controller:', error);
+            return res.status(500).json({ message: 'Internal server error' });
         }
     });
 }
@@ -108,11 +112,12 @@ function getOwnerReservationsHandler(req, res) {
     return __awaiter(this, void 0, void 0, function* () {
         var _a;
         try {
-            const propertyOwnerId = req.params.propertyOwnerId || ((_a = req.user) === null || _a === void 0 ? void 0 : _a.userId);
+            const propertyOwnerId = (_a = req.user) === null || _a === void 0 ? void 0 : _a.userId;
             if (!propertyOwnerId) {
-                return res.status(400).json({ message: "Property owner ID is required" });
+                res.status(400).json({ message: 'Property owner ID is required' });
+                return;
             }
-            const { page = "1", limit = "10", sortBy = "createdAt", sortOrder = "desc", status, startDate, endDate, search, minAmount, maxAmount, } = req.query;
+            const { page = '1', limit = '10', sortBy = 'createdAt', sortOrder = 'desc', status, startDate, endDate, search, minAmount, maxAmount } = req.query;
             const filters = {};
             if (status) {
                 filters.status = status;
@@ -137,14 +142,15 @@ function getOwnerReservationsHandler(req, res) {
                 limit: parseInt(limit, 10),
                 sortBy: sortBy,
                 sortOrder: sortOrder,
-                filters,
+                filters
             };
             const result = yield (0, reservationQueryService_1.getOwnerReservations)(propertyOwnerId, options);
-            return res.json(result);
+            res.json(result);
+            return;
         }
         catch (error) {
-            console.error("Error fetching tenant reservations:", error);
-            return res.status(500).json({ message: "Internal server error" });
+            console.error('Error fetching tenant reservations:', error);
+            res.status(500).json({ message: 'Internal server error' });
         }
     });
 }
@@ -154,9 +160,10 @@ function getPropertyReservationsHandler(req, res) {
         try {
             const propertyId = req.params.propertyId;
             if (!propertyId) {
-                return res.status(400).json({ message: "Property ID is required" });
+                res.status(400).json({ message: 'Property ID is required' });
+                return;
             }
-            const { page = "1", limit = "10", sortBy = "createdAt", sortOrder = "desc", status, startDate, endDate, search, minAmount, maxAmount, } = req.query;
+            const { page = '1', limit = '10', sortBy = 'createdAt', sortOrder = 'desc', status, startDate, endDate, search, minAmount, maxAmount } = req.query;
             const filters = {};
             if (status) {
                 filters.status = status;
@@ -181,14 +188,15 @@ function getPropertyReservationsHandler(req, res) {
                 limit: parseInt(limit, 10),
                 sortBy: sortBy,
                 sortOrder: sortOrder,
-                filters,
+                filters
             };
             const result = yield (0, reservationQueryService_1.getPropertyReservations)(propertyId, options);
-            return res.json(result);
+            res.json(result);
+            return;
         }
         catch (error) {
-            console.error("Error fetching property reservations:", error);
-            return res.status(500).json({ message: "Internal server error" });
+            console.error('Error fetching property reservations:', error);
+            res.status(500).json({ message: 'Internal server error' });
         }
     });
 }
@@ -197,21 +205,20 @@ function getReservationWithPaymentHandler(req, res) {
         try {
             const reservationId = req.params.id;
             if (!reservationId) {
-                res.status(400).json({ message: "Reservation ID is required" });
+                res.status(400).json({ message: 'Reservation ID is required' });
                 return;
             }
             const reservationWithPayment = yield (0, reservationQueryService_1.getReservationWithPayment)(reservationId);
             if (!reservationWithPayment) {
-                res.status(404).json({ message: "Reservation not found" });
+                res.status(404).json({ message: 'Reservation not found' });
                 return;
             }
             res.json(reservationWithPayment);
             return;
         }
         catch (error) {
-            console.error("Error fetching reservation with payment:", error);
-            res.status(500).json({ message: "Internal server error" });
-            return;
+            console.error('Error fetching reservation with payment:', error);
+            res.status(500).json({ message: 'Internal server error' });
             // Atau jika ingin lebih spesifik (hati-hati dengan informasi sensitif):
             // return res.status(500).json({ message: 'Failed to fetch reservation details', error: error.message });
         }
