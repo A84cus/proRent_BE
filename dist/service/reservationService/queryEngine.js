@@ -83,6 +83,9 @@ function buildOrderByClause(sortBy, sortOrder) {
         case 'reservationNumber':
             orderBy.push({ id: sortOrder });
             break;
+        case 'invoiceNumber':
+            orderBy.push({ payment: { invoiceNumber: sortOrder } });
+            break;
         case 'startDate':
             orderBy.push({ startDate: sortOrder });
             break;
@@ -90,6 +93,7 @@ function buildOrderByClause(sortBy, sortOrder) {
             orderBy.push({ endDate: sortOrder });
             break;
         case 'totalAmount':
+            return [{ payment: { amount: sortOrder } }];
             orderBy.push({ payment: { amount: sortOrder } });
             break;
         default:

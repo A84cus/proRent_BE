@@ -10,7 +10,7 @@ interface ReservationQueryOptions {
    propertyId?: string;
    page?: number;
    limit?: number;
-   sortBy?: 'createdAt' | 'startDate' | 'endDate' | 'totalAmount' | 'reservationNumber';
+   sortBy?: 'createdAt' | 'startDate' | 'endDate' | 'totalAmount' | 'reservationNumber' | 'invoiceNumber';
    sortOrder?: 'asc' | 'desc';
    filters?: {
       status?: Status;

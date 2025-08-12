@@ -103,13 +103,16 @@ function buildAmountFilter (minAmount?: number, maxAmount?: number) {
 }
 
 export function buildOrderByClause (
-   sortBy: 'createdAt' | 'startDate' | 'endDate' | 'totalAmount' | 'reservationNumber',
+   sortBy: 'createdAt' | 'startDate' | 'endDate' | 'totalAmount' | 'reservationNumber' | 'invoiceNumber',
    sortOrder: 'asc' | 'desc'
 ): any {
    const orderBy: any[] = [];
    switch (sortBy) {
       case 'reservationNumber':
          orderBy.push({ id: sortOrder });
+         break;
+      case 'invoiceNumber':
+         orderBy.push({ payment: { invoiceNumber: sortOrder } });
          break;
       case 'startDate':
          orderBy.push({ startDate: sortOrder });
@@ -118,6 +121,7 @@ export function buildOrderByClause (
          orderBy.push({ endDate: sortOrder });
          break;
       case 'totalAmount':
+         return [ { payment: { amount: sortOrder } } ];
          orderBy.push({ payment: { amount: sortOrder } });
          break;
       default:
