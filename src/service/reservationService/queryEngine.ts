@@ -103,7 +103,15 @@ function buildAmountFilter (minAmount?: number, maxAmount?: number) {
 }
 
 export function buildOrderByClause (
-   sortBy: 'createdAt' | 'startDate' | 'endDate' | 'totalAmount' | 'reservationNumber' | 'invoiceNumber',
+   sortBy:
+      | 'createdAt'
+      | 'startDate'
+      | 'endDate'
+      | 'totalAmount'
+      | 'reservationNumber'
+      | 'invoiceNumber'
+      | 'property.name'
+      | 'RoomType.name',
    sortOrder: 'asc' | 'desc'
 ): any {
    const orderBy: any[] = [];
@@ -114,6 +122,12 @@ export function buildOrderByClause (
       case 'invoiceNumber':
          orderBy.push({ payment: { invoiceNumber: sortOrder } });
          break;
+      case 'property.name':
+         orderBy.push({ RoomType: { property: { name: sortOrder } } });
+         break;
+      case 'RoomType.name':
+         orderBy.push({ RoomType: { name: sortOrder } });
+         break;
       case 'startDate':
          orderBy.push({ startDate: sortOrder });
          break;
@@ -121,7 +135,6 @@ export function buildOrderByClause (
          orderBy.push({ endDate: sortOrder });
          break;
       case 'totalAmount':
-         return [ { payment: { amount: sortOrder } } ];
          orderBy.push({ payment: { amount: sortOrder } });
          break;
       default:
