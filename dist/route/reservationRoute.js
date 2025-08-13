@@ -19,6 +19,9 @@ router.get('/:id', authMwr_1.authAny, reservationQueryController_1.getReservatio
 router.get('/property/:propertyId', reservationQueryController_1.getPropertyReservationsHandler);
 // POST /reservation - Create a new reservation
 router.post('/', authMwr_1.authUser, reservationController_1.createReservationController);
-router.post('/:reservationId/cancel', authMwr_1.authUser, reservationController_1.cancelReservationController);
+router.post('/cancel-expired', authMwr_1.authAny, reservationController_1.cancelExpiredReservationsController);
+router.post('/:reservationId/cancel', authMwr_1.authAny, reservationController_1.cancelReservationController);
+router.patch('/:reservationId/reject', authMwr_1.authOwner, reservationController_1.rejectReservationByOwnerController);
+router.patch('/:reservationId/confirm', authMwr_1.authOwner, reservationController_1.confirmReservationByOwnerController);
 router.patch('/:reservationId/upload-payment', authMwr_1.authUser, uploadFile, paymentProofController_1.uploadPayment);
 exports.default = router;

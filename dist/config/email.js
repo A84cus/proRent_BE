@@ -5,14 +5,15 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.createEmailTransporter = exports.emailConfig = void 0;
 const nodemailer_1 = __importDefault(require("nodemailer"));
+const index_1 = require("../config/index");
 exports.emailConfig = {
-    host: process.env.SMTP_HOST || "sandbox.smtp.mailtrap.io",
-    port: parseInt(process.env.SMTP_PORT || "2525"),
+    host: index_1.SMTP_HOST || 'sandbox.smtp.mailtrap.io',
+    port: parseInt(index_1.SMTP_PORT || '2525'),
     secure: false, // true for 465, false for other ports
-    user: process.env.SMTP_USER || "5afc643591b70e",
-    pass: process.env.SMTP_PASS || "c3ffe7e5804c14",
-    from: process.env.SMTP_FROM || "proprerent@gmail.com",
-    frontendUrl: process.env.FRONTEND_URL || "http://localhost:3000",
+    user: index_1.SMTP_USER || '5afc643591b70e',
+    pass: index_1.SMTP_PASS || 'c3ffe7e5804c14',
+    from: index_1.SMTP_FROM || 'proprerent@gmail.com',
+    frontendUrl: index_1.BASE_FE_URL || 'http://localhost:3000'
 };
 const createEmailTransporter = () => {
     return nodemailer_1.default.createTransport({
@@ -21,8 +22,8 @@ const createEmailTransporter = () => {
         secure: exports.emailConfig.secure,
         auth: {
             user: exports.emailConfig.user,
-            pass: exports.emailConfig.pass,
-        },
+            pass: exports.emailConfig.pass
+        }
     });
 };
 exports.createEmailTransporter = createEmailTransporter;

@@ -9,16 +9,15 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.cancelReservationController = exports.createReservationController = void 0;
+exports.confirmReservationByOwnerController = exports.rejectReservationByOwnerController = exports.cancelExpiredReservationsController = exports.cancelReservationController = exports.createReservationController = void 0;
 const reservationService_1 = require("../../service/reservationService/reservationService");
+const reservationExpiryService_1 = require("../../service/reservationService/reservationExpiryService"); // Import the new service
 const zod_1 = require("zod");
 const index_1 = require("../../config/index"); // Import your env config
-// --- Helper function to determine success status code ---
+const reservationManagementService_1 = require("../../service/reservationService/reservationManagementService");
 function getSuccessStatusCode(isXendit) {
-    return isXendit ? 201 : 201; // Both cases result in 201 Created
-    // If Xendit required redirect (303), logic would differ slightly
+    return isXendit ? 201 : 201;
 }
-// --- Main controller function ---
 const createReservationController = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const userId = getUserIdFromRequest(req);
@@ -34,15 +33,12 @@ const createReservationController = (req, res) => __awaiter(void 0, void 0, void
 exports.createReservationController = createReservationController;
 const cancelReservationController = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        // --- 1. Extract Data from Request ---
         const userId = getUserIdFromRequest(req);
         const { reservationId } = req.params;
         if (!reservationId) {
             return res.status(400).json({ error: 'Reservation ID is required in the URL path.' });
         }
-        // --- 2. Call Service Layer ---
         const updatedReservation = yield (0, reservationService_1.cancelReservation)(reservationId, userId);
-        // --- 3. Send Success Response ---
         return res.status(200).json({
             message: 'Reservation cancelled successfully.',
             reservation: updatedReservation
@@ -54,6 +50,65 @@ const cancelReservationController = (req, res) => __awaiter(void 0, void 0, void
     }
 });
 exports.cancelReservationController = cancelReservationController;
+// --- New Controller Function ---
+const cancelExpiredReservationsController = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        console.log('Manual trigger: Running reservation expiry check...');
+        const result = yield (0, reservationExpiryService_1.cancelExpiredReservations)();
+        return res.status(200).json({
+            message: `Reservation expiry check completed. ${result.cancelledReservationIds.length} reservation(s) cancelled.`,
+            cancelledReservations: result.cancelledReservationIds
+        });
+    }
+    catch (error) {
+        console.error('Error in cancelExpiredReservationsController:', error);
+        if (error.message) {
+            return res.status(500).json({ error: 'Failed to process expired reservations.', details: error.message });
+        }
+        return res.status(500).json({ error: 'An unexpected error occurred while processing expired reservations.' });
+    }
+});
+exports.cancelExpiredReservationsController = cancelExpiredReservationsController;
+// --- NEW CONTROLLER FUNCTIONS FOR OWNER ACTIONS ---
+// --- Controller for Owner to Reject a Reservation ---
+const rejectReservationByOwnerController = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const ownerId = getUserIdFromRequest(req);
+        const { reservationId } = req.params;
+        if (!reservationId) {
+            return res.status(400).json({ error: 'Reservation ID is required in the URL path.' });
+        }
+        const updatedReservation = yield (0, reservationManagementService_1.rejectReservationByOwner)(reservationId, ownerId);
+        return res.status(200).json({
+            message: 'Reservation rejected successfully. Status changed to PENDING_PAYMENT.',
+            reservation: updatedReservation
+        });
+    }
+    catch (error) {
+        console.error('Error in rejectReservationByOwnerController:', error);
+        handleError(res, error);
+    }
+});
+exports.rejectReservationByOwnerController = rejectReservationByOwnerController;
+const confirmReservationByOwnerController = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const ownerId = getUserIdFromRequest(req);
+        const { reservationId } = req.params;
+        if (!reservationId) {
+            return res.status(400).json({ error: 'Reservation ID is required in the URL path.' });
+        }
+        const updatedReservation = yield (0, reservationManagementService_1.confirmReservationByOwner)(reservationId, ownerId);
+        return res.status(200).json({
+            message: 'Reservation confirmed successfully.',
+            reservation: updatedReservation
+        });
+    }
+    catch (error) {
+        console.error('Error in confirmReservationByOwnerController:', error);
+        handleError(res, error);
+    }
+});
+exports.confirmReservationByOwnerController = confirmReservationByOwnerController;
 // --- Refactored helper functions (each < 15 lines) ---
 function getUserIdFromRequest(req) {
     var _a;
@@ -82,7 +137,6 @@ function handleError(res, error) {
         return res.status(500).json({ error: error.message });
     }
     if (error.message) {
-        // Assume other service errors are client-related (e.g., unavailable)
         return res.status(400).json({ error: error.message });
     }
     return res.status(500).json({

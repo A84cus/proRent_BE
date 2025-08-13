@@ -381,7 +381,7 @@ model OwnerReply {
   review     Review    @relation(fields: [reviewId], references: [id])
   reviewId   String    @unique
   content    String
-  rating     Int
+  rating     Int?
   visibility Boolean   @default(true)
   createdAt  DateTime  @default(now())
   updatedAt  DateTime  @updatedAt
