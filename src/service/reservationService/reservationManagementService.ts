@@ -147,7 +147,19 @@ export async function confirmReservationByOwner (reservationId: string, ownerId:
                select: { id: true, name: true }
             },
             User: {
-               select: { id: true, email: true, profile: true }
+               select: {
+                  id: true,
+                  email: true,
+                  profile: {
+                     select: {
+                        id: true,
+                        firstName: true,
+                        lastName: true,
+                        phone: true,
+                        address: true
+                     }
+                  }
+               }
             },
             payment: { select: { id: true, amount: true, method: true, paymentStatus: true } },
             PaymentProof: { include: { picture: true } }
@@ -179,7 +191,8 @@ export async function confirmReservationByOwner (reservationId: string, ownerId:
             totalAmount: updatedReservation.payment?.amount || 0,
             paymentStatus: updatedReservation.payment?.paymentStatus || 'N/A'
          };
-
+         console.log('BookingDetails:', bookingDetails);
+         console.log('UserWithProfile:', userWithProfile);
          await EmailService.sendBookingConfirmation(userWithProfile, bookingDetails);
          console.log(
             `Booking confirmation email sent successfully to ${reservation.User.email} for reservation ${reservationId}.`

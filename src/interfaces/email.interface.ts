@@ -11,7 +11,7 @@ export interface EmailConfig {
    host: string;
    port: number;
    secure: boolean;
-   user: string;
+   user?: string;
    pass: string;
    from: string;
    frontendUrl: string;

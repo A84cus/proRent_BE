@@ -143,7 +143,7 @@ function rejectReservationByOwner(reservationId, ownerId) {
 }
 function confirmReservationByOwner(reservationId, ownerId) {
     return __awaiter(this, void 0, void 0, function* () {
-        var _a, _b, _c, _d, _e;
+        var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l, _m, _o, _p, _q;
         const reservation = yield findAndValidateReservationForOwner(reservationId, ownerId);
         try {
             const updatedReservation = yield prisma_1.default.reservation.update({
@@ -163,32 +163,56 @@ function confirmReservationByOwner(reservationId, ownerId) {
                         select: { id: true, name: true }
                     },
                     User: {
-                        select: { id: true, email: true }
+                        select: {
+                            id: true,
+                            email: true,
+                            profile: {
+                                select: {
+                                    id: true,
+                                    firstName: true,
+                                    lastName: true,
+                                    phone: true,
+                                    address: true
+                                }
+                            }
+                        }
                     },
-                    payment: { select: { id: true, amount: true, method: true } },
+                    payment: { select: { id: true, amount: true, method: true, paymentStatus: true } },
                     PaymentProof: { include: { picture: true } }
                 }
             });
             console.log(`Reservation ${reservationId} confirmed by owner ${ownerId}. Status changed to CONFIRMED.`);
             try {
-                if (!reservation.User || !reservation.User.email) {
+                if (!updatedReservation.User || !updatedReservation.User.email) {
                     throw new Error('User email not found for reservation.');
                 }
-                const userWithProfile = Object.assign(Object.assign({}, reservation.User), { profile: reservation.User.profile || null });
-                const bookingDetails = {
-                    id: reservation.id,
-                    propertyName: ((_a = reservation.Property) === null || _a === void 0 ? void 0 : _a.name) || 'N/A',
-                    roomTypeName: ((_b = reservation.RoomType) === null || _b === void 0 ? void 0 : _b.name) || 'N/A',
-                    checkIn: reservation.startDate,
-                    checkOut: reservation.endDate,
-                    totalAmount: ((_c = reservation.payment) === null || _c === void 0 ? void 0 : _c.amount) || 0,
-                    paymentStatus: ((_d = reservation.payment) === null || _d === void 0 ? void 0 : _d.paymentStatus) || 'N/A'
+                const userWithProfile = {
+                    id: updatedReservation.User.id,
+                    email: updatedReservation.User.email,
+                    profile: {
+                        id: (_b = (_a = updatedReservation.User.profile) === null || _a === void 0 ? void 0 : _a.id) !== null && _b !== void 0 ? _b : '',
+                        firstName: (_d = (_c = updatedReservation.User.profile) === null || _c === void 0 ? void 0 : _c.firstName) !== null && _d !== void 0 ? _d : '',
+                        lastName: (_f = (_e = updatedReservation.User.profile) === null || _e === void 0 ? void 0 : _e.lastName) !== null && _f !== void 0 ? _f : '',
+                        phone: (_h = (_g = updatedReservation.User.profile) === null || _g === void 0 ? void 0 : _g.phone) !== null && _h !== void 0 ? _h : '',
+                        address: (_k = (_j = updatedReservation.User.profile) === null || _j === void 0 ? void 0 : _j.address) !== null && _k !== void 0 ? _k : ''
+                    }
                 };
+                const bookingDetails = {
+                    id: updatedReservation.id,
+                    propertyName: ((_l = updatedReservation.Property) === null || _l === void 0 ? void 0 : _l.name) || 'N/A',
+                    roomTypeName: ((_m = updatedReservation.RoomType) === null || _m === void 0 ? void 0 : _m.name) || 'N/A',
+                    checkIn: updatedReservation.startDate.toISOString().split('T')[0],
+                    checkOut: updatedReservation.endDate.toISOString().split('T')[0],
+                    totalAmount: ((_o = updatedReservation.payment) === null || _o === void 0 ? void 0 : _o.amount) || 0,
+                    paymentStatus: ((_p = updatedReservation.payment) === null || _p === void 0 ? void 0 : _p.paymentStatus) || 'N/A'
+                };
+                console.log('BookingDetails:', bookingDetails);
+                console.log('UserWithProfile:', userWithProfile);
                 yield emailService_1.default.sendBookingConfirmation(userWithProfile, bookingDetails);
                 console.log(`Booking confirmation email sent successfully to ${reservation.User.email} for reservation ${reservationId}.`);
             }
             catch (emailError) {
-                console.error(`Failed to send booking confirmation email for reservation ${reservationId} to ${((_e = reservation.User) === null || _e === void 0 ? void 0 : _e.email) || 'N/A'}:`, emailError);
+                console.error(`Failed to send booking confirmation email for reservation ${reservationId} to ${((_q = reservation.User) === null || _q === void 0 ? void 0 : _q.email) || 'N/A'}:`, emailError);
                 throw emailError;
             }
             return updatedReservation;

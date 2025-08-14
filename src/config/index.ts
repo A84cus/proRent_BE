@@ -14,6 +14,10 @@ export const {
    SMTP_PORT,
    SMTP_USER,
    SMTP_PASS,
-   SMTP_FROM
+   SMTP_FROM,
+   LOGO_URL,
+   GMAIL_USER,
+   GMAIL_PASS,
+   USE_GMAIL
 } = process.env;
 export const JWT_SECRET = process.env.JWT_SECRET || 'fallback-secret-key';
