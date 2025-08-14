@@ -34,5 +34,5 @@ function extractSerialFromInvoiceNumber(invoiceNumber) {
     if (parts.length === 2) {
         return parseInt(parts[1], 10);
     }
-    return 1; // fallback
+    return 1;
 }

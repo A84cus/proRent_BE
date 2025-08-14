@@ -3,6 +3,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.buildWhereConditions = buildWhereConditions;
 exports.buildOrderByClause = buildOrderByClause;
 exports.buildIncludeFields = buildIncludeFields;
+const buildInclude_1 = require("./buildInclude");
 function buildWhereConditions(options) {
     const { userId, propertyOwnerId, propertyId, filters = {} } = options;
     const whereConditions = {};
@@ -109,49 +110,12 @@ function buildOrderByClause(sortBy, sortOrder) {
 }
 function buildIncludeFields(propertyOwnerId, propertyId) {
     const includeFields = {
-        RoomType: buildRoomTypeInclude(propertyOwnerId),
-        payment: buildPaymentsInclude()
+        RoomType: (0, buildInclude_1.buildRoomTypeInclude)(propertyOwnerId),
+        payment: (0, buildInclude_1.buildPaymentsInclude)(),
+        PaymentProof: (0, buildInclude_1.buildPaymentProofInclude)()
     };
     if (propertyOwnerId || propertyId) {
-        includeFields.User = buildUserInclude();
+        includeFields.User = (0, buildInclude_1.buildUserInclude)();
     }
     return includeFields;
-}
-function buildRoomTypeInclude(propertyOwnerId) {
-    return {
-        select: {
-            name: true,
-            basePrice: true,
-            property: {
-                select: Object.assign({ id: true, name: true, location: true }, (propertyOwnerId && { OwnerId: true }))
-            }
-        }
-    };
-}
-function buildPaymentsInclude() {
-    return {
-        select: {
-            id: true,
-            invoiceNumber: true,
-            amount: true,
-            method: true,
-            paymentStatus: true,
-            createdAt: true
-        }
-    };
-}
-function buildUserInclude() {
-    return {
-        select: {
-            id: true,
-            profile: {
-                select: {
-                    firstName: true,
-                    lastName: true,
-                    phone: true
-                }
-            },
-            email: true
-        }
-    };
 }

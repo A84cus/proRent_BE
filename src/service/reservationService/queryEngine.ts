@@ -1,5 +1,6 @@
 // services/reservationQueryBuilder.ts
 import { Status } from '@prisma/client';
+import { buildPaymentProofInclude, buildPaymentsInclude, buildRoomTypeInclude, buildUserInclude } from './buildInclude';
 
 interface QueryOptions {
    userId?: string;
@@ -148,7 +149,8 @@ export function buildOrderByClause (
 export function buildIncludeFields (propertyOwnerId?: string, propertyId?: string) {
    const includeFields: any = {
       RoomType: buildRoomTypeInclude(propertyOwnerId),
-      payment: buildPaymentsInclude()
+      payment: buildPaymentsInclude(),
+      PaymentProof: buildPaymentProofInclude()
    };
 
    if (propertyOwnerId || propertyId) {
@@ -156,50 +158,4 @@ export function buildIncludeFields (propertyOwnerId?: string, propertyId?: strin
    }
 
    return includeFields;
-}
-
-function buildRoomTypeInclude (propertyOwnerId?: string) {
-   return {
-      select: {
-         name: true,
-         basePrice: true,
-         property: {
-            select: {
-               id: true,
-               name: true,
-               location: true,
-               ...(propertyOwnerId && { OwnerId: true })
-            }
-         }
-      }
-   };
-}
-
-function buildPaymentsInclude () {
-   return {
-      select: {
-         id: true,
-         invoiceNumber: true,
-         amount: true,
-         method: true,
-         paymentStatus: true,
-         createdAt: true
-      }
-   };
-}
-
-function buildUserInclude () {
-   return {
-      select: {
-         id: true,
-         profile: {
-            select: {
-               firstName: true,
-               lastName: true,
-               phone: true
-            }
-         },
-         email: true
-      }
-   };
 }
