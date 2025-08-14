@@ -1,17 +1,5 @@
-import { User, Profile } from '@prisma/client';
-
-type BookingDetails = {
-   id: string;
-   propertyName: string;
-   checkIn: string;
-   checkOut: string;
-   totalAmount: number;
-   paymentStatus: string;
-};
-
-type UserWithProfile = User & {
-   profile: Profile | null;
-};
+import { User, Profile } from '../../interfaces/userAndProfileInterface';
+import { BookingDetails, UserWithProfile } from '../../interfaces/email.interface';
 
 export const createBookingConfirmationTemplate = (user: UserWithProfile, bookingDetails: BookingDetails): string => {
    const firstName = user.profile?.firstName || user.profile?.lastName || 'Valued Guest';

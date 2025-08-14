@@ -2,6 +2,7 @@ import prisma from '../../prisma';
 import { Status } from '@prisma/client';
 import { cancelExpiredReservations } from './reservationExpiryService';
 import EmailService from '../emailService';
+import { Profile } from '../../interfaces/userAndProfileInterface';
 
 async function runPostRejectionExpiryCheck (reservationId: string): Promise<void> {
    console.log(`Checking for expiry after rejecting reservation ${reservationId}...`);
@@ -146,30 +147,37 @@ export async function confirmReservationByOwner (reservationId: string, ownerId:
                select: { id: true, name: true }
             },
             User: {
-               select: { id: true, email: true }
+               select: { id: true, email: true, profile: true }
             },
-            payment: { select: { id: true, amount: true, method: true } },
+            payment: { select: { id: true, amount: true, method: true, paymentStatus: true } },
             PaymentProof: { include: { picture: true } }
          }
       });
       console.log(`Reservation ${reservationId} confirmed by owner ${ownerId}. Status changed to CONFIRMED.`);
       try {
-         if (!reservation.User || !reservation.User.email) {
+         if (!updatedReservation.User || !updatedReservation.User.email) {
             throw new Error('User email not found for reservation.');
          }
          const userWithProfile = {
-            ...reservation.User,
-            profile: reservation.User.profile || null
+            id: updatedReservation.User.id,
+            email: updatedReservation.User.email,
+            profile: {
+               id: updatedReservation.User.profile?.id ?? '',
+               firstName: updatedReservation.User.profile?.firstName ?? '',
+               lastName: updatedReservation.User.profile?.lastName ?? '',
+               phone: updatedReservation.User.profile?.phone ?? '',
+               address: updatedReservation.User.profile?.address ?? ''
+            }
          };
 
          const bookingDetails = {
-            id: reservation.id,
-            propertyName: reservation.Property?.name || 'N/A',
-            roomTypeName: reservation.RoomType?.name || 'N/A',
-            checkIn: reservation.startDate,
-            checkOut: reservation.endDate,
-            totalAmount: reservation.payment?.amount || 0,
-            paymentStatus: reservation.payment?.paymentStatus || 'N/A'
+            id: updatedReservation.id,
+            propertyName: updatedReservation.Property?.name || 'N/A',
+            roomTypeName: updatedReservation.RoomType?.name || 'N/A',
+            checkIn: updatedReservation.startDate.toISOString().split('T')[0],
+            checkOut: updatedReservation.endDate.toISOString().split('T')[0],
+            totalAmount: updatedReservation.payment?.amount || 0,
+            paymentStatus: updatedReservation.payment?.paymentStatus || 'N/A'
          };
 
          await EmailService.sendBookingConfirmation(userWithProfile, bookingDetails);

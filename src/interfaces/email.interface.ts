@@ -1,4 +1,4 @@
-import { User, Profile } from '@prisma/client';
+import { User, Profile } from './userAndProfileInterface';
 
 export interface EmailOptions {
    to: string;
