@@ -1,4 +1,4 @@
-import { User, Profile } from '@prisma/client';
+import { User, Profile } from './userAndProfileInterface';
 
 export interface EmailOptions {
    to: string;
@@ -11,7 +11,7 @@ export interface EmailConfig {
    host: string;
    port: number;
    secure: boolean;
-   user: string;
+   user?: string;
    pass: string;
    from: string;
    frontendUrl: string;

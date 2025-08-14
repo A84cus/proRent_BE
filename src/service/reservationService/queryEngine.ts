@@ -1,5 +1,6 @@
 // services/reservationQueryBuilder.ts
 import { Status } from '@prisma/client';
+import { buildPaymentProofInclude, buildPaymentsInclude, buildRoomTypeInclude, buildUserInclude } from './buildInclude';
 
 interface QueryOptions {
    userId?: string;
@@ -18,19 +19,15 @@ interface QueryOptions {
 export function buildWhereConditions (options: QueryOptions): any {
    const { userId, propertyOwnerId, propertyId, filters = {} } = options;
    const whereConditions: any = {};
-
    if (userId) {
       whereConditions.userId = userId;
    }
-
    if (propertyOwnerId) {
       whereConditions.RoomType = buildPropertyOwnerFilter(propertyOwnerId);
    }
-
    if (propertyId) {
       whereConditions.propertyId = propertyId;
    }
-
    Object.assign(whereConditions, buildStatusFilter(filters.status));
    Object.assign(whereConditions, buildDateRangeFilter(filters.startDate, filters.endDate));
    Object.assign(whereConditions, buildSearchFilter(filters.search));
@@ -81,8 +78,12 @@ function buildSearchFilter (search?: string) {
    return {
       OR: [
          { id: { contains: search, mode: 'insensitive' } },
-         { User: { name: { contains: search, mode: 'insensitive' } } },
-         { User: { email: { contains: search, mode: 'insensitive' } } }
+         { RoomType: { name: { contains: search, mode: 'insensitive' } } },
+         { RoomType: { property: { name: { contains: search, mode: 'insensitive' } } } },
+         { payment: { invoiceNumber: { contains: search, mode: 'insensitive' } } },
+         { User: { email: { contains: search, mode: 'insensitive' } } },
+         { User: { profile: { firstName: { contains: search, mode: 'insensitive' } } } },
+         { User: { profile: { lastName: { contains: search, mode: 'insensitive' } } } }
       ]
    };
 }
@@ -90,50 +91,66 @@ function buildSearchFilter (search?: string) {
 function buildAmountFilter (minAmount?: number, maxAmount?: number) {
    const amountConditions: any = {};
 
-   if (minAmount || maxAmount) {
-      if (minAmount) {
+   if (minAmount !== undefined || maxAmount !== undefined) {
+      if (minAmount !== undefined) {
          amountConditions.amount = { ...amountConditions.amount, gte: minAmount };
       }
-      if (maxAmount) {
+      if (maxAmount !== undefined) {
          amountConditions.amount = { ...amountConditions.amount, lte: maxAmount };
       }
-
-      return { payments: amountConditions };
+      return { payment: amountConditions };
    }
-
    return {};
 }
 
 export function buildOrderByClause (
-   sortBy: 'createdAt' | 'startDate' | 'endDate' | 'totalAmount' | 'reservationNumber',
+   sortBy:
+      | 'createdAt'
+      | 'startDate'
+      | 'endDate'
+      | 'totalAmount'
+      | 'reservationNumber'
+      | 'invoiceNumber'
+      | 'property.name'
+      | 'RoomType.name',
    sortOrder: 'asc' | 'desc'
 ): any {
-   const orderBy: any = {};
-
+   const orderBy: any[] = [];
    switch (sortBy) {
       case 'reservationNumber':
-         orderBy.id = sortOrder;
+         orderBy.push({ id: sortOrder });
+         break;
+      case 'invoiceNumber':
+         orderBy.push({ payment: { invoiceNumber: sortOrder } });
+         break;
+      case 'property.name':
+         orderBy.push({ RoomType: { property: { name: sortOrder } } });
+         break;
+      case 'RoomType.name':
+         orderBy.push({ RoomType: { name: sortOrder } });
          break;
       case 'startDate':
-         orderBy.startDate = sortOrder;
+         orderBy.push({ startDate: sortOrder });
          break;
       case 'endDate':
-         orderBy.endDate = sortOrder;
+         orderBy.push({ endDate: sortOrder });
          break;
       case 'totalAmount':
-         orderBy.payments = { _count: sortOrder };
+         orderBy.push({ payment: { amount: sortOrder } });
          break;
       default:
-         orderBy[sortBy] = sortOrder;
+         orderBy.push({ [sortBy]: sortOrder });
+         break;
    }
 
-   return [ orderBy ];
+   return orderBy;
 }
 
 export function buildIncludeFields (propertyOwnerId?: string, propertyId?: string) {
    const includeFields: any = {
       RoomType: buildRoomTypeInclude(propertyOwnerId),
-      payment: buildPaymentsInclude()
+      payment: buildPaymentsInclude(),
+      PaymentProof: buildPaymentProofInclude()
    };
 
    if (propertyOwnerId || propertyId) {
@@ -141,50 +158,4 @@ export function buildIncludeFields (propertyOwnerId?: string, propertyId?: strin
    }
 
    return includeFields;
-}
-
-function buildRoomTypeInclude (propertyOwnerId?: string) {
-   return {
-      select: {
-         name: true,
-         basePrice: true,
-         property: {
-            select: {
-               id: true,
-               name: true,
-               location: true,
-               ...(propertyOwnerId && { OwnerId: true })
-            }
-         }
-      }
-   };
-}
-
-function buildPaymentsInclude () {
-   return {
-      select: {
-         id: true,
-         invoiceNumber: true,
-         amount: true,
-         method: true,
-         paymentStatus: true,
-         createdAt: true
-      }
-   };
-}
-
-function buildUserInclude () {
-   return {
-      select: {
-         id: true,
-         profile: {
-            select: {
-               firstName: true,
-               lastName: true,
-               phone: true
-            }
-         },
-         email: true
-      }
-   };
 }

@@ -103,7 +103,7 @@ function getUserReservationsHandler(req, res) {
         }
         catch (error) {
             console.error('Error in controller:', error);
-            return res.status(500).json({ message: 'Internal server error' });
+            res.status(500).json({ message: error.message });
         }
     });
 }

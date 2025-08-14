@@ -3,6 +3,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.buildWhereConditions = buildWhereConditions;
 exports.buildOrderByClause = buildOrderByClause;
 exports.buildIncludeFields = buildIncludeFields;
+const buildInclude_1 = require("./buildInclude");
 function buildWhereConditions(options) {
     const { userId, propertyOwnerId, propertyId, filters = {} } = options;
     const whereConditions = {};
@@ -55,89 +56,66 @@ function buildSearchFilter(search) {
     return {
         OR: [
             { id: { contains: search, mode: 'insensitive' } },
-            { User: { name: { contains: search, mode: 'insensitive' } } },
-            { User: { email: { contains: search, mode: 'insensitive' } } }
+            { RoomType: { name: { contains: search, mode: 'insensitive' } } },
+            { RoomType: { property: { name: { contains: search, mode: 'insensitive' } } } },
+            { payment: { invoiceNumber: { contains: search, mode: 'insensitive' } } },
+            { User: { email: { contains: search, mode: 'insensitive' } } },
+            { User: { profile: { firstName: { contains: search, mode: 'insensitive' } } } },
+            { User: { profile: { lastName: { contains: search, mode: 'insensitive' } } } }
         ]
     };
 }
 function buildAmountFilter(minAmount, maxAmount) {
     const amountConditions = {};
-    if (minAmount || maxAmount) {
-        if (minAmount) {
+    if (minAmount !== undefined || maxAmount !== undefined) {
+        if (minAmount !== undefined) {
             amountConditions.amount = Object.assign(Object.assign({}, amountConditions.amount), { gte: minAmount });
         }
-        if (maxAmount) {
+        if (maxAmount !== undefined) {
             amountConditions.amount = Object.assign(Object.assign({}, amountConditions.amount), { lte: maxAmount });
         }
-        return { payments: amountConditions };
+        return { payment: amountConditions };
     }
     return {};
 }
 function buildOrderByClause(sortBy, sortOrder) {
-    const orderBy = {};
+    const orderBy = [];
     switch (sortBy) {
         case 'reservationNumber':
-            orderBy.id = sortOrder;
+            orderBy.push({ id: sortOrder });
+            break;
+        case 'invoiceNumber':
+            orderBy.push({ payment: { invoiceNumber: sortOrder } });
+            break;
+        case 'property.name':
+            orderBy.push({ RoomType: { property: { name: sortOrder } } });
+            break;
+        case 'RoomType.name':
+            orderBy.push({ RoomType: { name: sortOrder } });
             break;
         case 'startDate':
-            orderBy.startDate = sortOrder;
+            orderBy.push({ startDate: sortOrder });
             break;
         case 'endDate':
-            orderBy.endDate = sortOrder;
+            orderBy.push({ endDate: sortOrder });
             break;
         case 'totalAmount':
-            orderBy.payments = { _count: sortOrder };
+            orderBy.push({ payment: { amount: sortOrder } });
             break;
         default:
-            orderBy[sortBy] = sortOrder;
+            orderBy.push({ [sortBy]: sortOrder });
+            break;
     }
-    return [orderBy];
+    return orderBy;
 }
 function buildIncludeFields(propertyOwnerId, propertyId) {
     const includeFields = {
-        RoomType: buildRoomTypeInclude(propertyOwnerId),
-        payment: buildPaymentsInclude()
+        RoomType: (0, buildInclude_1.buildRoomTypeInclude)(propertyOwnerId),
+        payment: (0, buildInclude_1.buildPaymentsInclude)(),
+        PaymentProof: (0, buildInclude_1.buildPaymentProofInclude)()
     };
     if (propertyOwnerId || propertyId) {
-        includeFields.User = buildUserInclude();
+        includeFields.User = (0, buildInclude_1.buildUserInclude)();
     }
     return includeFields;
-}
-function buildRoomTypeInclude(propertyOwnerId) {
-    return {
-        select: {
-            name: true,
-            basePrice: true,
-            property: {
-                select: Object.assign({ id: true, name: true, location: true }, (propertyOwnerId && { OwnerId: true }))
-            }
-        }
-    };
-}
-function buildPaymentsInclude() {
-    return {
-        select: {
-            id: true,
-            invoiceNumber: true,
-            amount: true,
-            method: true,
-            paymentStatus: true,
-            createdAt: true
-        }
-    };
-}
-function buildUserInclude() {
-    return {
-        select: {
-            id: true,
-            profile: {
-                select: {
-                    firstName: true,
-                    lastName: true,
-                    phone: true
-                }
-            },
-            email: true
-        }
-    };
 }

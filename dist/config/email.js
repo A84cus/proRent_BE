@@ -5,24 +5,51 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.createEmailTransporter = exports.emailConfig = void 0;
 const nodemailer_1 = __importDefault(require("nodemailer"));
-exports.emailConfig = {
-    host: process.env.SMTP_HOST || "sandbox.smtp.mailtrap.io",
-    port: parseInt(process.env.SMTP_PORT || "2525"),
-    secure: false, // true for 465, false for other ports
-    user: process.env.SMTP_USER || "5afc643591b70e",
-    pass: process.env.SMTP_PASS || "c3ffe7e5804c14",
-    from: process.env.SMTP_FROM || "proprerent@gmail.com",
-    frontendUrl: process.env.FRONTEND_URL || "http://localhost:3000",
-};
+const index_1 = require("../config/index");
+exports.emailConfig = index_1.USE_GMAIL
+    ? {
+        host: 'smtp.gmail.com',
+        port: 587,
+        secure: false, // true for port 465, false for 587
+        user: index_1.SMTP_FROM || '',
+        pass: index_1.GMAIL_PASS || '',
+        from: index_1.SMTP_FROM || '',
+        frontendUrl: index_1.BASE_FE_URL || 'http://localhost:3000'
+    }
+    : {
+        host: index_1.SMTP_HOST || '',
+        port: parseInt(index_1.SMTP_PORT || '2525'),
+        secure: false,
+        user: index_1.SMTP_USER || '',
+        pass: index_1.SMTP_PASS || '',
+        from: index_1.SMTP_FROM || '',
+        frontendUrl: index_1.BASE_FE_URL || 'http://localhost:3000'
+    };
 const createEmailTransporter = () => {
-    return nodemailer_1.default.createTransport({
-        host: exports.emailConfig.host,
-        port: exports.emailConfig.port,
-        secure: exports.emailConfig.secure,
-        auth: {
-            user: exports.emailConfig.user,
-            pass: exports.emailConfig.pass,
-        },
-    });
+    let transporter;
+    if (index_1.USE_GMAIL) {
+        transporter = nodemailer_1.default.createTransport({
+            service: 'gmail',
+            auth: {
+                user: exports.emailConfig.user,
+                pass: exports.emailConfig.pass
+            },
+            tls: {
+                rejectUnauthorized: false
+            }
+        });
+    }
+    else {
+        transporter = nodemailer_1.default.createTransport({
+            host: exports.emailConfig.host,
+            port: exports.emailConfig.port,
+            secure: exports.emailConfig.secure,
+            auth: {
+                user: exports.emailConfig.user,
+                pass: exports.emailConfig.pass
+            }
+        });
+    }
+    return transporter;
 };
 exports.createEmailTransporter = createEmailTransporter;

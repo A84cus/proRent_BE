@@ -9,6 +9,15 @@ export const {
    NODE_ENV,
    XENDIT_SECRET_KEY,
    XENDIT_WEBHOOK_TOKEN,
-   XENDIT_CALLBACK_BASE_URL
+   XENDIT_CALLBACK_BASE_URL,
+   SMTP_HOST,
+   SMTP_PORT,
+   SMTP_USER,
+   SMTP_PASS,
+   SMTP_FROM,
+   LOGO_URL,
+   GMAIL_USER,
+   GMAIL_PASS,
+   USE_GMAIL
 } = process.env;
 export const JWT_SECRET = process.env.JWT_SECRET || 'fallback-secret-key';

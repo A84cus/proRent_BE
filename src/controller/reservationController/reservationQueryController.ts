@@ -121,9 +121,10 @@ export async function getUserReservationsHandler (req: Request, res: Response) {
       const result = await getUserReservations(userId, options);
       res.json(result);
       return;
-   } catch (error) {
+   } catch (error: any) {
       console.error('Error in controller:', error);
-      return res.status(500).json({ message: 'Internal server error' });
+      res.status(500).json({ message: error.message });
+      
    }
 }
 

@@ -1,23 +1,12 @@
-import { User, Profile } from '@prisma/client';
+import { User, Profile } from '../../interfaces/userAndProfileInterface';
+import { BookingDetails, UserWithProfile } from '../../interfaces/email.interface';
+import { LOGO_URL } from '../../config';
 
-type BookingDetails = {
-   id: string;
-   propertyName: string;
-   checkIn: string;
-   checkOut: string;
-   totalAmount: number;
-   paymentStatus: string;
-};
-
-type UserWithProfile = User & {
-   profile: Profile | null;
-};
-
-export const createBookingConfirmationTemplate = (user: UserWithProfile, bookingDetails: BookingDetails): string => {
-   const firstName = user.profile?.firstName || user.profile?.lastName || 'Valued Guest';
+export const createBookingConfirmationTemplate = (User: UserWithProfile, bookingDetails: BookingDetails): string => {
+   const firstName = User.profile?.firstName || User.profile?.lastName || 'Valued Guest';
    const fullName =
-      user.profile?.firstName && user.profile?.lastName
-         ? `${user.profile.firstName} ${user.profile.lastName}`
+      User.profile?.firstName && User.profile?.lastName
+         ? `${User.profile.firstName} ${User.profile.lastName}`
          : firstName;
 
    return `
@@ -98,7 +87,8 @@ export const createBookingConfirmationTemplate = (user: UserWithProfile, booking
     </head>
     <body>
       <div class="header">
-        <h1>✅ Booking Confirmed!</h1>
+      <img src="${LOGO_URL}" alt="ProRent Logo" width="100" style="display: block; max-width: 100px; width: 100px; height: auto; margin: 0 auto 15px auto;">
+        <h1> Booking Confirmed!</h1>
         <p>Your reservation is secured</p>
       </div>
       <div class="content">

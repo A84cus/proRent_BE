@@ -1,11 +1,12 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.createBookingConfirmationTemplate = void 0;
-const createBookingConfirmationTemplate = (user, bookingDetails) => {
+const config_1 = require("../../config");
+const createBookingConfirmationTemplate = (User, bookingDetails) => {
     var _a, _b, _c, _d;
-    const firstName = ((_a = user.profile) === null || _a === void 0 ? void 0 : _a.firstName) || ((_b = user.profile) === null || _b === void 0 ? void 0 : _b.lastName) || 'Valued Guest';
-    const fullName = ((_c = user.profile) === null || _c === void 0 ? void 0 : _c.firstName) && ((_d = user.profile) === null || _d === void 0 ? void 0 : _d.lastName)
-        ? `${user.profile.firstName} ${user.profile.lastName}`
+    const firstName = ((_a = User.profile) === null || _a === void 0 ? void 0 : _a.firstName) || ((_b = User.profile) === null || _b === void 0 ? void 0 : _b.lastName) || 'Valued Guest';
+    const fullName = ((_c = User.profile) === null || _c === void 0 ? void 0 : _c.firstName) && ((_d = User.profile) === null || _d === void 0 ? void 0 : _d.lastName)
+        ? `${User.profile.firstName} ${User.profile.lastName}`
         : firstName;
     return `
     <!DOCTYPE html>
@@ -81,7 +82,8 @@ const createBookingConfirmationTemplate = (user, bookingDetails) => {
     </head>
     <body>
       <div class="header">
-        <h1>✅ Booking Confirmed!</h1>
+      <img src="${config_1.LOGO_URL}" alt="ProRent Logo" width="100" style="display: block; max-width: 100px; width: 100px; height: auto; margin: 0 auto 15px auto;">
+        <h1> Booking Confirmed!</h1>
         <p>Your reservation is secured</p>
       </div>
       <div class="content">
