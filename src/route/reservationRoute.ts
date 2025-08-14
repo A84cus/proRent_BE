@@ -24,13 +24,13 @@ const uploadFile = memoryUploader().single('file');
 
 // Reservation routes
 router.get('/', getReservations);
+router.post('/cancel-expired', cancelExpiredReservationsController);
 router.get('/user', authUser, getUserReservationsHandler);
 router.get('/owner', authOwner, getOwnerReservationsHandler);
 router.get('/:id', authAny, getReservationWithPaymentHandler);
 router.get('/property/:propertyId', getPropertyReservationsHandler);
 // POST /reservation - Create a new reservation
 router.post('/', authUser, createReservationController);
-router.post('/cancel-expired', cancelExpiredReservationsController);
 router.post('/:reservationId/cancel', authAny, cancelReservationController);
 router.patch('/:reservationId/reject', authOwner, rejectReservationByOwnerController);
 router.patch('/:reservationId/confirm', authOwner, confirmReservationByOwnerController);
