@@ -312,8 +312,8 @@ model Reservation {
 }
 
 model invoiceCounter {
-  dateKey   String   @id // Format: YYYY-MM-DD
-  counter   Int      @default(0) // Counter untuk tanggal tersebut
+  dateKey   String   @id
+  counter   Int      @default(0)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }

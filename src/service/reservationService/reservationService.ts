@@ -19,7 +19,7 @@ async function validateBooking (data: any) {
    }
 
    const totalPrice = await calculateTotalPrice(targetRoomTypeId, startDate, endDate);
-   const expiresAt = new Date(Date.now() + 1 * 60 * 60 * 1000); // 1 hour
+   const expiresAt = new Date(Date.now() + 1 * 60 * 60 * 1000);
    const initialOrderStatus: Status = Status.PENDING_PAYMENT;
 
    return {

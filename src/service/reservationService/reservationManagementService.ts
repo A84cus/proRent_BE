@@ -8,6 +8,10 @@ async function runPostRejectionExpiryCheck (reservationId: string): Promise<void
    await cancelExpiredReservations();
 }
 
+function calculateNewExpiryTime (): Date {
+   return new Date(Date.now() + 1 * 60 * 60 * 1000);
+}
+
 async function checkFinalReservationStatus (reservationId: string) {
    const finalReservationCheck = await prisma.reservation.findUnique({
       where: { id: reservationId },
@@ -90,7 +94,9 @@ export async function rejectReservationByOwner (reservationId: string, ownerId: 
             orderStatus: Status.PENDING_CONFIRMATION
          },
          data: {
-            orderStatus: Status.PENDING_PAYMENT
+            orderStatus: Status.PENDING_PAYMENT,
+            expiresAt: calculateNewExpiryTime(),
+            payment: { update: { paymentStatus: Status.PENDING_PAYMENT } }
          },
          include: {
             Property: {
@@ -108,7 +114,6 @@ export async function rejectReservationByOwner (reservationId: string, ownerId: 
       });
 
       await runPostRejectionExpiryCheck(reservationId);
-      await cancelExpiredReservations();
       return updatedReservation;
    } catch (error: any) {
       if (error.code === 'P2025') {
@@ -130,7 +135,8 @@ export async function confirmReservationByOwner (reservationId: string, ownerId:
             orderStatus: Status.PENDING_CONFIRMATION
          },
          data: {
-            orderStatus: Status.CONFIRMED
+            orderStatus: Status.CONFIRMED,
+            payment: { update: { paymentStatus: Status.CONFIRMED } }
          },
          include: {
             Property: {

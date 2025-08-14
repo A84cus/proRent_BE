@@ -33,7 +33,7 @@ function validateBooking(data) {
             throw new Error('The selected accommodation type is not available for the chosen dates.');
         }
         const totalPrice = yield (0, pricingService_1.calculateTotalPrice)(targetRoomTypeId, startDate, endDate);
-        const expiresAt = new Date(Date.now() + 1 * 60 * 60 * 1000); // 1 hour
+        const expiresAt = new Date(Date.now() + 1 * 60 * 60 * 1000);
         const initialOrderStatus = client_1.Status.PENDING_PAYMENT;
         return {
             targetRoomTypeId,

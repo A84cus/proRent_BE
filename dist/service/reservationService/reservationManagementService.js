@@ -24,6 +24,9 @@ function runPostRejectionExpiryCheck(reservationId) {
         yield (0, reservationExpiryService_1.cancelExpiredReservations)();
     });
 }
+function calculateNewExpiryTime() {
+    return new Date(Date.now() + 1 * 60 * 60 * 1000);
+}
 function checkFinalReservationStatus(reservationId) {
     return __awaiter(this, void 0, void 0, function* () {
         const finalReservationCheck = yield prisma_1.default.reservation.findUnique({
@@ -107,7 +110,9 @@ function rejectReservationByOwner(reservationId, ownerId) {
                     orderStatus: client_1.Status.PENDING_CONFIRMATION
                 },
                 data: {
-                    orderStatus: client_1.Status.PENDING_PAYMENT
+                    orderStatus: client_1.Status.PENDING_PAYMENT,
+                    expiresAt: calculateNewExpiryTime(),
+                    payment: { update: { paymentStatus: client_1.Status.PENDING_PAYMENT } }
                 },
                 include: {
                     Property: {
@@ -124,7 +129,6 @@ function rejectReservationByOwner(reservationId, ownerId) {
                 }
             });
             yield runPostRejectionExpiryCheck(reservationId);
-            yield (0, reservationExpiryService_1.cancelExpiredReservations)();
             return updatedReservation;
         }
         catch (error) {
@@ -148,7 +152,8 @@ function confirmReservationByOwner(reservationId, ownerId) {
                     orderStatus: client_1.Status.PENDING_CONFIRMATION
                 },
                 data: {
-                    orderStatus: client_1.Status.CONFIRMED
+                    orderStatus: client_1.Status.CONFIRMED,
+                    payment: { update: { paymentStatus: client_1.Status.CONFIRMED } }
                 },
                 include: {
                     Property: {
