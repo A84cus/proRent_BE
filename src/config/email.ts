@@ -11,51 +11,43 @@ import {
    GMAIL_PASS
 } from '../config/index';
 
-export const emailConfig: EmailConfig = USE_GMAIL
-   ? {
-        host: 'smtp.gmail.com',
-        port: 587,
-        secure: false, // true for port 465, false for 587
-        user: SMTP_FROM || '',
-        pass: GMAIL_PASS || '',
-        from: SMTP_FROM || '',
-        frontendUrl: BASE_FE_URL || 'http://localhost:3000'
-     }
-   : {
-        host: SMTP_HOST || '',
-        port: parseInt(SMTP_PORT || '2525'),
-        secure: false,
-        user: SMTP_USER || '',
-        pass: SMTP_PASS || '',
-        from: SMTP_FROM || '',
-        frontendUrl: BASE_FE_URL || 'http://localhost:3000'
-     };
+export const emailConfig: EmailConfig = {
+   host: 'smtp.gmail.com',
+   port: 587,
+   secure: false, // true untuk port 465, false untuk 587
+   user: SMTP_FROM || '',
+   pass: GMAIL_PASS || '',
+   from: SMTP_FROM || '',
+   frontendUrl: BASE_FE_URL || 'http://localhost:3000'
+};
+// : {
+//      host: SMTP_HOST || '',
+//      port: parseInt(SMTP_PORT || '2525'),
+//      secure: false,
+//      user: SMTP_USER || '',
+//      pass: SMTP_PASS || '',
+//      from: SMTP_FROM || '',
+//      frontendUrl: BASE_FE_URL || 'http://localhost:3000'
+//   };
 
 export const createEmailTransporter = () => {
-   let transporter;
-
-   if (USE_GMAIL) {
-      transporter = nodemailer.createTransport({
-         service: 'gmail',
-         auth: {
-            user: emailConfig.user,
-            pass: emailConfig.pass
-         },
-         tls: {
-            rejectUnauthorized: false
-         }
-      });
-   } else {
-      transporter = nodemailer.createTransport({
-         host: emailConfig.host,
-         port: emailConfig.port,
-         secure: emailConfig.secure,
-         auth: {
-            user: emailConfig.user,
-            pass: emailConfig.pass
-         }
-      });
-   }
-
-   return transporter;
+   return nodemailer.createTransport({
+      service: 'gmail',
+      auth: {
+         user: emailConfig.user,
+         pass: emailConfig.pass
+      },
+      tls: {
+         rejectUnauthorized: false
+      }
+   });
 };
+// transporter = nodemailer.createTransport({
+//    host: emailConfig.host,
+//    port: emailConfig.port,
+//    secure: emailConfig.secure,
+//    auth: {
+//       user: emailConfig.user,
+//       pass: emailConfig.pass
+//    }
+// });

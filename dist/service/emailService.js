@@ -116,6 +116,23 @@ class EmailService {
             }
         });
     }
+    sendBookingReminder(user, bookingDetails) {
+        return __awaiter(this, void 0, void 0, function* () {
+            try {
+                const htmlContent = (0, email_2.createBookingReminderTemplate)(user, bookingDetails);
+                yield this.sendEmail({
+                    to: user.email,
+                    subject: 'Reminder: Your Stay is Tomorrow - ProRent', // Fixed subject
+                    html: htmlContent
+                });
+                logger_1.default.info(`Booking reminder email sent to ${user.email}`);
+            }
+            catch (error) {
+                logger_1.default.error('Failed to send booking reminder email:', error);
+                throw new Error('Failed to send booking reminder email');
+            }
+        });
+    }
     // Test email connection
     testConnection() {
         return __awaiter(this, void 0, void 0, function* () {

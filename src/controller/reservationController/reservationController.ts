@@ -8,6 +8,7 @@ import {
    confirmReservationByOwner,
    rejectReservationByOwner
 } from '../../service/reservationService/reservationManagementService';
+import { sendBookingReminderForTomorrow } from '../../service/reservationService/reservationReminderService';
 
 function getSuccessStatusCode (isXendit: boolean): number {
    return isXendit ? 201 : 201;
@@ -110,6 +111,32 @@ export const confirmReservationByOwnerController = async (req: Request, res: Res
    } catch (error: any) {
       console.error('Error in confirmReservationByOwnerController:', error);
       handleError(res, error);
+   }
+};
+
+export const sendBookingReminderController = async (req: Request, res: Response) => {
+   try {
+      console.log('Manual trigger: Running booking reminder job...');
+
+      const result = await sendBookingReminderForTomorrow();
+
+      return res.status(200).json({
+         message: `Booking reminder job completed successfully.`,
+         remindersSent: result.count,
+         success: result.success
+      });
+   } catch (error: any) {
+      console.error('Error in sendBookingReminderController:', error);
+
+      if (error.message) {
+         return res.status(500).json({
+            error: 'Failed to send booking reminders.',
+            details: error.message
+         });
+      }
+      return res.status(500).json({
+         error: 'An unexpected error occurred while sending booking reminders.'
+      });
    }
 };
 // --- Refactored helper functions (each < 15 lines) ---

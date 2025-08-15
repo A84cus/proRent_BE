@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.createBookingConfirmationTemplate = exports.createWelcomeEmailTemplate = exports.createResetPasswordEmailTemplate = exports.createVerificationEmailTemplate = void 0;
+exports.createBookingReminderTemplate = exports.createBookingConfirmationTemplate = exports.createWelcomeEmailTemplate = exports.createResetPasswordEmailTemplate = exports.createVerificationEmailTemplate = void 0;
 var verificationEmail_1 = require("./verificationEmail");
 Object.defineProperty(exports, "createVerificationEmailTemplate", { enumerable: true, get: function () { return verificationEmail_1.createVerificationEmailTemplate; } });
 var resetPasswordEmail_1 = require("./resetPasswordEmail");
@@ -9,3 +9,5 @@ var welcomeEmail_1 = require("./welcomeEmail");
 Object.defineProperty(exports, "createWelcomeEmailTemplate", { enumerable: true, get: function () { return welcomeEmail_1.createWelcomeEmailTemplate; } });
 var bookingConfirmationEmail_1 = require("./bookingConfirmationEmail");
 Object.defineProperty(exports, "createBookingConfirmationTemplate", { enumerable: true, get: function () { return bookingConfirmationEmail_1.createBookingConfirmationTemplate; } });
+var orderReminderEmail_1 = require("./orderReminderEmail");
+Object.defineProperty(exports, "createBookingReminderTemplate", { enumerable: true, get: function () { return orderReminderEmail_1.createBookingReminderTemplate; } });

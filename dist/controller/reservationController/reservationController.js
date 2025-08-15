@@ -9,12 +9,13 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.confirmReservationByOwnerController = exports.rejectReservationByOwnerController = exports.cancelExpiredReservationsController = exports.cancelReservationController = exports.createReservationController = void 0;
+exports.sendBookingReminderController = exports.confirmReservationByOwnerController = exports.rejectReservationByOwnerController = exports.cancelExpiredReservationsController = exports.cancelReservationController = exports.createReservationController = void 0;
 const reservationService_1 = require("../../service/reservationService/reservationService");
 const reservationExpiryService_1 = require("../../service/reservationService/reservationExpiryService"); // Import the new service
 const zod_1 = require("zod");
 const index_1 = require("../../config/index"); // Import your env config
 const reservationManagementService_1 = require("../../service/reservationService/reservationManagementService");
+const reservationReminderService_1 = require("../../service/reservationService/reservationReminderService");
 function getSuccessStatusCode(isXendit) {
     return isXendit ? 201 : 201;
 }
@@ -109,6 +110,30 @@ const confirmReservationByOwnerController = (req, res) => __awaiter(void 0, void
     }
 });
 exports.confirmReservationByOwnerController = confirmReservationByOwnerController;
+const sendBookingReminderController = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        console.log('Manual trigger: Running booking reminder job...');
+        const result = yield (0, reservationReminderService_1.sendBookingReminderForTomorrow)();
+        return res.status(200).json({
+            message: `Booking reminder job completed successfully.`,
+            remindersSent: result.count,
+            success: result.success
+        });
+    }
+    catch (error) {
+        console.error('Error in sendBookingReminderController:', error);
+        if (error.message) {
+            return res.status(500).json({
+                error: 'Failed to send booking reminders.',
+                details: error.message
+            });
+        }
+        return res.status(500).json({
+            error: 'An unexpected error occurred while sending booking reminders.'
+        });
+    }
+});
+exports.sendBookingReminderController = sendBookingReminderController;
 // --- Refactored helper functions (each < 15 lines) ---
 function getUserIdFromRequest(req) {
     var _a;

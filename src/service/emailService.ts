@@ -5,7 +5,8 @@ import {
    createVerificationEmailTemplate,
    createResetPasswordEmailTemplate,
    createWelcomeEmailTemplate,
-   createBookingConfirmationTemplate
+   createBookingConfirmationTemplate,
+   createBookingReminderTemplate
 } from '../templates/email';
 import logger from '../utils/logger';
 
@@ -113,6 +114,23 @@ class EmailService {
       } catch (error) {
          logger.error('Failed to send booking confirmation email:', error);
          throw new Error('Failed to send booking confirmation email');
+      }
+   }
+
+   async sendBookingReminder (user: UserWithProfile, bookingDetails: BookingDetails): Promise<void> {
+      try {
+         const htmlContent = createBookingReminderTemplate(user, bookingDetails);
+
+         await this.sendEmail({
+            to: user.email,
+            subject: 'Reminder: Your Stay is Tomorrow - ProRent', // Fixed subject
+            html: htmlContent
+         });
+
+         logger.info(`Booking reminder email sent to ${user.email}`);
+      } catch (error) {
+         logger.error('Failed to send booking reminder email:', error);
+         throw new Error('Failed to send booking reminder email');
       }
    }
 
