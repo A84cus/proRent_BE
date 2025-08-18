@@ -9,4 +9,5 @@ const router = express_1.default.Router();
 // Reservation routes
 router.post('/cancel-expired', reservationController_1.cancelExpiredReservationsController);
 router.post('/send-booking-reminder', reservationController_1.sendBookingReminderController);
+router.post('/:reservationId/send', reservationController_1.sendBookingReminderByReservationIdController);
 exports.default = router;

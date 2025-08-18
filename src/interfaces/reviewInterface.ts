@@ -14,12 +14,23 @@ export interface ReplyToReviewInput {
    rating?: number;
 }
 
+export enum sortBy {
+   rating = 'rating',
+   createdAt = 'createdAt',
+   updatedAt = 'updatedAt'
+}
+
+export enum sortOrder {
+   asc = 'asc',
+   desc = 'desc'
+}
+
 export interface GetReviewsFilter {
    propertyId: string;
    page?: number;
    limit?: number;
-   sortBy?: 'rating' | 'createdAt' | 'updatedAt';
-   sortOrder?: 'asc' | 'desc';
+   sortBy?: sortBy;
+   sortOrder?: sortOrder;
    searchContent?: string;
    includeInvisible?: boolean;
 }
@@ -43,4 +54,8 @@ export interface GetReviewsResult {
    page: number;
    limit: number;
    totalPages: number;
+}
+
+export interface GetReviewsFilterForOwner extends GetReviewsFilter {
+   OwnerId: string;
 }

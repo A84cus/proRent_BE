@@ -15,6 +15,7 @@ const utilityRoute_1 = __importDefault(require("./route/utilityRoute"));
 const reservationRoute_1 = __importDefault(require("./route/reservationRoute"));
 const userRoute_1 = __importDefault(require("./route/userRoute"));
 const cronjobRoute_1 = __importDefault(require("./route/cronjobRoute"));
+const reviewRoute_1 = __importDefault(require("./route/reviewRoute"));
 const corsOptions = {
     origin: '*',
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
@@ -33,6 +34,7 @@ app.use('/api/upload', uploadRoute_1.default);
 app.use('/api/utility', utilityRoute_1.default);
 app.use('/api/users', userRoute_1.default);
 app.use('/api/reservation', reservationRoute_1.default);
+app.use('/api/review', reviewRoute_1.default);
 app.use('/api/cronjob', cronjobRoute_1.default);
 app.get('/', (req, res) => {
     logger_1.default.info('Homepage accessed');

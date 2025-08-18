@@ -10,6 +10,7 @@ import utilityRoute from './route/utilityRoute';
 import reserveRoute from './route/reservationRoute';
 import userRoute from './route/userRoute';
 import cronJobRoute from './route/cronjobRoute';
+import reviewRoute from './route/reviewRoute';
 
 const corsOptions = {
    origin: '*',
@@ -33,6 +34,7 @@ app.use('/api/upload', uploadRoute);
 app.use('/api/utility', utilityRoute);
 app.use('/api/users', userRoute);
 app.use('/api/reservation', reserveRoute);
+app.use('/api/review', reviewRoute);
 app.use('/api/cronjob', cronJobRoute);
 
 app.get('/', (req: Request, res: Response) => {

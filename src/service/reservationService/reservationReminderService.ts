@@ -102,3 +102,75 @@ export async function sendBookingReminderForTomorrow () {
       throw error;
    }
 }
+
+export async function sendBookingReminderByReservationId (reservationId: string) {
+   try {
+      const reservation = await prisma.reservation.findUnique({
+         where: { id: reservationId },
+         include: {
+            Property: {
+               select: { id: true, name: true }
+            },
+            RoomType: {
+               select: { id: true, name: true }
+            },
+            User: {
+               select: {
+                  id: true,
+                  email: true,
+                  profile: {
+                     select: {
+                        id: true,
+                        firstName: true,
+                        lastName: true,
+                        phone: true,
+                        address: true
+                     }
+                  }
+               }
+            },
+            payment: { select: { id: true, amount: true, method: true, paymentStatus: true } }
+         }
+      });
+
+      if (!reservation) {
+         throw new Error('Reservation not found');
+      }
+
+      if (!reservation.User || !reservation.User.email) {
+         throw new Error('User email not found for reservation');
+      }
+
+      const userWithProfile = {
+         id: reservation.User.id,
+         email: reservation.User.email,
+         profile: {
+            id: reservation.User.profile?.id ?? '',
+            firstName: reservation.User.profile?.firstName ?? '',
+            lastName: reservation.User.profile?.lastName ?? '',
+            phone: reservation.User.profile?.phone ?? '',
+            address: reservation.User.profile?.address ?? ''
+         }
+      };
+
+      const bookingDetails = {
+         id: reservation.id,
+         propertyName: reservation.Property?.name || 'N/A',
+         roomTypeName: reservation.RoomType?.name || 'N/A',
+         checkIn: reservation.startDate.toISOString().split('T')[0],
+         checkOut: reservation.endDate.toISOString().split('T')[0],
+         totalAmount: reservation.payment?.amount || 0,
+         paymentStatus: reservation.payment?.paymentStatus || 'N/A'
+      };
+
+      await EmailService.sendBookingReminder(userWithProfile, bookingDetails);
+      console.log(
+         `Booking reminder email sent successfully to ${reservation.User.email} for reservation ${reservation.id}`
+      );
+
+      return { success: true, reservationId };
+   } catch (error: any) {
+      console.error(`Error sending booking reminder for reservation ${reservationId}:`, error);
+      throw error;
+   }
+}
