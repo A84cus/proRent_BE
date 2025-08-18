@@ -10,7 +10,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.updateImage = exports.removeImage = exports.uploadImage = void 0;
-const cloudinary_1 = require("../../utils/cloudinary");
+const cloudinary_1 = require("../../utils/upload/cloudinary");
 const uploadImage = (file, folder) => __awaiter(void 0, void 0, void 0, function* () {
     const result = yield (0, cloudinary_1.cloudinaryUpload)(file, folder);
     return result.secure_url;

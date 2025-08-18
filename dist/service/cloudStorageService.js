@@ -22,7 +22,8 @@ class CloudStorageService {
             try {
                 const uploadOptions = {
                     folder: options.folder,
-                    resource_type: options.resource_type || "auto",
+                    resource_type: options.resource_type ||
+                        "auto",
                     public_id: `${Date.now()}_${filename.split(".")[0]}`,
                     use_filename: true,
                     unique_filename: true,
