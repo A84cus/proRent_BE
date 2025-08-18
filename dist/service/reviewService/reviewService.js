@@ -106,8 +106,7 @@ function replyToReview(input) {
             update: { content },
             create: {
                 content,
-                review: { connect: { id: reviewId } },
-                id: input.OwnerId
+                review: { connect: { id: reviewId } }
             },
             include: {
                 review: {

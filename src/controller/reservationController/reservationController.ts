@@ -8,6 +8,7 @@ import {
    confirmReservationByOwner,
    rejectReservationByOwner
 } from '../../service/reservationService/reservationManagementService';
+import { sendBookingReminderForTomorrow } from '../../service/reservationService/reservationReminderService';
 
 function getSuccessStatusCode (isXendit: boolean): number {
    return isXendit ? 201 : 201;
@@ -110,6 +111,74 @@ export const confirmReservationByOwnerController = async (req: Request, res: Res
    } catch (error: any) {
       console.error('Error in confirmReservationByOwnerController:', error);
       handleError(res, error);
+   }
+};
+
+export const sendBookingReminderController = async (req: Request, res: Response) => {
+   try {
+      console.log('Manual trigger: Running booking reminder job...');
+
+      const result = await sendBookingReminderForTomorrow();
+
+      return res.status(200).json({
+         message: `Booking reminder job completed successfully.`,
+         remindersSent: result.count,
+         success: result.success
+      });
+   } catch (error: any) {
+      console.error('Error in sendBookingReminderController:', error);
+
+      if (error.message) {
+         return res.status(500).json({
+            error: 'Failed to send booking reminders.',
+            details: error.message
+         });
+      }
+      return res.status(500).json({
+         error: 'An unexpected error occurred while sending booking reminders.'
+      });
+   }
+};
+
+// Add this import if you created the manual trigger function
+import { sendBookingReminderByReservationId } from '../../service/reservationService/reservationReminderService';
+
+// --- Controller for Sending Booking Reminder for Specific Reservation ---
+export const sendBookingReminderByReservationIdController = async (req: Request, res: Response) => {
+   try {
+      const { reservationId } = req.params;
+
+      if (!reservationId) {
+         return res.status(400).json({ error: 'Reservation ID is required in the URL path.' });
+      }
+
+      const result = await sendBookingReminderByReservationId(reservationId);
+
+      return res.status(200).json({
+         message: `Booking reminder sent successfully for reservation ${reservationId}.`,
+         reservationId: result.reservationId,
+         success: result.success
+      });
+   } catch (error: any) {
+      console.error('Error in sendBookingReminderByReservationIdController:', error);
+
+      if (error.message === 'Reservation not found') {
+         return res.status(404).json({ error: 'Reservation not found.' });
+      }
+
+      if (error.message === 'User email not found for reservation') {
+         return res.status(400).json({ error: 'User email not found for this reservation.' });
+      }
+
+      if (error.message) {
+         return res.status(500).json({
+            error: 'Failed to send booking reminder.',
+            details: error.message
+         });
+      }
+      return res.status(500).json({
+         error: 'An unexpected error occurred while sending booking reminder.'
+      });
    }
 };
 // --- Refactored helper functions (each < 15 lines) ---
