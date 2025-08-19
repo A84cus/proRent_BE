@@ -17,11 +17,21 @@ exports.replyToReview = replyToReview;
 // services/reviewService.ts
 const prisma_1 = __importDefault(require("../../prisma")); // Adjust path
 const client_1 = require("@prisma/client");
+const reviewValidation_1 = require("../../validations/review/reviewValidation");
 // --- Helper: Validate Review Creation Conditions ---
 function validateReviewCreation(data) {
     return __awaiter(this, void 0, void 0, function* () {
         var _a;
-        const { userId, reservationId } = data;
+        const { userId, reservationId, rating, content } = data;
+        // Validate rating and comment using centralized validation
+        const ratingValidation = (0, reviewValidation_1.validateReviewRating)(rating);
+        if (!ratingValidation.isValid) {
+            throw new Error(ratingValidation.error);
+        }
+        const commentValidation = (0, reviewValidation_1.validateReviewComment)(content);
+        if (!commentValidation.isValid) {
+            throw new Error(commentValidation.error);
+        }
         const reservation = yield prisma_1.default.reservation.findUnique({
             where: { id: reservationId },
             include: {
@@ -33,8 +43,10 @@ function validateReviewCreation(data) {
         if (!reservation) {
             throw new Error('Reservation not found.');
         }
-        if (((_a = reservation.User) === null || _a === void 0 ? void 0 : _a.id) !== userId) {
-            throw new Error('Unauthorized: You can only review your own reservations.');
+        // Validate ownership using centralized validation
+        const ownershipValidation = (0, reviewValidation_1.validateReviewOwnership)((_a = reservation.User) === null || _a === void 0 ? void 0 : _a.id, userId);
+        if (!ownershipValidation.isValid) {
+            throw new Error(ownershipValidation.error);
         }
         if (reservation.review) {
             throw new Error('A review already exists for this reservation.');
@@ -69,9 +81,19 @@ function createReview(input) {
                 // Property relation is implicit via reservation
             },
             include: {
-                reviewer: { select: { id: true, profile: { select: { firstName: true, lastName: true } } } },
+                reviewer: {
+                    select: {
+                        id: true,
+                        profile: { select: { firstName: true, lastName: true } }
+                    }
+                },
                 reservation: {
-                    select: { id: true, startDate: true, endDate: true, Property: { select: { id: true, name: true } } }
+                    select: {
+                        id: true,
+                        startDate: true,
+                        endDate: true,
+                        Property: { select: { id: true, name: true } }
+                    }
                 }
             }
         });
@@ -85,7 +107,9 @@ function validateOwnerReply(data) {
         const { OwnerId, reviewId } = data;
         const review = yield prisma_1.default.review.findUnique({
             where: { id: reviewId },
-            include: { reservation: { select: { Property: { select: { OwnerId: true } } } } }
+            include: {
+                reservation: { select: { Property: { select: { OwnerId: true } } } }
+            }
         });
         if (!review) {
             throw new Error('Review not found.');

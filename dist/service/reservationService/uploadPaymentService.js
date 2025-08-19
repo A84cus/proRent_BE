@@ -16,7 +16,7 @@ exports.uploadPaymentProof = uploadPaymentProof;
 const prisma_1 = __importDefault(require("../../prisma")); // Adjust path to your Prisma client
 const client_1 = require("@prisma/client");
 const Image_service_1 = require("./Image.service"); // Adjust path to your cloudinary utility
-const paymentProofValidation_1 = require("../../validations/paymentProofValidation"); // Adjust path
+const validations_1 = require("../../validations"); // Adjust path
 const invoiceNumberService_1 = require("./invoiceNumberService");
 // 1. Authorization & Initial Reservation Validation
 function validateReservationAccess(reservationId, userId) {
@@ -28,27 +28,27 @@ function validateReservationAccess(reservationId, userId) {
                 payment: true,
                 PaymentProof: {
                     include: {
-                        picture: true
-                    }
+                        picture: true,
+                    },
                 },
                 RoomType: true,
-                Property: true
-            }
+                Property: true,
+            },
         });
         if (!reservation) {
-            throw new Error('Reservation not found.');
+            throw new Error("Reservation not found.");
         }
         if (reservation.userId !== userId) {
-            throw new Error('Unauthorized: You can only upload proof for your own reservations.');
+            throw new Error("Unauthorized: You can only upload proof for your own reservations.");
         }
         if (reservation.orderStatus !== client_1.Status.PENDING_PAYMENT) {
-            throw new Error('Payment proof can only be uploaded for reservations pending payment.');
+            throw new Error("Payment proof can only be uploaded for reservations pending payment.");
         }
-        if (((_a = reservation.payment) === null || _a === void 0 ? void 0 : _a.method) !== 'MANUAL_TRANSFER') {
-            throw new Error('Payment proof upload is only allowed for manual transfer payments.');
+        if (((_a = reservation.payment) === null || _a === void 0 ? void 0 : _a.method) !== "MANUAL_TRANSFER") {
+            throw new Error("Payment proof upload is only allowed for manual transfer payments.");
         }
         if (reservation.PaymentProof) {
-            throw new Error('Payment proof already uploaded for this reservation.');
+            throw new Error("Payment proof already uploaded for this reservation.");
         }
         return reservation;
     });
@@ -58,11 +58,13 @@ function validatePaymentProofFile(file) {
     const fileValidationData = {
         originalname: file.originalname,
         size: file.size,
-        type: 'proof'
+        type: "proof",
     };
-    const validationResult = paymentProofValidation_1.paymentProofFileSchema.safeParse(fileValidationData);
+    const validationResult = validations_1.paymentProofFileSchema.safeParse(fileValidationData);
     if (!validationResult.success) {
-        const errorMessages = validationResult.error.issues.map(e => e.message).join(', ');
+        const errorMessages = validationResult.error.issues
+            .map((e) => e.message)
+            .join(", ");
         throw new Error(`File validation failed: ${errorMessages}`);
     }
     return validationResult;
@@ -71,14 +73,14 @@ function validatePaymentProofFile(file) {
 function uploadFileToStorage(file) {
     return __awaiter(this, void 0, void 0, function* () {
         try {
-            const cloudinaryUrl = yield (0, Image_service_1.uploadImage)(file, 'payment_proofs');
+            const cloudinaryUrl = yield (0, Image_service_1.uploadImage)(file, "payment_proofs");
             if (!cloudinaryUrl) {
-                throw new Error('Cloudinary upload did not return a URL.');
+                throw new Error("Cloudinary upload did not return a URL.");
             }
             return cloudinaryUrl;
         }
         catch (uploadError) {
-            console.error('Error uploading file to Cloudinary:', uploadError);
+            console.error("Error uploading file to Cloudinary:", uploadError);
             throw new Error(`Failed to upload payment proof to storage: ${uploadError.message || uploadError}`);
         }
     });
@@ -88,7 +90,7 @@ function generateAltText(reservation, validationResult) {
     var _a, _b;
     const serial = ((_a = reservation.payment) === null || _a === void 0 ? void 0 : _a.invoiceNumber)
         ? (0, invoiceNumberService_1.extractSerialFromInvoiceNumber)(reservation.payment.invoiceNumber)
-        : '001';
+        : "001";
     return (validationResult.data.alt ||
         `Payment proof for Invoice No. ${((_b = reservation.payment) === null || _b === void 0 ? void 0 : _b.invoiceNumber) || serial} reservation `);
 }
@@ -100,17 +102,17 @@ function createPaymentProofRecords(tx, reservation, file, cloudinaryUrl, altText
             data: {
                 url: cloudinaryUrl,
                 alt: altText,
-                type: 'proof',
+                type: "proof",
                 sizeKB: Math.round(file.size / 1024),
-                uploadedAt: new Date()
-            }
+                uploadedAt: new Date(),
+            },
         });
         // b. Create Payment Proof record
         yield tx.paymentProof.create({
             data: {
                 reservationId: reservation.id,
-                pictureId: pictureRecord.id
-            }
+                pictureId: pictureRecord.id,
+            },
         });
         return pictureRecord;
     });
@@ -123,7 +125,7 @@ function updateReservationStatus(tx, reservation, reservationId) {
         const updatedReservation = yield tx.reservation.update({
             where: { id: reservationId },
             data: {
-                orderStatus: client_1.Status.PENDING_CONFIRMATION
+                orderStatus: client_1.Status.PENDING_CONFIRMATION,
             },
             include: {
                 payment: {
@@ -134,8 +136,8 @@ function updateReservationStatus(tx, reservation, reservationId) {
                         paymentStatus: true,
                         payerEmail: true,
                         createdAt: true,
-                        updatedAt: true
-                    }
+                        updatedAt: true,
+                    },
                 },
                 PaymentProof: {
                     select: {
@@ -148,33 +150,33 @@ function updateReservationStatus(tx, reservation, reservationId) {
                                 alt: true,
                                 type: true,
                                 sizeKB: true,
-                                uploadedAt: true
-                            }
-                        }
-                    }
+                                uploadedAt: true,
+                            },
+                        },
+                    },
                 },
                 RoomType: {
                     select: {
                         id: true,
-                        name: true
-                    }
+                        name: true,
+                    },
                 },
                 Property: {
                     select: {
                         id: true,
                         name: true,
-                        location: true
-                    }
-                }
-            }
+                        location: true,
+                    },
+                },
+            },
         });
         // Update payment status if payment exists
         if ((_a = reservation.payment) === null || _a === void 0 ? void 0 : _a.id) {
             yield tx.payment.update({
                 where: { id: reservation.payment.id },
                 data: {
-                    paymentStatus: client_1.Status.PENDING_CONFIRMATION
-                }
+                    paymentStatus: client_1.Status.PENDING_CONFIRMATION,
+                },
             });
         }
         return updatedReservation;

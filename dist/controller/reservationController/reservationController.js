@@ -15,6 +15,7 @@ const reservationExpiryService_1 = require("../../service/reservationService/res
 const zod_1 = require("zod");
 const index_1 = require("../../config/index"); // Import your env config
 const reservationManagementService_1 = require("../../service/reservationService/reservationManagementService");
+const reservation_1 = require("../../constants/controllers/reservation");
 const reservationReminderService_1 = require("../../service/reservationService/reservationReminderService");
 function getSuccessStatusCode(isXendit) {
     return isXendit ? 201 : 201;
@@ -37,11 +38,13 @@ const cancelReservationController = (req, res) => __awaiter(void 0, void 0, void
         const userId = getUserIdFromRequest(req);
         const { reservationId } = req.params;
         if (!reservationId) {
-            return res.status(400).json({ error: 'Reservation ID is required in the URL path.' });
+            return res.status(400).json({
+                error: reservation_1.RESERVATION_ERROR_MESSAGES.RESERVATION_ID_REQUIRED_URL
+            });
         }
         const updatedReservation = yield (0, reservationService_1.cancelReservation)(reservationId, userId);
         return res.status(200).json({
-            message: 'Reservation cancelled successfully.',
+            message: reservation_1.RESERVATION_SUCCESS_MESSAGES.RESERVATION_CANCELLED,
             reservation: updatedReservation
         });
     }
@@ -57,16 +60,21 @@ const cancelExpiredReservationsController = (req, res) => __awaiter(void 0, void
         console.log('Manual trigger: Running reservation expiry check...');
         const result = yield (0, reservationExpiryService_1.cancelExpiredReservations)();
         return res.status(200).json({
-            message: `Reservation expiry check completed. ${result.cancelledReservationIds.length} reservation(s) cancelled.`,
+            message: `${reservation_1.RESERVATION_SUCCESS_MESSAGES.RESERVATION_EXPIRY_CHECK_COMPLETED} ${result.cancelledReservationIds.length} reservation(s) cancelled.`,
             cancelledReservations: result.cancelledReservationIds
         });
     }
     catch (error) {
         console.error('Error in cancelExpiredReservationsController:', error);
         if (error.message) {
-            return res.status(500).json({ error: 'Failed to process expired reservations.', details: error.message });
+            return res.status(500).json({
+                error: reservation_1.RESERVATION_ERROR_MESSAGES.FAILED_TO_PROCESS_EXPIRED,
+                details: error.message
+            });
         }
-        return res.status(500).json({ error: 'An unexpected error occurred while processing expired reservations.' });
+        return res.status(500).json({
+            error: reservation_1.RESERVATION_ERROR_MESSAGES.UNEXPECTED_ERROR_PROCESSING_EXPIRED
+        });
     }
 });
 exports.cancelExpiredReservationsController = cancelExpiredReservationsController;
@@ -77,11 +85,13 @@ const rejectReservationByOwnerController = (req, res) => __awaiter(void 0, void 
         const ownerId = getUserIdFromRequest(req);
         const { reservationId } = req.params;
         if (!reservationId) {
-            return res.status(400).json({ error: 'Reservation ID is required in the URL path.' });
+            return res.status(400).json({
+                error: reservation_1.RESERVATION_ERROR_MESSAGES.RESERVATION_ID_REQUIRED_URL
+            });
         }
         const updatedReservation = yield (0, reservationManagementService_1.rejectReservationByOwner)(reservationId, ownerId);
         return res.status(200).json({
-            message: 'Reservation rejected successfully. Status changed to PENDING_PAYMENT.',
+            message: reservation_1.RESERVATION_SUCCESS_MESSAGES.RESERVATION_REJECTED,
             reservation: updatedReservation
         });
     }
@@ -96,11 +106,13 @@ const confirmReservationByOwnerController = (req, res) => __awaiter(void 0, void
         const ownerId = getUserIdFromRequest(req);
         const { reservationId } = req.params;
         if (!reservationId) {
-            return res.status(400).json({ error: 'Reservation ID is required in the URL path.' });
+            return res.status(400).json({
+                error: reservation_1.RESERVATION_ERROR_MESSAGES.RESERVATION_ID_REQUIRED_URL
+            });
         }
         const updatedReservation = yield (0, reservationManagementService_1.confirmReservationByOwner)(reservationId, ownerId);
         return res.status(200).json({
-            message: 'Reservation confirmed successfully.',
+            message: reservation_1.RESERVATION_SUCCESS_MESSAGES.RESERVATION_CONFIRMED,
             reservation: updatedReservation
         });
     }
@@ -187,12 +199,12 @@ function handleError(res, error) {
     console.error('Error in createReservationController:', error);
     if (error instanceof zod_1.ZodError) {
         return res.status(400).json({
-            error: 'Invalid input data.',
+            error: reservation_1.RESERVATION_ERROR_MESSAGES.INVALID_INPUT_DATA,
             details: index_1.NODE_ENV === 'development' ? error : undefined
         });
     }
     if (error.message === 'AUTH_REQUIRED') {
-        return res.status(401).json({ error: 'Authentication required.' });
+        return res.status(401).json({ error: reservation_1.RESERVATION_ERROR_MESSAGES.AUTH_REQUIRED });
     }
     if ((_a = error.message) === null || _a === void 0 ? void 0 : _a.includes('Xendit payment setup failed')) {
         return res.status(500).json({ error: error.message });
@@ -201,6 +213,6 @@ function handleError(res, error) {
         return res.status(400).json({ error: error.message });
     }
     return res.status(500).json({
-        error: 'An unexpected error occurred while creating the reservation.'
+        error: reservation_1.RESERVATION_ERROR_MESSAGES.CREATE_RESERVATION_ERROR
     });
 }

@@ -7,7 +7,7 @@ import {
    updateReviewVisibilityController
 } from '../controller/reviewController/reviewQueryController';
 
-import { authUser, authOwner, authAny } from '../middleware/authMwr';
+import { authUser, authOwner, authAny } from '../middleware';
 
 const router = express.Router();
 

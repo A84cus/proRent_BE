@@ -1,6 +1,6 @@
 import prisma from '../../prisma';
 import { Status } from '@prisma/client';
-import EmailService from '../emailService';
+import EmailService from '../email/emailService';
 
 export async function sendBookingReminderForTomorrow () {
    try {

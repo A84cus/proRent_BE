@@ -17,7 +17,7 @@ exports.confirmReservationByOwner = confirmReservationByOwner;
 const prisma_1 = __importDefault(require("../../prisma"));
 const client_1 = require("@prisma/client");
 const reservationExpiryService_1 = require("./reservationExpiryService");
-const emailService_1 = __importDefault(require("../emailService"));
+const emailService_1 = __importDefault(require("../email/emailService"));
 function runPostRejectionExpiryCheck(reservationId) {
     return __awaiter(this, void 0, void 0, function* () {
         console.log(`Checking for expiry after rejecting reservation ${reservationId}...`);
@@ -26,6 +26,23 @@ function runPostRejectionExpiryCheck(reservationId) {
 }
 function calculateNewExpiryTime() {
     return new Date(Date.now() + 1 * 60 * 60 * 1000);
+}
+function checkFinalReservationStatus(reservationId) {
+    return __awaiter(this, void 0, void 0, function* () {
+        const finalReservationCheck = yield prisma_1.default.reservation.findUnique({
+            where: { id: reservationId },
+            select: { orderStatus: true, payment: { select: { paymentStatus: true } } }
+        });
+        if (!finalReservationCheck) {
+            throw new Error('Reservation not found after rejection.');
+        }
+        if (finalReservationCheck.orderStatus === client_1.Status.CANCELLED) {
+            console.log(`Reservation ${reservationId} was automatically cancelled because it had expired.`);
+            throw new Error('Reservation was automatically cancelled because it had expired.');
+        }
+        console.log(`Reservation ${reservationId} successfully rejected (status PENDING_PAYMENT).`);
+        return finalReservationCheck; // Optional: return data if needed elsewhere
+    });
 }
 function findAndValidateReservationForOwner(reservationId, ownerId) {
     return __awaiter(this, void 0, void 0, function* () {
@@ -57,7 +74,9 @@ function findAndValidateReservationForOwner(reservationId, ownerId) {
                         }
                     }
                 },
-                payment: { select: { id: true, amount: true, method: true, paymentStatus: true } }
+                payment: {
+                    select: { id: true, amount: true, method: true, paymentStatus: true }
+                }
             }
         });
         if (!reservation) {
@@ -160,7 +179,9 @@ function confirmReservationByOwner(reservationId, ownerId) {
                             }
                         }
                     },
-                    payment: { select: { id: true, amount: true, method: true, paymentStatus: true } },
+                    payment: {
+                        select: { id: true, amount: true, method: true, paymentStatus: true }
+                    },
                     PaymentProof: { include: { picture: true } }
                 }
             });

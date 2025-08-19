@@ -1,5 +1,5 @@
-import { User, Profile } from '../../interfaces/userAndProfileInterface';
-import { BookingDetails, UserWithProfile } from '../../interfaces/email.interface';
+import { User, Profile } from '../../interfaces';
+import { BookingDetails, UserWithProfile } from '../../interfaces';
 import { LOGO_URL } from '../../config';
 
 export const createBookingConfirmationTemplate = (User: UserWithProfile, bookingDetails: BookingDetails): string => {
