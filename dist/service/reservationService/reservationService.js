@@ -19,18 +19,34 @@ const prisma_1 = __importDefault(require("../../prisma"));
 const pricingService_1 = require("./pricingService");
 const availabilityService_1 = require("./availabilityService");
 const propertyRoomResolver_1 = require("./propertyRoomResolver");
-const reservationSchema_1 = require("../../validations/reservationSchema");
+const validations_1 = require("../../validations");
+const reservationValidation_1 = require("../../validations/reservation/reservationValidation");
 const client_1 = require("@prisma/client");
 const xenditService_1 = require("./xenditService");
 const invoiceNumberService_1 = require("./invoiceNumberService");
 function validateBooking(data) {
     return __awaiter(this, void 0, void 0, function* () {
+        // Validate input using schema
+        const validationResult = reservationValidation_1.reservationCreateSchema.safeParse(Object.assign(Object.assign({}, data), { startDate: data.startDate.toISOString(), endDate: data.endDate.toISOString() }));
+        if (!validationResult.success) {
+            throw new Error(validationResult.error.issues[0].message);
+        }
         const targetRoomTypeId = yield (0, propertyRoomResolver_1.resolveTargetRoomTypeId)(data.propertyId, data.roomTypeId);
         const startDate = new Date(data.startDate);
         const endDate = new Date(data.endDate);
+        // Validate date range using centralized validation
+        const dateValidation = (0, reservationValidation_1.validateDateRange)(startDate, endDate);
+        if (!dateValidation.isValid) {
+            throw new Error(dateValidation.error);
+        }
+        // Validate reservation duration
+        const durationValidation = (0, reservationValidation_1.validateReservationDuration)(startDate, endDate);
+        if (!durationValidation.isValid) {
+            throw new Error(durationValidation.error);
+        }
         const isAvailable = yield (0, availabilityService_1.checkAvailability)(targetRoomTypeId, startDate, endDate);
         if (!isAvailable) {
-            throw new Error('The selected accommodation type is not available for the chosen dates.');
+            throw new Error("The selected accommodation type is not available for the chosen dates.");
         }
         const totalPrice = yield (0, pricingService_1.calculateTotalPrice)(targetRoomTypeId, startDate, endDate);
         const expiresAt = new Date(Date.now() + 1 * 60 * 60 * 1000);
@@ -41,13 +57,13 @@ function validateBooking(data) {
             expiresAt,
             initialOrderStatus,
             startDate,
-            endDate
+            endDate,
         };
     });
 }
 function executeReservationTransaction(data, validationData) {
     return __awaiter(this, void 0, void 0, function* () {
-        const { targetRoomTypeId, totalPrice, expiresAt, initialOrderStatus, startDate, endDate } = validationData;
+        const { targetRoomTypeId, totalPrice, expiresAt, initialOrderStatus, startDate, endDate, } = validationData;
         return yield prisma_1.default.$transaction((tx) => __awaiter(this, void 0, void 0, function* () {
             const reservation = yield tx.reservation.create({
                 data: {
@@ -57,8 +73,8 @@ function executeReservationTransaction(data, validationData) {
                     startDate,
                     endDate,
                     orderStatus: initialOrderStatus,
-                    expiresAt
-                }
+                    expiresAt,
+                },
             });
             const paymentRecord = yield tx.payment.create({
                 data: {
@@ -67,8 +83,8 @@ function executeReservationTransaction(data, validationData) {
                     amount: totalPrice,
                     method: data.paymentType,
                     paymentStatus: client_1.Status.PENDING_PAYMENT,
-                    payerEmail: data.payerEmail || ''
-                }
+                    payerEmail: data.payerEmail || "",
+                },
             });
             yield (0, availabilityService_1.DecrementAvailability)(tx, targetRoomTypeId, startDate, endDate);
             return { reservation, paymentRecordId: paymentRecord.id };
@@ -82,11 +98,11 @@ function handleXenditPostProcessing(paymentRecordId, reservationId) {
             return {
                 reservationId,
                 paymentUrl: xenditInvoiceDetails.invoiceUrl,
-                message: 'Reservation created, redirecting to payment.'
+                message: "Reservation created, redirecting to payment.",
             };
         }
         catch (xenditError) {
-            console.error('Error creating Xendit invoice after reservation:', xenditError);
+            console.error("Error creating Xendit invoice after reservation:", xenditError);
             throw new Error(`Reservation created, but Xendit payment setup failed: ${xenditError.message}`);
         }
     });
@@ -94,7 +110,7 @@ function handleXenditPostProcessing(paymentRecordId, reservationId) {
 function handleManualPostProcessing(reservation) {
     return {
         reservation,
-        message: 'Reservation created. Please upload payment proof.'
+        message: "Reservation created. Please upload payment proof.",
     };
 }
 function createReservation(input) {
@@ -111,7 +127,7 @@ function createReservation(input) {
     });
 }
 function validateInput(input) {
-    return reservationSchema_1.createReservationSchema.parse(input);
+    return validations_1.createReservationSchema.parse(input);
 }
 function findAndValidateReservation(reservationId, userId) {
     return __awaiter(this, void 0, void 0, function* () {
@@ -122,26 +138,26 @@ function findAndValidateReservation(reservationId, userId) {
                     select: {
                         id: true,
                         amount: true,
-                        method: true
-                    }
+                        method: true,
+                    },
                 },
                 PaymentProof: true,
                 RoomType: {
-                    select: { id: true }
-                }
-            }
+                    select: { id: true },
+                },
+            },
         });
         if (!reservation) {
-            throw new Error('Reservation not found.');
+            throw new Error("Reservation not found.");
         }
         if (reservation.userId !== userId) {
-            throw new Error('Unauthorized: You can only cancel your own reservations.');
+            throw new Error("Unauthorized: You can only cancel your own reservations.");
         }
         if (reservation.orderStatus === client_1.Status.CANCELLED) {
-            throw new Error('Reservation is already cancelled.');
+            throw new Error("Reservation is already cancelled.");
         }
         if (reservation.orderStatus !== client_1.Status.PENDING_PAYMENT) {
-            throw new Error('Cancellation is not allowed for reservations that are confirmed or awaiting confirmation.');
+            throw new Error("Cancellation is not allowed for reservations that are confirmed or awaiting confirmation.");
         }
         return reservation;
     });
@@ -150,18 +166,20 @@ function updateReservationAndPaymentStatus(tx, reservationId) {
     return __awaiter(this, void 0, void 0, function* () {
         yield tx.reservation.update({
             where: { id: reservationId },
-            data: { orderStatus: client_1.Status.CANCELLED }
+            data: { orderStatus: client_1.Status.CANCELLED },
         });
         yield tx.payment.updateMany({
             where: { reservationId },
-            data: { paymentStatus: client_1.Status.CANCELLED }
+            data: { paymentStatus: client_1.Status.CANCELLED },
         });
     });
 }
 function restoreAvailability(tx, reservation) {
     return __awaiter(this, void 0, void 0, function* () {
         var _a;
-        if (((_a = reservation.RoomType) === null || _a === void 0 ? void 0 : _a.id) && reservation.startDate && reservation.endDate) {
+        if (((_a = reservation.RoomType) === null || _a === void 0 ? void 0 : _a.id) &&
+            reservation.startDate &&
+            reservation.endDate) {
             yield (0, availabilityService_1.incrementAvailability)(tx, reservation.RoomType.id, new Date(reservation.startDate), new Date(reservation.endDate));
         }
         else {
@@ -185,16 +203,16 @@ function cancelReservation(reservationId, userId) {
                             method: true,
                             paymentStatus: true,
                             createdAt: true,
-                            updatedAt: true
-                        }
+                            updatedAt: true,
+                        },
                     },
                     RoomType: {
-                        select: { id: true, name: true }
+                        select: { id: true, name: true },
                     },
                     Property: {
-                        select: { id: true, name: true }
-                    }
-                }
+                        select: { id: true, name: true },
+                    },
+                },
             });
         }), { timeout: 30000 });
         return updatedReservation;

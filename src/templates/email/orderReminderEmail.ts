@@ -1,5 +1,5 @@
-import { User, Profile } from '../../interfaces/userAndProfileInterface';
-import { BookingDetails, UserWithProfile } from '../../interfaces/email.interface';
+import { User, Profile } from '../../interfaces/user/userAndProfileInterface';
+import { BookingDetails, UserWithProfile } from '../../interfaces/email/email.interface';
 import { LOGO_URL } from '../../config';
 
 export const createBookingReminderTemplate = (User: UserWithProfile, bookingDetails: BookingDetails): string => {

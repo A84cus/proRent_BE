@@ -1,7 +1,7 @@
-import UserAuthService from "./userAuthService";
-import AvatarUploadService from "./avatarUploadService";
-import EmailVerificationService from "./emailVerificationService";
-import logger from "../utils/logger";
+import UserAuthService from "./auth/userAuthService";
+import AvatarUploadService from "./upload/avatarUploadService";
+import EmailVerificationService from "./email/emailVerificationService";
+import logger from "../utils/system/logger";
 class UserOperationsService {
   // Handle complete password change workflow
   async executePasswordChange(

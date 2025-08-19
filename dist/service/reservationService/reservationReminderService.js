@@ -16,7 +16,7 @@ exports.sendBookingReminderForTomorrow = sendBookingReminderForTomorrow;
 exports.sendBookingReminderByReservationId = sendBookingReminderByReservationId;
 const prisma_1 = __importDefault(require("../../prisma"));
 const client_1 = require("@prisma/client");
-const emailService_1 = __importDefault(require("../emailService"));
+const emailService_1 = __importDefault(require("../email/emailService"));
 function sendBookingReminderForTomorrow() {
     return __awaiter(this, void 0, void 0, function* () {
         var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l, _m, _o, _p, _q;

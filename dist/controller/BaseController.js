@@ -3,13 +3,14 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-const logger_1 = __importDefault(require("../utils/logger"));
-const responseHelper_1 = __importDefault(require("../helpers/responseHelper"));
-const userValidationHelper_1 = __importDefault(require("../helpers/userValidationHelper"));
+const logger_1 = __importDefault(require("../utils/system/logger"));
+const responseHelper_1 = __importDefault(require("../helpers/system/responseHelper"));
+const userValidation_1 = require("../validations/user/userValidation");
+const property_1 = require("../constants/controllers/property");
 class BaseController {
     // Common method untuk validasi user authentication
     validateUser(req) {
-        return userValidationHelper_1.default.getUserId(req);
+        return (0, userValidation_1.validateUserId)(req);
     }
     // Common error handler
     handleError(res, error, operation, specificErrors = {}) {
@@ -20,7 +21,7 @@ class BaseController {
             return responseHelper_1.default.error(res, specificError.message, undefined, specificError.statusCode);
         }
         // Default error
-        return responseHelper_1.default.error(res, 'Internal server error', undefined, 500);
+        return responseHelper_1.default.error(res, property_1.PROPERTY_ERROR_MESSAGES.INTERNAL_SERVER_ERROR, undefined, 500);
     }
     // Common authentication error
     handleAuthError(res, error) {
@@ -32,7 +33,7 @@ class BaseController {
         return responseHelper_1.default.error(res, message, Array.isArray(error) ? error : undefined, 400);
     }
     // Common not found error
-    handleNotFoundError(res, resource = 'Resource') {
+    handleNotFoundError(res, resource = "Resource") {
         return responseHelper_1.default.error(res, `${resource} not found`, undefined, 404);
     }
     // Common success response
