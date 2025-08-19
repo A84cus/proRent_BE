@@ -11,7 +11,7 @@ exports.emailConfig = environment_1.THIRD_PARTY_CONFIG.USE_GMAIL === 'true'
         host: 'smtp.gmail.com',
         port: 587,
         secure: false, // true for port 465, false for 587
-        user: environment_1.THIRD_PARTY_CONFIG.SMTP_FROM || '',
+        user: environment_1.THIRD_PARTY_CONFIG.GMAIL_USER || '',
         pass: environment_1.THIRD_PARTY_CONFIG.GMAIL_PASS || '',
         from: environment_1.THIRD_PARTY_CONFIG.SMTP_FROM || '',
         frontendUrl: environment_1.THIRD_PARTY_CONFIG.BASE_FE_URL || 'http://localhost:3000'

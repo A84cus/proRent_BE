@@ -8,7 +8,7 @@ export const emailConfig: EmailConfig =
            host: 'smtp.gmail.com',
            port: 587,
            secure: false, // true for port 465, false for 587
-           user: THIRD_PARTY_CONFIG.SMTP_FROM || '',
+           user: THIRD_PARTY_CONFIG.GMAIL_USER || '',
            pass: THIRD_PARTY_CONFIG.GMAIL_PASS || '',
            from: THIRD_PARTY_CONFIG.SMTP_FROM || '',
            frontendUrl: THIRD_PARTY_CONFIG.BASE_FE_URL || 'http://localhost:3000'
