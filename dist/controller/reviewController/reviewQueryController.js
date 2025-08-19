@@ -13,7 +13,7 @@ exports.updateReviewVisibilityController = exports.getOwnerReviewsController = e
 const reviewQueryService_1 = require("../../service/reviewService/reviewQueryService");
 const zod_1 = require("zod");
 const index_1 = require("../../config/index");
-const reviewInterface_1 = require("../../interfaces/reviewInterface");
+const interfaces_1 = require("../../interfaces");
 // --- Helper Functions (Each <15 lines) ---
 function getUserIdFromRequest(req) {
     var _a;
@@ -47,7 +47,7 @@ function parseQueryParams(req) {
         page: parseInt(req.query.page) || 1,
         limit: parseInt(req.query.limit) || 10,
         sortBy,
-        sortOrder: validSortByValues.includes(sortBy) ? req.query.sortOrder : reviewInterface_1.sortOrder.desc,
+        sortOrder: validSortByValues.includes(sortBy) ? req.query.sortOrder : interfaces_1.sortOrder.desc,
         searchContent: req.query.searchContent,
         includeInvisible: req.query.includeInvisible === 'true'
     };

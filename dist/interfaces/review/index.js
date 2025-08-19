@@ -1,8 +1,4 @@
 "use strict";
-/**
- * Main Interface Export
- * Central export point for all interface definitions
- */
 var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
     var desc = Object.getOwnPropertyDescriptor(m, k);
@@ -18,13 +14,5 @@ var __exportStar = (this && this.__exportStar) || function(m, exports) {
     for (var p in m) if (p !== "default" && !Object.prototype.hasOwnProperty.call(exports, p)) __createBinding(exports, m, p);
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-// Domain-based interface exports
-__exportStar(require("./auth"), exports);
-__exportStar(require("./email"), exports);
-__exportStar(require("./upload"), exports);
-__exportStar(require("./user"), exports);
-__exportStar(require("./property"), exports);
-__exportStar(require("./reservation"), exports);
-__exportStar(require("./review"), exports);
-__exportStar(require("./system"), exports);
-__exportStar(require("./common"), exports);
+// Reservation Interface Exports
+__exportStar(require("../review/reviewInterface"), exports);

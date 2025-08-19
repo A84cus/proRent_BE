@@ -19,8 +19,9 @@ const userControllerHelper_1 = __importDefault(require("../../helpers/user/userC
 const BaseController_1 = __importDefault(require("../BaseController"));
 const user_1 = require("../../constants/controllers/user");
 class UserController extends BaseController_1.default {
-    getProfile(req, res) {
-        return __awaiter(this, void 0, void 0, function* () {
+    constructor() {
+        super(...arguments);
+        this.getProfile = (req, res) => __awaiter(this, void 0, void 0, function* () {
             try {
                 const userValidation = userControllerHelper_1.default.validateUserRequest(req);
                 if (!userValidation.isValid) {
@@ -38,9 +39,7 @@ class UserController extends BaseController_1.default {
                 return this.handleError(res, error, "getting user profile");
             }
         });
-    }
-    updateProfile(req, res) {
-        return __awaiter(this, void 0, void 0, function* () {
+        this.updateProfile = (req, res) => __awaiter(this, void 0, void 0, function* () {
             try {
                 const userValidation = userControllerHelper_1.default.validateUserRequest(req);
                 if (!userValidation.isValid) {
@@ -58,9 +57,7 @@ class UserController extends BaseController_1.default {
                 return this.handleError(res, error, "updating user profile", specificErrors);
             }
         });
-    }
-    changePassword(req, res) {
-        return __awaiter(this, void 0, void 0, function* () {
+        this.changePassword = (req, res) => __awaiter(this, void 0, void 0, function* () {
             try {
                 const userValidation = userControllerHelper_1.default.validateUserRequest(req);
                 if (!userValidation.isValid) {
@@ -76,19 +73,7 @@ class UserController extends BaseController_1.default {
                 return this.handleError(res, error, "changing password");
             }
         });
-    }
-    processPasswordChange(req, res, userId) {
-        return __awaiter(this, void 0, void 0, function* () {
-            const { currentPassword, newPassword, user } = yield userControllerHelper_1.default.preparePasswordChangeData(userId, req.body);
-            if (!user || !user.password) {
-                return this.handleNotFoundError(res, "User");
-            }
-            yield userOperationsService_1.default.executePasswordChange(userId, currentPassword, newPassword, user.password);
-            return this.handleSuccess(res, user_1.USER_SUCCESS_MESSAGES.PASSWORD_CHANGED);
-        });
-    }
-    uploadAvatar(req, res) {
-        return __awaiter(this, void 0, void 0, function* () {
+        this.uploadAvatar = (req, res) => __awaiter(this, void 0, void 0, function* () {
             try {
                 const userValidation = userControllerHelper_1.default.validateUserRequest(req);
                 if (!userValidation.isValid) {
@@ -108,22 +93,7 @@ class UserController extends BaseController_1.default {
                 return this.handleAvatarUploadError(res, error);
             }
         });
-    }
-    processAvatarUpload(req, res, userId) {
-        return __awaiter(this, void 0, void 0, function* () {
-            const newPicture = yield userOperationsService_1.default.executeAvatarUpload(req.file, userId);
-            const avatarResponse = userControllerHelper_1.default.formatAvatarResponse(newPicture);
-            return this.handleSuccess(res, user_1.USER_SUCCESS_MESSAGES.AVATAR_UPDATED, avatarResponse);
-        });
-    }
-    handleAvatarUploadError(res, error) {
-        const { message, statusCode } = userControllerHelper_1.default.formatAvatarUploadError(error);
-        return this.handleError(res, { message }, "uploading avatar", {
-            [message]: { message, statusCode },
-        });
-    }
-    reverifyEmail(req, res) {
-        return __awaiter(this, void 0, void 0, function* () {
+        this.reverifyEmail = (req, res) => __awaiter(this, void 0, void 0, function* () {
             try {
                 const userValidation = userControllerHelper_1.default.validateUserRequest(req);
                 if (!userValidation.isValid) {
@@ -139,6 +109,29 @@ class UserController extends BaseController_1.default {
             catch (error) {
                 return this.handleError(res, error, "reverifying email");
             }
+        });
+    }
+    processPasswordChange(req, res, userId) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const { currentPassword, newPassword, user } = yield userControllerHelper_1.default.preparePasswordChangeData(userId, req.body);
+            if (!user || !user.password) {
+                return this.handleNotFoundError(res, "User");
+            }
+            yield userOperationsService_1.default.executePasswordChange(userId, currentPassword, newPassword, user.password);
+            return this.handleSuccess(res, user_1.USER_SUCCESS_MESSAGES.PASSWORD_CHANGED);
+        });
+    }
+    processAvatarUpload(req, res, userId) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const newPicture = yield userOperationsService_1.default.executeAvatarUpload(req.file, userId);
+            const avatarResponse = userControllerHelper_1.default.formatAvatarResponse(newPicture);
+            return this.handleSuccess(res, user_1.USER_SUCCESS_MESSAGES.AVATAR_UPDATED, avatarResponse);
+        });
+    }
+    handleAvatarUploadError(res, error) {
+        const { message, statusCode } = userControllerHelper_1.default.formatAvatarUploadError(error);
+        return this.handleError(res, { message }, "uploading avatar", {
+            [message]: { message, statusCode },
         });
     }
 }

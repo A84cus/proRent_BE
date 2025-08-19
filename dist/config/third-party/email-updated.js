@@ -6,7 +6,16 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.createEmailTransporter = exports.emailConfig = void 0;
 const nodemailer_1 = __importDefault(require("nodemailer"));
 const environment_1 = require("../environment");
-exports.emailConfig = environment_1.THIRD_PARTY_CONFIG.USE_GMAIL === 'true'
+// Ethereal Email configuration for testing (alternative to Mailtrap)
+const etherealConfig = {
+    host: 'smtp.ethereal.email',
+    port: 587,
+    secure: false,
+    user: 'ethereal.user@ethereal.email', // Replace with actual ethereal credentials
+    pass: 'ethereal.pass', // Replace with actual ethereal credentials
+    from: environment_1.THIRD_PARTY_CONFIG.SMTP_FROM || 'noreply@prorent.com'
+};
+exports.emailConfig = environment_1.THIRD_PARTY_CONFIG.USE_GMAIL
     ? {
         host: 'smtp.gmail.com',
         port: 587,
@@ -27,7 +36,7 @@ exports.emailConfig = environment_1.THIRD_PARTY_CONFIG.USE_GMAIL === 'true'
     };
 const createEmailTransporter = () => {
     let transporter;
-    if (environment_1.THIRD_PARTY_CONFIG.USE_GMAIL === 'true') {
+    if (environment_1.THIRD_PARTY_CONFIG.USE_GMAIL) {
         transporter = nodemailer_1.default.createTransport({
             service: 'gmail',
             auth: {

@@ -16,5 +16,4 @@ var __exportStar = (this && this.__exportStar) || function(m, exports) {
 Object.defineProperty(exports, "__esModule", { value: true });
 // Reservation Interface Exports
 __exportStar(require("./queryReservationInterface"), exports);
-__exportStar(require("./reviewInterface"), exports);
 __exportStar(require("./room.interface"), exports);

@@ -27,7 +27,8 @@ class PeakRateController extends BaseController_1.default {
                 // Validate user authentication
                 const userValidation = this.validateUser(req);
                 if (!userValidation.isValid) {
-                    responseHelper_1.default.error(res, userValidation.error || property_1.PROPERTY_ERROR_MESSAGES.USER_VALIDATION_FAILED, undefined, 401);
+                    responseHelper_1.default.error(res, userValidation.error ||
+                        property_1.PROPERTY_ERROR_MESSAGES.USER_VALIDATION_FAILED, undefined, 401);
                     return;
                 }
                 // Validate room ID
@@ -61,7 +62,8 @@ class PeakRateController extends BaseController_1.default {
                 // Validate user authentication
                 const userValidation = this.validateUser(req);
                 if (!userValidation.isValid) {
-                    responseHelper_1.default.error(res, userValidation.error || property_1.PROPERTY_ERROR_MESSAGES.USER_VALIDATION_FAILED, undefined, 401);
+                    responseHelper_1.default.error(res, userValidation.error ||
+                        property_1.PROPERTY_ERROR_MESSAGES.USER_VALIDATION_FAILED, undefined, 401);
                     return;
                 }
                 // Validate room ID
@@ -101,7 +103,8 @@ class PeakRateController extends BaseController_1.default {
                 // Validate user authentication
                 const userValidation = this.validateUser(req);
                 if (!userValidation.isValid) {
-                    responseHelper_1.default.error(res, userValidation.error || property_1.PROPERTY_ERROR_MESSAGES.USER_VALIDATION_FAILED, undefined, 401);
+                    responseHelper_1.default.error(res, userValidation.error ||
+                        property_1.PROPERTY_ERROR_MESSAGES.USER_VALIDATION_FAILED, undefined, 401);
                     return;
                 }
                 // Validate room ID

@@ -7,7 +7,7 @@ import {
 } from '../../service/reviewService/reviewQueryService';
 import { ZodError } from 'zod';
 import { NODE_ENV } from '../../config/index';
-import { GetReviewsFilter, GetReviewsFilterForOwner, sortBy, sortOrder } from '../../interfaces/reviewInterface';
+import { GetReviewsFilter, GetReviewsFilterForOwner, sortBy, sortOrder } from '../../interfaces';
 
 // --- Helper Functions (Each <15 lines) ---
 

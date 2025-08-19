@@ -44,6 +44,7 @@ exports.THIRD_PARTY_CONFIG = {
     GMAIL_USER: process.env.GMAIL_USER,
     GMAIL_PASS: process.env.GMAIL_PASS,
     USE_GMAIL: process.env.USE_GMAIL,
+    USE_DISPOSABLE: process.env.USE_DISPOSABLE,
     BASE_FE_URL: process.env.BASE_FE_URL,
 };
 // Legacy exports for backward compatibility

@@ -40,6 +40,22 @@ class UserProfileService {
                                     alt: true,
                                 },
                             },
+                            location: {
+                                select: {
+                                    id: true,
+                                    name: true,
+                                    city: {
+                                        select: {
+                                            name: true,
+                                            province: {
+                                                select: {
+                                                    name: true,
+                                                },
+                                            },
+                                        },
+                                    },
+                                },
+                            },
                         },
                     },
                     createdAt: true,
@@ -50,27 +66,38 @@ class UserProfileService {
     }
     // Format profile data for response
     formatProfileData(user) {
-        var _a, _b, _c, _d, _e, _f;
+        var _a, _b, _c, _d, _e, _f, _g;
         return {
             id: user.id,
             email: user.email,
             role: user.role,
             isVerified: user.isVerified,
-            name: user.profile
-                ? `${user.profile.firstName || ""} ${user.profile.lastName || ""}`.trim()
-                : null,
-            firstName: ((_a = user.profile) === null || _a === void 0 ? void 0 : _a.firstName) || null,
-            lastName: ((_b = user.profile) === null || _b === void 0 ? void 0 : _b.lastName) || null,
-            phone: ((_c = user.profile) === null || _c === void 0 ? void 0 : _c.phone) || null,
-            birthDate: ((_d = user.profile) === null || _d === void 0 ? void 0 : _d.birthDate) || null,
-            address: ((_e = user.profile) === null || _e === void 0 ? void 0 : _e.address) || null,
-            avatar: ((_f = user.profile) === null || _f === void 0 ? void 0 : _f.avatar)
-                ? {
-                    id: user.profile.avatar.id,
-                    url: user.profile.avatar.url,
-                    alt: user.profile.avatar.alt,
-                }
-                : null,
+            profile: {
+                firstName: ((_a = user.profile) === null || _a === void 0 ? void 0 : _a.firstName) || null,
+                lastName: ((_b = user.profile) === null || _b === void 0 ? void 0 : _b.lastName) || null,
+                phone: ((_c = user.profile) === null || _c === void 0 ? void 0 : _c.phone) || null,
+                avatar: ((_d = user.profile) === null || _d === void 0 ? void 0 : _d.avatar)
+                    ? {
+                        id: user.profile.avatar.id,
+                        url: user.profile.avatar.url,
+                        alt: user.profile.avatar.alt,
+                    }
+                    : null,
+                birthDate: ((_e = user.profile) === null || _e === void 0 ? void 0 : _e.birthDate) || null,
+                address: ((_f = user.profile) === null || _f === void 0 ? void 0 : _f.address) || null,
+                location: ((_g = user.profile) === null || _g === void 0 ? void 0 : _g.location)
+                    ? {
+                        id: user.profile.location.id,
+                        name: user.profile.location.name,
+                        city: {
+                            name: user.profile.location.city.name,
+                            province: {
+                                name: user.profile.location.city.province.name,
+                            },
+                        },
+                    }
+                    : null,
+            },
             createdAt: user.createdAt,
             updatedAt: user.updatedAt,
         };
