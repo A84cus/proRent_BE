@@ -12,10 +12,10 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-const userProfileService_1 = __importDefault(require("../service/userProfileService"));
-const userAuthService_1 = __importDefault(require("../service/userAuthService"));
-const avatarUploadService_1 = __importDefault(require("../service/avatarUploadService"));
-const emailVerificationService_1 = __importDefault(require("../service/emailVerificationService"));
+const userProfileService_1 = __importDefault(require("../service/user/userProfileService"));
+const userAuthService_1 = __importDefault(require("../service/auth/userAuthService"));
+const avatarUploadService_1 = __importDefault(require("../service/upload/avatarUploadService"));
+const emailVerificationService_1 = __importDefault(require("../service/email/emailVerificationService"));
 const userValidationHelper_1 = __importDefault(require("./userValidationHelper"));
 class UserControllerHelper {
     validateUserRequest(req) {

@@ -12,10 +12,10 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-const userAuthService_1 = __importDefault(require("./userAuthService"));
-const avatarUploadService_1 = __importDefault(require("./avatarUploadService"));
-const emailVerificationService_1 = __importDefault(require("./emailVerificationService"));
-const logger_1 = __importDefault(require("../utils/logger"));
+const userAuthService_1 = __importDefault(require("./auth/userAuthService"));
+const avatarUploadService_1 = __importDefault(require("./upload/avatarUploadService"));
+const emailVerificationService_1 = __importDefault(require("./email/emailVerificationService"));
+const logger_1 = __importDefault(require("../utils/system/logger"));
 class UserOperationsService {
     // Handle complete password change workflow
     executePasswordChange(userId, currentPassword, newPassword, userPassword) {

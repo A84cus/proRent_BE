@@ -1,11 +1,28 @@
 // services/reviewService.ts
 import prisma from '../../prisma'; // Adjust path
 import { Status } from '@prisma/client';
-import { CreateReviewInput, ReplyToReviewInput } from '../../interfaces/reviewInterface'; // Adjust path
+import { CreateReviewInput, ReplyToReviewInput } from '../../interfaces'; // Adjust path
+import {
+   validateReviewRating,
+   validateReviewComment,
+   validateReviewOwnership,
+   reviewCreateSchema
+} from '../../validations/review/reviewValidation';
 
 // --- Helper: Validate Review Creation Conditions ---
 async function validateReviewCreation (data: CreateReviewInput): Promise<void> {
-   const { userId, reservationId } = data;
+   const { userId, reservationId, rating, content } = data;
+
+   // Validate rating and comment using centralized validation
+   const ratingValidation = validateReviewRating(rating);
+   if (!ratingValidation.isValid) {
+      throw new Error(ratingValidation.error!);
+   }
+
+   const commentValidation = validateReviewComment(content);
+   if (!commentValidation.isValid) {
+      throw new Error(commentValidation.error!);
+   }
 
    const reservation = await prisma.reservation.findUnique({
       where: { id: reservationId },
@@ -19,9 +36,13 @@ async function validateReviewCreation (data: CreateReviewInput): Promise<void> {
    if (!reservation) {
       throw new Error('Reservation not found.');
    }
-   if (reservation.User?.id !== userId) {
-      throw new Error('Unauthorized: You can only review your own reservations.');
+
+   // Validate ownership using centralized validation
+   const ownershipValidation = validateReviewOwnership(reservation.User?.id!, userId);
+   if (!ownershipValidation.isValid) {
+      throw new Error(ownershipValidation.error!);
    }
+
    if (reservation.review) {
       throw new Error('A review already exists for this reservation.');
    }
@@ -56,9 +77,19 @@ export async function createReview (input: CreateReviewInput) {
          // Property relation is implicit via reservation
       },
       include: {
-         reviewer: { select: { id: true, profile: { select: { firstName: true, lastName: true } } } },
+         reviewer: {
+            select: {
+               id: true,
+               profile: { select: { firstName: true, lastName: true } }
+            }
+         },
          reservation: {
-            select: { id: true, startDate: true, endDate: true, Property: { select: { id: true, name: true } } }
+            select: {
+               id: true,
+               startDate: true,
+               endDate: true,
+               Property: { select: { id: true, name: true } }
+            }
          }
       }
    });
@@ -71,7 +102,9 @@ async function validateOwnerReply (data: ReplyToReviewInput): Promise<void> {
 
    const review = await prisma.review.findUnique({
       where: { id: reviewId },
-      include: { reservation: { select: { Property: { select: { OwnerId: true } } } } }
+      include: {
+         reservation: { select: { Property: { select: { OwnerId: true } } } }
+      }
    });
 
    if (!review) {

@@ -6,9 +6,10 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
 const cors_1 = __importDefault(require("cors"));
 const helmet_1 = __importDefault(require("helmet"));
-const logger_1 = __importDefault(require("./utils/logger"));
-const loggerMwr_1 = __importDefault(require("./middleware/loggerMwr"));
+const logger_1 = __importDefault(require("./utils/system/logger"));
+const loggerMwr_1 = __importDefault(require("./middleware/system/loggerMwr"));
 const config_1 = require("./config");
+<<<<<<< HEAD
 const authRoute_1 = __importDefault(require("./route/authRoute"));
 const uploadRoute_1 = __importDefault(require("./route/uploadRoute"));
 const utilityRoute_1 = __importDefault(require("./route/utilityRoute"));
@@ -23,11 +24,24 @@ const corsOptions = {
     credentials: true
 };
 const express = require('express');
+=======
+const authRoute_1 = __importDefault(require("./route/auth/authRoute"));
+const uploadRoute_1 = __importDefault(require("./route/upload/uploadRoute"));
+const utilityRoute_1 = __importDefault(require("./route/system/utilityRoute"));
+const reservationRoute_1 = __importDefault(require("./route/reservation/reservationRoute"));
+const userRoute_1 = __importDefault(require("./route/user/userRoute"));
+const ownerRoutes_1 = __importDefault(require("./route/property/ownerRoutes"));
+const roomOperationsRoutes_1 = __importDefault(require("./route/property/roomOperationsRoutes"));
+const publicPropertyRoutes_1 = __importDefault(require("./route/property/publicPropertyRoutes"));
+const corsOption_1 = __importDefault(require("./config/app/corsOption"));
+const express = require("express");
+>>>>>>> origin/feature-1
 const app = express();
 app.use(express_1.default.json());
-app.use((0, cors_1.default)(corsOptions));
+app.use((0, cors_1.default)(corsOption_1.default));
 app.use((0, helmet_1.default)());
 app.use(loggerMwr_1.default);
+<<<<<<< HEAD
 // Routes
 app.use('/api/auth', authRoute_1.default);
 app.use('/api/upload', uploadRoute_1.default);
@@ -39,10 +53,23 @@ app.use('/api/cronjob', cronjobRoute_1.default);
 app.get('/', (req, res) => {
     logger_1.default.info('Homepage accessed');
     res.send('Express on Vercel');
+=======
+app.use("/api/auth", authRoute_1.default);
+app.use("/api/public/properties", publicPropertyRoutes_1.default);
+app.use("/api/upload", uploadRoute_1.default);
+app.use("/api/utility", utilityRoute_1.default);
+app.use("/api/users", userRoute_1.default);
+app.use("/api/reservation", reservationRoute_1.default);
+app.use("/api/owner", ownerRoutes_1.default);
+app.use("/api/rooms", roomOperationsRoutes_1.default);
+app.get("/", (req, res) => {
+    logger_1.default.info("Homepage accessed");
+    res.send("Express on Vercel");
+>>>>>>> origin/feature-1
 });
 app.use((err, req, res, next) => {
     logger_1.default.error(err.stack);
-    res.status(500).send('Something broke!');
+    res.status(500).send("Something broke!");
 });
 app.listen(config_1.PORT, () => console.log(`App is running on PORT ${config_1.PORT}`));
 module.exports = app;

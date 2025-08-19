@@ -1,8 +1,8 @@
 import prisma from '../../prisma';
 import { Status } from '@prisma/client';
 import { cancelExpiredReservations } from './reservationExpiryService';
-import EmailService from '../emailService';
-import { Profile } from '../../interfaces/userAndProfileInterface';
+import EmailService from '../email/emailService';
+import { Profile } from '../../interfaces';
 
 async function runPostRejectionExpiryCheck (reservationId: string): Promise<void> {
    console.log(`Checking for expiry after rejecting reservation ${reservationId}...`);
@@ -11,6 +11,25 @@ async function runPostRejectionExpiryCheck (reservationId: string): Promise<void
 
 function calculateNewExpiryTime (): Date {
    return new Date(Date.now() + 1 * 60 * 60 * 1000);
+}
+
+async function checkFinalReservationStatus (reservationId: string) {
+   const finalReservationCheck = await prisma.reservation.findUnique({
+      where: { id: reservationId },
+      select: { orderStatus: true, payment: { select: { paymentStatus: true } } }
+   });
+
+   if (!finalReservationCheck) {
+      throw new Error('Reservation not found after rejection.');
+   }
+
+   if (finalReservationCheck.orderStatus === Status.CANCELLED) {
+      console.log(`Reservation ${reservationId} was automatically cancelled because it had expired.`);
+      throw new Error('Reservation was automatically cancelled because it had expired.');
+   }
+
+   console.log(`Reservation ${reservationId} successfully rejected (status PENDING_PAYMENT).`);
+   return finalReservationCheck; // Optional: return data if needed elsewhere
 }
 
 async function findAndValidateReservationForOwner (reservationId: string, ownerId: string): Promise<any> {
@@ -43,7 +62,9 @@ async function findAndValidateReservationForOwner (reservationId: string, ownerI
                }
             }
          },
-         payment: { select: { id: true, amount: true, method: true, paymentStatus: true } }
+         payment: {
+            select: { id: true, amount: true, method: true, paymentStatus: true }
+         }
       }
    });
 
@@ -142,7 +163,9 @@ export async function confirmReservationByOwner (reservationId: string, ownerId:
                   }
                }
             },
-            payment: { select: { id: true, amount: true, method: true, paymentStatus: true } },
+            payment: {
+               select: { id: true, amount: true, method: true, paymentStatus: true }
+            },
             PaymentProof: { include: { picture: true } }
          }
       });
