@@ -113,8 +113,8 @@ class PropertyValidationHelper {
       location: location.trim(),
       city: city.trim(),
       province: province.trim(),
-      latitude: latitude?.trim(),
-      longitude: longitude?.trim(),
+      latitude: latitude && latitude.trim() !== "" ? latitude.trim() : null,
+      longitude: longitude && longitude.trim() !== "" ? longitude.trim() : null,
     };
 
     return {
@@ -135,6 +135,8 @@ class PropertyValidationHelper {
       location,
       city,
       province,
+      latitude,
+      longitude,
     } = data;
 
     // Check if at least one field is provided
@@ -145,7 +147,9 @@ class PropertyValidationHelper {
       mainPictureId === undefined &&
       location === undefined &&
       city === undefined &&
-      province === undefined
+      province === undefined &&
+      latitude === undefined &&
+      longitude === undefined
     ) {
       return {
         isValid: false,
@@ -233,6 +237,12 @@ class PropertyValidationHelper {
     if (location !== undefined) updateData.location = location.trim();
     if (city !== undefined) updateData.city = city.trim();
     if (province !== undefined) updateData.province = province.trim();
+    if (latitude !== undefined)
+      updateData.latitude =
+        latitude && latitude.trim() !== "" ? latitude.trim() : null;
+    if (longitude !== undefined)
+      updateData.longitude =
+        longitude && longitude.trim() !== "" ? longitude.trim() : null;
 
     return {
       isValid: true,

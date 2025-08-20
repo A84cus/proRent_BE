@@ -56,8 +56,22 @@ export const propertyUpdateSchema = z.object({
     .min(1, "Province is required")
     .max(100, "Province name must not exceed 100 characters")
     .optional(),
-  latitude: z.string().optional(),
-  longitude: z.string().optional(),
+  latitude: z
+    .string()
+    .refine((val) => {
+      if (!val || val.trim() === "") return true; // Allow empty/null
+      const num = parseFloat(val);
+      return !isNaN(num) && num >= -90 && num <= 90;
+    }, "Latitude must be a valid number between -90 and 90")
+    .optional(),
+  longitude: z
+    .string()
+    .refine((val) => {
+      if (!val || val.trim() === "") return true; // Allow empty/null
+      const num = parseFloat(val);
+      return !isNaN(num) && num >= -180 && num <= 180;
+    }, "Longitude must be a valid number between -180 and 180")
+    .optional(),
 });
 
 export const propertyQuerySchema = z.object({
