@@ -35,9 +35,9 @@ function validateReviewCreation(data) {
         const reservation = yield prisma_1.default.reservation.findUnique({
             where: { id: reservationId },
             include: {
-                User: { select: { id: true } }, // Reviewer
+                User: { select: { id: true } },
                 Property: { select: { id: true, OwnerId: true } },
-                review: { select: { id: true } } // Check if review already exists
+                review: { select: { id: true } }
             }
         });
         if (!reservation) {
@@ -66,25 +66,65 @@ function createReview(input) {
     return __awaiter(this, void 0, void 0, function* () {
         yield validateReviewCreation(input);
         const { userId, reservationId, content, rating } = input;
-        // Fetch reservation again to get propertyId for relation
+        // Fetch reservation to get property owner (reviewee)
         const reservation = yield prisma_1.default.reservation.findUniqueOrThrow({
             where: { id: reservationId },
-            select: { propertyId: true, userId: true } // userId is revieweeId
+            select: {
+                Property: {
+                    select: {
+                        OwnerId: true
+                    }
+                },
+                userId: true
+            }
         });
+        // Double-check: ensure the userId matches the reservation's guest
+        if (reservation.userId !== userId) {
+            throw new Error('You can only review your own reservations.');
+        }
         const newReview = yield prisma_1.default.review.create({
             data: {
                 content,
                 rating,
-                reviewer: { connect: { id: userId } }, // User writing the review (Reviewer relation)
-                reviewee: { connect: { id: reservation.userId } }, // User who made the reservation (Reviewee relation)
+                reviewer: { connect: { id: userId } }, // Guest (reviewer)
+                reviewee: { connect: { id: reservation.Property.OwnerId } }, // Host (reviewee)
                 reservation: { connect: { id: reservationId } }
-                // Property relation is implicit via reservation
             },
             include: {
                 reviewer: {
                     select: {
                         id: true,
-                        profile: { select: { firstName: true, lastName: true } }
+                        profile: {
+                            select: {
+                                firstName: true,
+                                lastName: true,
+                                avatar: {
+                                    select: {
+                                        id: true,
+                                        url: true,
+                                        alt: true
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                reviewee: {
+                    select: {
+                        id: true,
+                        profile: {
+                            select: {
+                                firstName: true,
+                                lastName: true,
+                                avatar: {
+                                    select: {
+                                        id: true,
+                                        url: true,
+                                        alt: true
+                                    }
+                                }
+                            }
+                        }
                     }
                 },
                 reservation: {
@@ -135,7 +175,42 @@ function replyToReview(input) {
             include: {
                 review: {
                     include: {
-                        reviewer: { select: { id: true, profile: { select: { firstName: true, lastName: true } } } },
+                        reviewer: {
+                            select: {
+                                id: true,
+                                profile: {
+                                    select: {
+                                        firstName: true,
+                                        lastName: true,
+                                        avatar: {
+                                            select: {
+                                                id: true,
+                                                url: true,
+                                                alt: true
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        reviewee: {
+                            select: {
+                                id: true,
+                                profile: {
+                                    select: {
+                                        firstName: true,
+                                        lastName: true,
+                                        avatar: {
+                                            select: {
+                                                id: true,
+                                                url: true,
+                                                alt: true
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        },
                         reservation: { select: { Property: { select: { name: true } } } }
                     }
                 }
