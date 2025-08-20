@@ -2,6 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.buildRoomTypeInclude = buildRoomTypeInclude;
 exports.buildPaymentsInclude = buildPaymentsInclude;
+exports.buildReviewInclude = buildReviewInclude;
 exports.buildUserInclude = buildUserInclude;
 exports.buildPaymentProofInclude = buildPaymentProofInclude;
 function buildRoomTypeInclude(propertyOwnerId) {
@@ -24,6 +25,16 @@ function buildPaymentsInclude() {
             method: true,
             paymentStatus: true,
             createdAt: true
+        }
+    };
+}
+function buildReviewInclude() {
+    return {
+        select: {
+            id: true,
+            content: true,
+            createdAt: true,
+            OwnerReply: { select: { id: true, content: true, createdAt: true, visibility: true, rating: true } }
         }
     };
 }
