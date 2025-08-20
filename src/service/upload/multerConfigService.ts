@@ -12,24 +12,9 @@ class MulterConfigService {
         files: 1, // Single file upload
       },
       fileFilter: (req, file, cb) => {
-        // Get upload type from request body
-        const type = req.body?.type as FileType;
-
-        if (!type) {
-          return cb(new Error("Upload type is required"));
-        }
-
-        // Validate MIME type
-        const validation = fileValidationService.validateMimeType(
-          file.mimetype,
-          type
-        );
-
-        if (validation.isValid) {
-          cb(null, true);
-        } else {
-          cb(new Error(validation.error || "Invalid file type"));
-        }
+        // Skip validation in fileFilter for multipart form-data
+        // Validation will be done in controller after multer processes the fields
+        cb(null, true);
       },
     });
   }

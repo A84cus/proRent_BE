@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import uploadService from "../../service/upload/uploadService";
 import multerConfigService from "../../service/upload/multerConfigService";
+import fileValidationService from "../../service/upload/fileValidationService";
 import responseHelper from "../../helpers/system/responseHelper";
 import authorizationHelper from "../../helpers/auth/authorizationHelper";
 import logger from "../../utils/system/logger";
@@ -15,15 +16,28 @@ class UploadController {
   // POST /upload - Generic file upload endpoint
   async uploadFile(req: Request, res: Response) {
     try {
-      // Validate request body
-      const validatedData = uploadFileSchema.parse(req.body);
-      const { type, alt } = validatedData;
-
       // Check if file exists
       if (!req.file) {
         return responseHelper.badRequest(
           res,
           "No file provided. Please upload a file."
+        );
+      }
+
+      // Validate request body
+      const validatedData = uploadFileSchema.parse(req.body);
+      const { type, alt } = validatedData;
+
+      // Additional MIME type validation now that we have type
+      const mimeValidation = fileValidationService.validateMimeType(
+        req.file.mimetype,
+        type
+      );
+
+      if (!mimeValidation.isValid) {
+        return responseHelper.badRequest(
+          res,
+          mimeValidation.error || "Invalid file type for upload type"
         );
       }
 
