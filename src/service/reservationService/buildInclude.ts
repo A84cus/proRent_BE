@@ -28,6 +28,17 @@ export function buildPaymentsInclude () {
    };
 }
 
+export function buildReviewInclude () {
+   return {
+      select: {
+         id: true,
+         content: true,
+         createdAt: true,
+         OwnerReply: { select: { id: true, content: true, createdAt: true, visibility: true, rating: true } }
+      }
+   };
+}
+
 export function buildUserInclude () {
    return {
       select: {

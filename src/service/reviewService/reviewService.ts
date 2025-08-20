@@ -8,12 +8,46 @@ import {
    validateReviewOwnership,
    reviewCreateSchema
 } from '../../validations/review/reviewValidation';
+import { ReplyInclude, ReviewInclude, SelectEligibleReservations } from './reviewQueryHelper';
+
+export async function getEligibleReservationsForReview (userId: string, propertyId: string) {
+   const today = new Date();
+   try {
+      const eligibleReservations = await prisma.reservation.findMany({
+         where: {
+            userId,
+            propertyId,
+            orderStatus: Status.CONFIRMED,
+            endDate: {
+               lt: today
+            },
+            review: null,
+            payment: {
+               paymentStatus: Status.CONFIRMED
+            }
+         },
+         select: SelectEligibleReservations,
+         orderBy: {
+            endDate: 'desc'
+         }
+      });
+      return eligibleReservations.map(res => ({
+         id: res.id,
+         propertyId: res.Property?.id,
+         propertyName: res.Property?.name || 'Unknown Property',
+         propertyImageUrl: res.Property?.mainPicture?.url || null,
+         startDate: res.startDate,
+         endDate: res.endDate
+      }));
+   } catch (error) {
+      console.error('Error in getEligibleReservationsForReview service:', error);
+      throw new Error('Failed to fetch eligible reservations. Please try again later.');
+   }
+}
 
 // --- Helper: Validate Review Creation Conditions ---
 async function validateReviewCreation (data: CreateReviewInput): Promise<void> {
    const { userId, reservationId, rating, content } = data;
-
-   // Validate rating and comment using centralized validation
    const ratingValidation = validateReviewRating(rating);
    if (!ratingValidation.isValid) {
       throw new Error(ratingValidation.error!);
@@ -87,52 +121,7 @@ export async function createReview (input: CreateReviewInput) {
          reviewee: { connect: { id: reservation.Property.OwnerId } }, // Host (reviewee)
          reservation: { connect: { id: reservationId } }
       },
-      include: {
-         reviewer: {
-            select: {
-               id: true,
-               profile: {
-                  select: {
-                     firstName: true,
-                     lastName: true,
-                     avatar: {
-                        select: {
-                           id: true,
-                           url: true,
-                           alt: true
-                        }
-                     }
-                  }
-               }
-            }
-         },
-         reviewee: {
-            select: {
-               id: true,
-               profile: {
-                  select: {
-                     firstName: true,
-                     lastName: true,
-                     avatar: {
-                        select: {
-                           id: true,
-                           url: true,
-                           alt: true
-                        }
-                     }
-                  }
-               }
-            }
-         },
-         reservation: {
-            select: {
-               id: true,
-               startDate: true,
-               endDate: true,
-               Property: { select: { id: true, name: true } }
-            }
-         }
-      }
+      include: ReviewInclude
    });
 
    return newReview;
@@ -170,49 +159,7 @@ export async function replyToReview (input: ReplyToReviewInput) {
          content,
          review: { connect: { id: reviewId } }
       },
-      include: {
-         review: {
-            include: {
-               reviewer: {
-                  select: {
-                     id: true,
-                     profile: {
-                        select: {
-                           firstName: true,
-                           lastName: true,
-                           avatar: {
-                              select: {
-                                 id: true,
-                                 url: true,
-                                 alt: true
-                              }
-                           }
-                        }
-                     }
-                  }
-               },
-               reviewee: {
-                  select: {
-                     id: true,
-                     profile: {
-                        select: {
-                           firstName: true,
-                           lastName: true,
-                           avatar: {
-                              select: {
-                                 id: true,
-                                 url: true,
-                                 alt: true
-                              }
-                           }
-                        }
-                     }
-                  }
-               },
-               reservation: { select: { Property: { select: { name: true } } } }
-            }
-         }
-      }
+      include: ReplyInclude
    });
 
    return ownerReply;

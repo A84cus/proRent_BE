@@ -8,6 +8,7 @@ import {
 import { ZodError } from 'zod';
 import { NODE_ENV } from '../../config/index';
 import { GetReviewsFilter, GetReviewsFilterForOwner, sortBy, sortOrder } from '../../interfaces';
+import { getEligibleReservationsForReview } from '../../service/reviewService/reviewService';
 
 // --- Helper Functions (Each <15 lines) ---
 
@@ -101,6 +102,19 @@ export const updateReviewVisibilityController = async (req: Request, res: Respon
       const result = await updateReviewVisibility(ownerId, reviewId, visibility);
 
       return res.status(200).json(result);
+   } catch (error: any) {
+      handleError(res, error);
+   }
+};
+
+export const getEligibleReservationsController = async (req: Request, res: Response) => {
+   try {
+      const userId = getUserIdFromRequest(req);
+      const propertyId = req.params.propertyId;
+
+      const eligibleReservations = await getEligibleReservationsForReview(userId, propertyId);
+
+      return res.status(200).json(eligibleReservations);
    } catch (error: any) {
       handleError(res, error);
    }
