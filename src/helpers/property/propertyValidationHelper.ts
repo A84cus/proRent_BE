@@ -33,6 +33,8 @@ class PropertyValidationHelper {
       location,
       city,
       province,
+      latitude,
+      longitude,
     } = data;
 
     // Validate name
@@ -111,6 +113,8 @@ class PropertyValidationHelper {
       location: location.trim(),
       city: city.trim(),
       province: province.trim(),
+      latitude: latitude?.trim(),
+      longitude: longitude?.trim(),
     };
 
     return {

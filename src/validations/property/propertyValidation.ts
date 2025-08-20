@@ -6,12 +6,12 @@ export const propertyCreateSchema = z.object({
     .string()
     .min(1, "Property name is required")
     .max(200, "Property name must not exceed 200 characters"),
-  categoryId: z.string().uuid("Invalid category ID format"),
+  categoryId: z.string().min(1, "Category ID is required"),
   description: z
     .string()
     .min(10, "Description must be at least 10 characters")
     .max(2000, "Description must not exceed 2000 characters"),
-  mainPictureId: z.string().uuid("Invalid main picture ID format"),
+  mainPictureId: z.string().min(1, "Main picture ID is required"),
   location: z
     .string()
     .min(1, "Location/address is required")
@@ -24,6 +24,8 @@ export const propertyCreateSchema = z.object({
     .string()
     .min(1, "Province is required")
     .max(100, "Province name must not exceed 100 characters"),
+  latitude: z.string().optional(),
+  longitude: z.string().optional(),
 });
 
 export const propertyUpdateSchema = z.object({
@@ -32,13 +34,13 @@ export const propertyUpdateSchema = z.object({
     .min(1, "Property name is required")
     .max(200, "Property name must not exceed 200 characters")
     .optional(),
-  categoryId: z.string().uuid("Invalid category ID format").optional(),
+  categoryId: z.string().min(1, "Category ID is required").optional(),
   description: z
     .string()
     .min(10, "Description must be at least 10 characters")
     .max(2000, "Description must not exceed 2000 characters")
     .optional(),
-  mainPictureId: z.string().uuid("Invalid main picture ID format").optional(),
+  mainPictureId: z.string().min(1, "Main picture ID is required").optional(),
   location: z
     .string()
     .min(1, "Location/address is required")
@@ -54,12 +56,14 @@ export const propertyUpdateSchema = z.object({
     .min(1, "Province is required")
     .max(100, "Province name must not exceed 100 characters")
     .optional(),
+  latitude: z.string().optional(),
+  longitude: z.string().optional(),
 });
 
 export const propertyQuerySchema = z.object({
   page: z.number().int().min(1).default(1).optional(),
   limit: z.number().int().min(1).max(100).default(10).optional(),
-  categoryId: z.string().uuid("Invalid category ID format").optional(),
+  categoryId: z.string().min(1, "Category ID is required").optional(),
   city: z.string().optional(),
   province: z.string().optional(),
   minPrice: z.number().min(0).optional(),
@@ -71,11 +75,11 @@ export const propertyQuerySchema = z.object({
   sortOrder: z.enum(["asc", "desc"]).default("desc").optional(),
 });
 
-export const propertyIdSchema = z.string().uuid("Invalid property ID format");
+export const propertyIdSchema = z.string().min(1, "Property ID is required");
 
 // Room validation schemas
 export const roomCreateSchema = z.object({
-  propertyId: z.string().uuid("Invalid property ID format"),
+  propertyId: z.string().min(1, "Property ID is required"),
   roomType: z
     .string()
     .min(1, "Room type is required")

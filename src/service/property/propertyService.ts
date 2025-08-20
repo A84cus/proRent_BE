@@ -84,7 +84,9 @@ class PropertyService {
       );
       const locationId = await propertyRepository.getOrCreateLocation(
         data.location,
-        cityId
+        cityId,
+        data.latitude,
+        data.longitude
       );
 
       const propertyData = {
