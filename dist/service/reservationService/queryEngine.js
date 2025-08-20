@@ -112,7 +112,8 @@ function buildIncludeFields(propertyOwnerId, propertyId) {
     const includeFields = {
         RoomType: (0, buildInclude_1.buildRoomTypeInclude)(propertyOwnerId),
         payment: (0, buildInclude_1.buildPaymentsInclude)(),
-        PaymentProof: (0, buildInclude_1.buildPaymentProofInclude)()
+        PaymentProof: (0, buildInclude_1.buildPaymentProofInclude)(),
+        review: (0, buildInclude_1.buildReviewInclude)()
     };
     if (propertyOwnerId || propertyId) {
         includeFields.User = (0, buildInclude_1.buildUserInclude)();

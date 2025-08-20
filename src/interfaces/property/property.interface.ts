@@ -9,6 +9,8 @@ export interface CreatePropertyData {
   location: string; // address
   city: string;
   province: string;
+  latitude?: string | null;
+  longitude?: string | null;
 }
 
 export interface UpdatePropertyData {
@@ -19,6 +21,8 @@ export interface UpdatePropertyData {
   location?: string; // address
   city?: string;
   province?: string;
+  latitude?: string | null;
+  longitude?: string | null;
 }
 
 export interface PropertyLocationData {

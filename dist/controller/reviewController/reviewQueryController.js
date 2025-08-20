@@ -9,11 +9,12 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.updateReviewVisibilityController = exports.getOwnerReviewsController = exports.getPublicReviewsController = void 0;
+exports.getEligibleReservationsController = exports.updateReviewVisibilityController = exports.getOwnerReviewsController = exports.getPublicReviewsController = void 0;
 const reviewQueryService_1 = require("../../service/reviewService/reviewQueryService");
 const zod_1 = require("zod");
 const index_1 = require("../../config/index");
 const interfaces_1 = require("../../interfaces");
+const reviewService_1 = require("../../service/reviewService/reviewService");
 // --- Helper Functions (Each <15 lines) ---
 function getUserIdFromRequest(req) {
     var _a;
@@ -96,3 +97,15 @@ const updateReviewVisibilityController = (req, res) => __awaiter(void 0, void 0,
     }
 });
 exports.updateReviewVisibilityController = updateReviewVisibilityController;
+const getEligibleReservationsController = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const userId = getUserIdFromRequest(req);
+        const propertyId = req.params.propertyId;
+        const eligibleReservations = yield (0, reviewService_1.getEligibleReservationsForReview)(userId, propertyId);
+        return res.status(200).json(eligibleReservations);
+    }
+    catch (error) {
+        handleError(res, error);
+    }
+});
+exports.getEligibleReservationsController = getEligibleReservationsController;

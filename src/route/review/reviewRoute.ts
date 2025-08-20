@@ -1,13 +1,14 @@
 import express from 'express';
-import { createReviewController, replyToReviewController } from '../controller/reviewController/reviewController';
+import { createReviewController, replyToReviewController } from '../../controller/reviewController/reviewController';
 
 import {
    getPublicReviewsController,
    getOwnerReviewsController,
-   updateReviewVisibilityController
-} from '../controller/reviewController/reviewQueryController';
+   updateReviewVisibilityController,
+   getEligibleReservationsController
+} from '../../controller/reviewController/reviewQueryController';
 
-import { authUser, authOwner, authAny } from '../middleware';
+import { authUser, authOwner, authAny } from '../../middleware';
 
 const router = express.Router();
 
@@ -17,6 +18,7 @@ router.post('/:reviewId/reply', authOwner, replyToReviewController);
 
 // Review Query Routes
 router.get('/property/:propertyId', getPublicReviewsController);
+router.get('/property/:propertyId/eligible-reservations', authAny, getEligibleReservationsController);
 router.get('/owner/property/:propertyId', authOwner, getOwnerReviewsController);
 
 // Review Management Routes

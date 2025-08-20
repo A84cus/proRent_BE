@@ -8,12 +8,46 @@ import {
    validateReviewOwnership,
    reviewCreateSchema
 } from '../../validations/review/reviewValidation';
+import { ReplyInclude, ReviewInclude, SelectEligibleReservations } from './reviewQueryHelper';
+
+export async function getEligibleReservationsForReview (userId: string, propertyId: string) {
+   const today = new Date();
+   try {
+      const eligibleReservations = await prisma.reservation.findMany({
+         where: {
+            userId,
+            propertyId,
+            orderStatus: Status.CONFIRMED,
+            endDate: {
+               lt: today
+            },
+            review: null,
+            payment: {
+               paymentStatus: Status.CONFIRMED
+            }
+         },
+         select: SelectEligibleReservations,
+         orderBy: {
+            endDate: 'desc'
+         }
+      });
+      return eligibleReservations.map(res => ({
+         id: res.id,
+         propertyId: res.Property?.id,
+         propertyName: res.Property?.name || 'Unknown Property',
+         propertyImageUrl: res.Property?.mainPicture?.url || null,
+         startDate: res.startDate,
+         endDate: res.endDate
+      }));
+   } catch (error) {
+      console.error('Error in getEligibleReservationsForReview service:', error);
+      throw new Error('Failed to fetch eligible reservations. Please try again later.');
+   }
+}
 
 // --- Helper: Validate Review Creation Conditions ---
 async function validateReviewCreation (data: CreateReviewInput): Promise<void> {
    const { userId, reservationId, rating, content } = data;
-
-   // Validate rating and comment using centralized validation
    const ratingValidation = validateReviewRating(rating);
    if (!ratingValidation.isValid) {
       throw new Error(ratingValidation.error!);
@@ -27,9 +61,9 @@ async function validateReviewCreation (data: CreateReviewInput): Promise<void> {
    const reservation = await prisma.reservation.findUnique({
       where: { id: reservationId },
       include: {
-         User: { select: { id: true } }, // Reviewer
+         User: { select: { id: true } },
          Property: { select: { id: true, OwnerId: true } },
-         review: { select: { id: true } } // Check if review already exists
+         review: { select: { id: true } }
       }
    });
 
@@ -61,38 +95,35 @@ export async function createReview (input: CreateReviewInput) {
    await validateReviewCreation(input);
    const { userId, reservationId, content, rating } = input;
 
-   // Fetch reservation again to get propertyId for relation
+   // Fetch reservation to get property owner (reviewee)
    const reservation = await prisma.reservation.findUniqueOrThrow({
       where: { id: reservationId },
-      select: { propertyId: true, userId: true } // userId is revieweeId
+      select: {
+         Property: {
+            select: {
+               OwnerId: true
+            }
+         },
+         userId: true
+      }
    });
+
+   // Double-check: ensure the userId matches the reservation's guest
+   if (reservation.userId !== userId) {
+      throw new Error('You can only review your own reservations.');
+   }
 
    const newReview = await prisma.review.create({
       data: {
          content,
          rating,
-         reviewer: { connect: { id: userId } }, // User writing the review (Reviewer relation)
-         reviewee: { connect: { id: reservation.userId } }, // User who made the reservation (Reviewee relation)
+         reviewer: { connect: { id: userId } }, // Guest (reviewer)
+         reviewee: { connect: { id: reservation.Property.OwnerId } }, // Host (reviewee)
          reservation: { connect: { id: reservationId } }
-         // Property relation is implicit via reservation
       },
-      include: {
-         reviewer: {
-            select: {
-               id: true,
-               profile: { select: { firstName: true, lastName: true } }
-            }
-         },
-         reservation: {
-            select: {
-               id: true,
-               startDate: true,
-               endDate: true,
-               Property: { select: { id: true, name: true } }
-            }
-         }
-      }
+      include: ReviewInclude
    });
+
    return newReview;
 }
 
@@ -128,14 +159,7 @@ export async function replyToReview (input: ReplyToReviewInput) {
          content,
          review: { connect: { id: reviewId } }
       },
-      include: {
-         review: {
-            include: {
-               reviewer: { select: { id: true, profile: { select: { firstName: true, lastName: true } } } },
-               reservation: { select: { Property: { select: { name: true } } } }
-            }
-         }
-      }
+      include: ReplyInclude
    });
 
    return ownerReply;

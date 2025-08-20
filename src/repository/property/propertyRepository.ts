@@ -204,7 +204,12 @@ class PropertyRepository {
   }
 
   // Get or create location
-  async getOrCreateLocation(address: string, cityId: string): Promise<string> {
+  async getOrCreateLocation(
+    address: string,
+    cityId: string,
+    latitude?: string | null,
+    longitude?: string | null
+  ): Promise<string> {
     // First try to find existing location
     const existingLocation = await prisma.location.findFirst({
       where: {
@@ -214,6 +219,26 @@ class PropertyRepository {
     });
 
     if (existingLocation) {
+      // Update existing location with new lat/lng if provided
+      if (latitude !== undefined || longitude !== undefined) {
+        await prisma.location.update({
+          where: { id: existingLocation.id },
+          data: {
+            latitude:
+              latitude !== undefined &&
+              latitude !== null &&
+              latitude.trim() !== ""
+                ? latitude
+                : existingLocation.latitude,
+            longitude:
+              longitude !== undefined &&
+              longitude !== null &&
+              longitude.trim() !== ""
+                ? longitude
+                : existingLocation.longitude,
+          },
+        });
+      }
       return existingLocation.id;
     }
 
@@ -223,6 +248,16 @@ class PropertyRepository {
         name: address, // Use address as name for now
         address,
         cityId,
+        latitude:
+          latitude !== undefined && latitude !== null && latitude.trim() !== ""
+            ? latitude
+            : null,
+        longitude:
+          longitude !== undefined &&
+          longitude !== null &&
+          longitude.trim() !== ""
+            ? longitude
+            : null,
       },
     });
 

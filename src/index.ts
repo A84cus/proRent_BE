@@ -10,7 +10,7 @@ import utilityRoute from './route/system/utilityRoute';
 import reserveRoute from './route/reservation/reservationRoute';
 import userRoute from './route/user/userRoute';
 import cronJobRoute from './route/cronjobRoute';
-import reviewRoute from './route/reviewRoute';
+import reviewRoute from './route/review/reviewRoute';
 import ownerRoutes from './route/property/ownerRoutes';
 import roomOperationsRoutes from './route/property/roomOperationsRoutes';
 import publicPropertyRoute from './route/property/publicPropertyRoutes';

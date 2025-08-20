@@ -16,19 +16,20 @@ exports.getReviewsPublic = getReviewsPublic;
 exports.getReviewsForOwner = getReviewsForOwner;
 exports.updateReviewVisibility = updateReviewVisibility;
 const prisma_1 = __importDefault(require("../../prisma"));
+const reviewQueryHelper_1 = require("./reviewQueryHelper");
 // --- Query: Fetch Reservation for Review Validation ---
 function getReviewsPublic(filter) {
     return __awaiter(this, void 0, void 0, function* () {
-        const { propertyId, page = 1, limit = 10, sortBy = "createdAt", sortOrder = "desc", searchContent, } = filter;
+        const { propertyId, page = 1, limit = 10, sortBy = 'createdAt', sortOrder = 'desc', searchContent } = filter;
         const skip = (page - 1) * limit;
         const take = limit;
         // Build where conditions
         const whereConditions = {
             reservation: { propertyId },
-            visibility: true, // Rule 5: Only visible reviews for public search
+            visibility: true
         };
         if (searchContent) {
-            whereConditions.content = { contains: searchContent, mode: "insensitive" };
+            whereConditions.content = { contains: searchContent, mode: 'insensitive' };
         }
         const [reviews, total] = yield Promise.all([
             prisma_1.default.review.findMany({
@@ -36,25 +37,9 @@ function getReviewsPublic(filter) {
                 skip,
                 take,
                 orderBy: { [sortBy]: sortOrder },
-                include: {
-                    reviewer: {
-                        select: {
-                            id: true,
-                            profile: { select: { firstName: true, lastName: true } },
-                        },
-                    },
-                    OwnerReply: { select: { id: true, content: true, createdAt: true } },
-                    reservation: {
-                        select: {
-                            id: true,
-                            startDate: true,
-                            endDate: true,
-                            Property: { select: { id: true, name: true } },
-                        },
-                    },
-                },
+                include: reviewQueryHelper_1.ReviewQueryHelper
             }),
-            prisma_1.default.review.count({ where: whereConditions }),
+            prisma_1.default.review.count({ where: whereConditions })
         ]);
         const totalPages = Math.ceil(total / limit);
         return { reviews, total, page, limit, totalPages };
@@ -63,14 +48,14 @@ function getReviewsPublic(filter) {
 // --- Service: Get Reviews for Owner Management (All visibility) ---
 function getReviewsForOwner(filter) {
     return __awaiter(this, void 0, void 0, function* () {
-        const { propertyId, page = 1, limit = 10, sortBy = "createdAt", sortOrder = "desc", searchContent, includeInvisible = true, } = filter;
+        const { propertyId, page = 1, limit = 10, sortBy = 'createdAt', sortOrder = 'desc', searchContent, includeInvisible = true } = filter;
         const skip = (page - 1) * limit;
         const take = limit;
         const whereConditions = {
-            reservation: { propertyId },
+            reservation: { propertyId }
         };
         if (searchContent) {
-            whereConditions.content = { contains: searchContent, mode: "insensitive" };
+            whereConditions.content = { contains: searchContent, mode: 'insensitive' };
         }
         const [reviews, total] = yield Promise.all([
             prisma_1.default.review.findMany({
@@ -78,33 +63,9 @@ function getReviewsForOwner(filter) {
                 skip,
                 take,
                 orderBy: { [sortBy]: sortOrder },
-                include: {
-                    reviewer: {
-                        select: {
-                            id: true,
-                            profile: { select: { firstName: true, lastName: true } },
-                        },
-                    },
-                    OwnerReply: {
-                        select: {
-                            id: true,
-                            content: true,
-                            createdAt: true,
-                            visibility: true,
-                        },
-                    },
-                    reservation: {
-                        select: {
-                            id: true,
-                            startDate: true,
-                            endDate: true,
-                            orderStatus: true,
-                            Property: { select: { id: true, name: true } },
-                        },
-                    },
-                },
+                include: reviewQueryHelper_1.ReplyOwnerQueryHelper
             }),
-            prisma_1.default.review.count({ where: whereConditions }),
+            prisma_1.default.review.count({ where: whereConditions })
         ]);
         const totalPages = Math.ceil(total / limit);
         return { reviews, total, page, limit, totalPages };
@@ -119,11 +80,11 @@ function updateReviewVisibility(ownerId, reviewId, visibility) {
         const review = yield prisma_1.default.review.findUnique({
             where: { id: reviewId },
             include: {
-                reservation: { select: { Property: { select: { OwnerId: true } } } },
-            },
+                reservation: { select: { Property: { select: { OwnerId: true } } } }
+            }
         });
         if (!review || ((_b = (_a = review.reservation) === null || _a === void 0 ? void 0 : _a.Property) === null || _b === void 0 ? void 0 : _b.OwnerId) !== ownerId) {
-            throw new Error("Unauthorized or review not found.");
+            throw new Error('Unauthorized or review not found.');
         }
         const updatedReview = yield prisma_1.default.review.update({
             where: { id: reviewId },
@@ -132,11 +93,11 @@ function updateReviewVisibility(ownerId, reviewId, visibility) {
                 reviewer: {
                     select: {
                         id: true,
-                        profile: { select: { firstName: true, lastName: true } },
-                    },
+                        profile: { select: { firstName: true, lastName: true } }
+                    }
                 },
-                OwnerReply: true,
-            },
+                OwnerReply: true
+            }
         });
         return updatedReview;
     });

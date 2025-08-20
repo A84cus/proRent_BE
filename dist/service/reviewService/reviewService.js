@@ -12,18 +12,59 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.getEligibleReservationsForReview = getEligibleReservationsForReview;
 exports.createReview = createReview;
 exports.replyToReview = replyToReview;
 // services/reviewService.ts
 const prisma_1 = __importDefault(require("../../prisma")); // Adjust path
 const client_1 = require("@prisma/client");
 const reviewValidation_1 = require("../../validations/review/reviewValidation");
+const reviewQueryHelper_1 = require("./reviewQueryHelper");
+function getEligibleReservationsForReview(userId, propertyId) {
+    return __awaiter(this, void 0, void 0, function* () {
+        const today = new Date();
+        try {
+            const eligibleReservations = yield prisma_1.default.reservation.findMany({
+                where: {
+                    userId,
+                    propertyId,
+                    orderStatus: client_1.Status.CONFIRMED,
+                    endDate: {
+                        lt: today
+                    },
+                    review: null,
+                    payment: {
+                        paymentStatus: client_1.Status.CONFIRMED
+                    }
+                },
+                select: reviewQueryHelper_1.SelectEligibleReservations,
+                orderBy: {
+                    endDate: 'desc'
+                }
+            });
+            return eligibleReservations.map(res => {
+                var _a, _b, _c, _d;
+                return ({
+                    id: res.id,
+                    propertyId: (_a = res.Property) === null || _a === void 0 ? void 0 : _a.id,
+                    propertyName: ((_b = res.Property) === null || _b === void 0 ? void 0 : _b.name) || 'Unknown Property',
+                    propertyImageUrl: ((_d = (_c = res.Property) === null || _c === void 0 ? void 0 : _c.mainPicture) === null || _d === void 0 ? void 0 : _d.url) || null,
+                    startDate: res.startDate,
+                    endDate: res.endDate
+                });
+            });
+        }
+        catch (error) {
+            console.error('Error in getEligibleReservationsForReview service:', error);
+            throw new Error('Failed to fetch eligible reservations. Please try again later.');
+        }
+    });
+}
 // --- Helper: Validate Review Creation Conditions ---
 function validateReviewCreation(data) {
     return __awaiter(this, void 0, void 0, function* () {
         var _a;
         const { userId, reservationId, rating, content } = data;
-        // Validate rating and comment using centralized validation
         const ratingValidation = (0, reviewValidation_1.validateReviewRating)(rating);
         if (!ratingValidation.isValid) {
             throw new Error(ratingValidation.error);
@@ -35,9 +76,9 @@ function validateReviewCreation(data) {
         const reservation = yield prisma_1.default.reservation.findUnique({
             where: { id: reservationId },
             include: {
-                User: { select: { id: true } }, // Reviewer
+                User: { select: { id: true } },
                 Property: { select: { id: true, OwnerId: true } },
-                review: { select: { id: true } } // Check if review already exists
+                review: { select: { id: true } }
             }
         });
         if (!reservation) {
@@ -66,36 +107,31 @@ function createReview(input) {
     return __awaiter(this, void 0, void 0, function* () {
         yield validateReviewCreation(input);
         const { userId, reservationId, content, rating } = input;
-        // Fetch reservation again to get propertyId for relation
+        // Fetch reservation to get property owner (reviewee)
         const reservation = yield prisma_1.default.reservation.findUniqueOrThrow({
             where: { id: reservationId },
-            select: { propertyId: true, userId: true } // userId is revieweeId
+            select: {
+                Property: {
+                    select: {
+                        OwnerId: true
+                    }
+                },
+                userId: true
+            }
         });
+        // Double-check: ensure the userId matches the reservation's guest
+        if (reservation.userId !== userId) {
+            throw new Error('You can only review your own reservations.');
+        }
         const newReview = yield prisma_1.default.review.create({
             data: {
                 content,
                 rating,
-                reviewer: { connect: { id: userId } }, // User writing the review (Reviewer relation)
-                reviewee: { connect: { id: reservation.userId } }, // User who made the reservation (Reviewee relation)
+                reviewer: { connect: { id: userId } }, // Guest (reviewer)
+                reviewee: { connect: { id: reservation.Property.OwnerId } }, // Host (reviewee)
                 reservation: { connect: { id: reservationId } }
-                // Property relation is implicit via reservation
             },
-            include: {
-                reviewer: {
-                    select: {
-                        id: true,
-                        profile: { select: { firstName: true, lastName: true } }
-                    }
-                },
-                reservation: {
-                    select: {
-                        id: true,
-                        startDate: true,
-                        endDate: true,
-                        Property: { select: { id: true, name: true } }
-                    }
-                }
-            }
+            include: reviewQueryHelper_1.ReviewInclude
         });
         return newReview;
     });
@@ -132,14 +168,7 @@ function replyToReview(input) {
                 content,
                 review: { connect: { id: reviewId } }
             },
-            include: {
-                review: {
-                    include: {
-                        reviewer: { select: { id: true, profile: { select: { firstName: true, lastName: true } } } },
-                        reservation: { select: { Property: { select: { name: true } } } }
-                    }
-                }
-            }
+            include: reviewQueryHelper_1.ReplyInclude
         });
         return ownerReply;
     });
