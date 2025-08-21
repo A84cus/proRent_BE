@@ -1,7 +1,5 @@
-import { RoomErrorMessages } from "../../../interfaces";
-
 // Room Management Error Messages
-export const ROOM_ERROR_MESSAGES: RoomErrorMessages = {
+export const ROOM_ERROR_MESSAGES = {
   // Authentication errors
   "User not authenticated": {
     message: "User authentication required",

@@ -74,6 +74,11 @@ class PropertyService {
         throw new Error(PROPERTY_SERVICE_ERRORS.CATEGORY_NOT_FOUND);
       }
 
+      // Validate rental type
+      if (!["WHOLE_PROPERTY", "ROOM_BY_ROOM"].includes(data.rentalType)) {
+        throw new Error(PROPERTY_SERVICE_ERRORS.INVALID_RENTAL_TYPE);
+      }
+
       // Handle location creation (province -> city -> location)
       const provinceId = await propertyRepository.findOrCreateProvince(
         data.province
@@ -92,6 +97,7 @@ class PropertyService {
       const propertyData = {
         name: data.name,
         description: data.description,
+        rentalType: data.rentalType, // Handle rental type
         category: {
           connect: { id: data.categoryId },
         },
@@ -110,7 +116,10 @@ class PropertyService {
     } catch (error) {
       logger.error("Error creating property:", error);
       if (error instanceof Error) {
-        if (error.message === PROPERTY_SERVICE_ERRORS.CATEGORY_NOT_FOUND) {
+        if (
+          error.message === PROPERTY_SERVICE_ERRORS.CATEGORY_NOT_FOUND ||
+          error.message === PROPERTY_SERVICE_ERRORS.INVALID_RENTAL_TYPE
+        ) {
           throw error;
         }
       }
@@ -144,11 +153,20 @@ class PropertyService {
         }
       }
 
+      // Validate rental type if provided
+      if (
+        data.rentalType &&
+        !["WHOLE_PROPERTY", "ROOM_BY_ROOM"].includes(data.rentalType)
+      ) {
+        throw new Error(PROPERTY_SERVICE_ERRORS.INVALID_RENTAL_TYPE);
+      }
+
       // Prepare update data
       const updateData: Prisma.PropertyUpdateInput = {};
 
       if (data.name) updateData.name = data.name;
       if (data.description) updateData.description = data.description;
+      if (data.rentalType) updateData.rentalType = data.rentalType; // Handle rental type update
       if (data.categoryId) {
         updateData.category = { connect: { id: data.categoryId } };
       }
@@ -186,7 +204,8 @@ class PropertyService {
         error instanceof Error &&
         (error.message ===
           PROPERTY_SERVICE_ERRORS.PROPERTY_NOT_FOUND_OR_NO_PERMISSION_UPDATE ||
-          error.message === PROPERTY_SERVICE_ERRORS.CATEGORY_NOT_FOUND)
+          error.message === PROPERTY_SERVICE_ERRORS.CATEGORY_NOT_FOUND ||
+          error.message === PROPERTY_SERVICE_ERRORS.INVALID_RENTAL_TYPE)
       ) {
         throw error;
       }

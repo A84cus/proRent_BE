@@ -2,7 +2,10 @@ import { Room } from "@prisma/client";
 import roomRepository from "../../repository/property/roomRepository";
 import logger from "../../utils/system/logger";
 import { ROOM_SERVICE_ERRORS } from "../../constants/services/roomServiceErrors";
-import { RoomCreateData, RoomUpdateData } from "../../interfaces";
+import {
+  RoomCreateData,
+  RoomUpdateData,
+} from "../../interfaces/property/room.interface";
 
 class RoomService {
   // Get all rooms by property ID
@@ -60,34 +63,34 @@ class RoomService {
         );
       }
 
-      // Validate price and capacity
-      if (data.basePrice <= 0) {
-        throw new Error(ROOM_SERVICE_ERRORS.BASE_PRICE_INVALID);
-      }
-
-      if (data.capacity <= 0) {
-        throw new Error(ROOM_SERVICE_ERRORS.CAPACITY_INVALID);
+      // Verify roomType exists and belongs to the property
+      const roomTypeExists = await roomRepository.verifyRoomTypeOwnership(
+        data.roomTypeId,
+        data.propertyId,
+        ownerId
+      );
+      if (!roomTypeExists) {
+        throw new Error(
+          ROOM_SERVICE_ERRORS.ROOM_TYPE_NOT_FOUND_OR_NO_PERMISSION
+        );
       }
 
       const roomData = {
-        name: data.name.trim(),
+        name: data.name?.trim(),
         propertyId: data.propertyId,
-        roomTypeName: data.roomTypeName.trim(),
-        description: data.description?.trim(),
-        basePrice: data.basePrice,
-        capacity: data.capacity,
+        roomTypeId: data.roomTypeId,
         pictures: data.pictures || [],
       };
 
-      return await roomRepository.createWithRoomType(roomData);
+      return await roomRepository.create(roomData);
     } catch (error) {
       logger.error("Error creating room:", error);
       if (error instanceof Error) {
         if (
           error.message ===
             ROOM_SERVICE_ERRORS.PROPERTY_NOT_FOUND_OR_NO_CREATE_PERMISSION ||
-          error.message === ROOM_SERVICE_ERRORS.BASE_PRICE_INVALID ||
-          error.message === ROOM_SERVICE_ERRORS.CAPACITY_INVALID
+          error.message ===
+            ROOM_SERVICE_ERRORS.ROOM_TYPE_NOT_FOUND_OR_NO_PERMISSION
         ) {
           throw error;
         }
@@ -111,33 +114,20 @@ class RoomService {
         );
       }
 
-      // Validate price and capacity if provided
-      if (data.basePrice !== undefined && data.basePrice <= 0) {
-        throw new Error(ROOM_SERVICE_ERRORS.BASE_PRICE_INVALID);
-      }
-
-      if (data.capacity !== undefined && data.capacity <= 0) {
-        throw new Error(ROOM_SERVICE_ERRORS.CAPACITY_INVALID);
-      }
-
-      // Prepare update data
+      // Prepare update data - only room-specific fields
       const updateData: RoomUpdateData = {};
-      if (data.name !== undefined) updateData.name = data.name.trim();
-      if (data.description !== undefined)
-        updateData.description = data.description?.trim();
-      if (data.basePrice !== undefined) updateData.basePrice = data.basePrice;
-      if (data.capacity !== undefined) updateData.capacity = data.capacity;
+      if (data.name !== undefined) updateData.name = data.name?.trim();
+      if (data.isAvailable !== undefined)
+        updateData.isAvailable = data.isAvailable;
       if (data.pictures !== undefined) updateData.pictures = data.pictures;
 
-      return await roomRepository.updateRoomAndType(id, updateData);
+      return await roomRepository.update(id, updateData);
     } catch (error) {
       logger.error(`Error updating room with ID ${id}:`, error);
       if (error instanceof Error) {
         if (
           error.message ===
             ROOM_SERVICE_ERRORS.ROOM_NOT_FOUND_OR_NO_PERMISSION_UPDATE ||
-          error.message === ROOM_SERVICE_ERRORS.BASE_PRICE_INVALID ||
-          error.message === ROOM_SERVICE_ERRORS.CAPACITY_INVALID ||
           error.message === ROOM_SERVICE_ERRORS.ROOM_NOT_FOUND
         ) {
           throw error;

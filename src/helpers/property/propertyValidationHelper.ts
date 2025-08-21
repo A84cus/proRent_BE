@@ -35,6 +35,7 @@ class PropertyValidationHelper {
       province,
       latitude,
       longitude,
+      rentalType,
     } = data;
 
     // Validate name
@@ -105,6 +106,18 @@ class PropertyValidationHelper {
       };
     }
 
+    // Validate rental type
+    if (
+      !rentalType ||
+      typeof rentalType !== "string" ||
+      !["WHOLE_PROPERTY", "ROOM_BY_ROOM"].includes(rentalType)
+    ) {
+      return {
+        isValid: false,
+        error: PROPERTY_ERROR_MESSAGES.RENTAL_TYPE_INVALID,
+      };
+    }
+
     const propertyData: CreatePropertyData = {
       name: name.trim(),
       categoryId: categoryId.trim(),
@@ -115,6 +128,7 @@ class PropertyValidationHelper {
       province: province.trim(),
       latitude: latitude && latitude.trim() !== "" ? latitude.trim() : null,
       longitude: longitude && longitude.trim() !== "" ? longitude.trim() : null,
+      rentalType: rentalType as "WHOLE_PROPERTY" | "ROOM_BY_ROOM",
     };
 
     return {

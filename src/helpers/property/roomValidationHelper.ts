@@ -1,4 +1,7 @@
-import { RoomCreateData, RoomUpdateData } from "../../interfaces";
+import {
+  RoomCreateData,
+  RoomUpdateData,
+} from "../../interfaces/property/room.interface";
 
 class RoomValidationHelper {
   // Validate room creation data
@@ -14,44 +17,13 @@ class RoomValidationHelper {
       errors.push("Property ID is required and must be a string");
     }
 
-    if (
-      !data.name ||
-      typeof data.name !== "string" ||
-      data.name.trim().length === 0
-    ) {
-      errors.push("Room name is required and must be a non-empty string");
-    }
-
-    if (
-      !data.roomTypeName ||
-      typeof data.roomTypeName !== "string" ||
-      data.roomTypeName.trim().length === 0
-    ) {
-      errors.push("Room type name is required and must be a non-empty string");
-    }
-
-    if (
-      !data.basePrice ||
-      typeof data.basePrice !== "number" ||
-      data.basePrice <= 0
-    ) {
-      errors.push("Base price is required and must be a number greater than 0");
-    }
-
-    if (
-      !data.capacity ||
-      typeof data.capacity !== "number" ||
-      data.capacity < 1
-    ) {
-      errors.push("Capacity is required and must be a number greater than 0");
+    if (!data.roomTypeId || typeof data.roomTypeId !== "string") {
+      errors.push("Room Type ID is required and must be a string");
     }
 
     // Optional fields validation
-    if (
-      data.description !== undefined &&
-      typeof data.description !== "string"
-    ) {
-      errors.push("Description must be a string");
+    if (data.name !== undefined && typeof data.name !== "string") {
+      errors.push("Room name must be a string");
     }
 
     if (data.pictures && !Array.isArray(data.pictures)) {
@@ -73,12 +45,9 @@ class RoomValidationHelper {
       isValid: true,
       errors: [],
       cleanData: {
+        roomTypeId: data.roomTypeId.trim(), // Changed from roomTypeName to roomTypeId
         propertyId: data.propertyId.trim(),
-        name: data.name.trim(),
-        roomTypeName: data.roomTypeName.trim(),
-        description: data.description?.trim(),
-        basePrice: Number(data.basePrice),
-        capacity: Math.floor(Number(data.capacity)),
+        name: data.name?.trim(), // Made optional
         pictures: data.pictures || [],
       },
     };
@@ -102,27 +71,19 @@ class RoomValidationHelper {
       }
     }
 
-    if (data.description !== undefined) {
-      if (typeof data.description !== "string") {
-        errors.push("Description must be a string");
+    if (data.name !== undefined) {
+      if (typeof data.name !== "string") {
+        errors.push("Name must be a string");
       } else {
-        updateData.description = data.description.trim();
+        updateData.name = data.name.trim();
       }
     }
 
-    if (data.basePrice !== undefined) {
-      if (typeof data.basePrice !== "number" || data.basePrice <= 0) {
-        errors.push("Base price must be a number greater than 0");
+    if (data.isAvailable !== undefined) {
+      if (typeof data.isAvailable !== "boolean") {
+        errors.push("isAvailable must be a boolean");
       } else {
-        updateData.basePrice = Number(data.basePrice);
-      }
-    }
-
-    if (data.capacity !== undefined) {
-      if (typeof data.capacity !== "number" || data.capacity < 1) {
-        errors.push("Capacity must be a number greater than 0");
-      } else {
-        updateData.capacity = Math.floor(Number(data.capacity));
+        updateData.isAvailable = data.isAvailable;
       }
     }
 
