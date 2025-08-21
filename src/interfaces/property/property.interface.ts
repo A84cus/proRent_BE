@@ -1,5 +1,5 @@
 // Property interfaces for service layer data transfer
-import { RateType } from "@prisma/client";
+import { RateType, PropertyRentalType } from "@prisma/client";
 
 export interface CreatePropertyData {
   name: string;
@@ -11,6 +11,7 @@ export interface CreatePropertyData {
   province: string;
   latitude?: string | null;
   longitude?: string | null;
+  rentalType: PropertyRentalType;
 }
 
 export interface UpdatePropertyData {
@@ -23,6 +24,7 @@ export interface UpdatePropertyData {
   province?: string;
   latitude?: string | null;
   longitude?: string | null;
+  rentalType?: PropertyRentalType;
 }
 
 export interface PropertyLocationData {
