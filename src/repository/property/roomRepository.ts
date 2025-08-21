@@ -93,45 +93,26 @@ class RoomRepository {
     });
   }
 
-  // Create room with room type
-  async createWithRoomType(roomData: {
-    name: string;
+  // Create room (simple room creation)
+  async create(roomData: {
+    name?: string;
     propertyId: string;
-    roomTypeName: string;
-    description?: string;
-    basePrice: number;
-    capacity: number;
+    roomTypeId: string;
     pictures: string[];
   }): Promise<Room> {
     return prisma.$transaction(async (tx) => {
-      // First, create or get the room type
-      let roomType = await tx.roomType.findFirst({
+      // Verify roomType exists and belongs to the property
+      const roomType = await tx.roomType.findFirst({
         where: {
+          id: roomData.roomTypeId,
           propertyId: roomData.propertyId,
-          name: roomData.roomTypeName,
         },
       });
 
       if (!roomType) {
-        roomType = await tx.roomType.create({
-          data: {
-            propertyId: roomData.propertyId,
-            name: roomData.roomTypeName,
-            description: roomData.description,
-            basePrice: roomData.basePrice,
-            capacity: roomData.capacity,
-            totalQuantity: 1,
-            isWholeUnit: false,
-          },
-        });
-      } else {
-        // Just increment quantity, don't override other properties
-        roomType = await tx.roomType.update({
-          where: { id: roomType.id },
-          data: {
-            totalQuantity: roomType.totalQuantity + 1,
-          },
-        });
+        throw new Error(
+          "Room type not found or doesn't belong to this property"
+        );
       }
 
       // Create the room
@@ -139,13 +120,16 @@ class RoomRepository {
         data: {
           name: roomData.name,
           propertyId: roomData.propertyId,
-          roomTypeId: roomType.id,
+          roomTypeId: roomData.roomTypeId,
         },
         include: {
           roomType: true,
           property: true,
         },
       });
+
+      // Note: totalQuantity in RoomType represents the maximum capacity
+      // and should be set when creating the RoomType, not automatically incremented
 
       // Add pictures if provided
       if (roomData.pictures && roomData.pictures.length > 0) {
@@ -163,14 +147,12 @@ class RoomRepository {
     });
   }
 
-  // Update room and room type
-  async updateRoomAndType(
+  // Update room (only room-specific fields)
+  async update(
     id: string,
     updateData: {
       name?: string;
-      description?: string;
-      basePrice?: number;
-      capacity?: number;
+      isAvailable?: boolean;
       pictures?: string[];
     }
   ): Promise<Room> {
@@ -184,38 +166,28 @@ class RoomRepository {
         throw new Error("Room not found");
       }
 
-      // Update room name if provided
-      if (updateData.name) {
-        await tx.room.update({
-          where: { id },
-          data: { name: updateData.name },
-        });
-      }
-
-      // Update room type if price, capacity, or description provided
-      if (
-        updateData.basePrice !== undefined ||
-        updateData.capacity !== undefined ||
-        updateData.description !== undefined
-      ) {
-        await tx.roomType.update({
-          where: { id: room.roomTypeId },
-          data: {
-            ...(updateData.description !== undefined && {
-              description: updateData.description,
-            }),
-            ...(updateData.basePrice !== undefined && {
-              basePrice: updateData.basePrice,
-            }),
-            ...(updateData.capacity !== undefined && {
-              capacity: updateData.capacity,
-            }),
+      // Update room fields
+      const updatedRoom = await tx.room.update({
+        where: { id },
+        data: {
+          ...(updateData.name !== undefined && { name: updateData.name }),
+          ...(updateData.isAvailable !== undefined && {
+            isAvailable: updateData.isAvailable,
+          }),
+        },
+        include: {
+          roomType: true,
+          property: true,
+          gallery: {
+            include: {
+              picture: true,
+            },
           },
-        });
-      }
+        },
+      });
 
       // Update pictures if provided
-      if (updateData.pictures) {
+      if (updateData.pictures !== undefined) {
         // Delete existing pictures
         await tx.roomPicture.deleteMany({
           where: { roomId: id },
@@ -234,20 +206,26 @@ class RoomRepository {
         }
       }
 
-      // Return updated room with includes
-      return tx.room.findUnique({
-        where: { id },
-        include: {
-          roomType: true,
-          property: true,
-          gallery: {
-            include: {
-              picture: true,
-            },
-          },
-        },
-      }) as Promise<Room>;
+      return updatedRoom;
     });
+  }
+
+  // Verify room type ownership
+  async verifyRoomTypeOwnership(
+    roomTypeId: string,
+    propertyId: string,
+    ownerId: string
+  ): Promise<boolean> {
+    const roomType = await prisma.roomType.findFirst({
+      where: {
+        id: roomTypeId,
+        propertyId: propertyId,
+        property: {
+          OwnerId: ownerId,
+        },
+      },
+    });
+    return !!roomType;
   }
 
   // Delete room
@@ -277,19 +255,16 @@ class RoomRepository {
         where: { id },
       });
 
-      // Update room type quantity
-      await tx.roomType.update({
-        where: { id: room.roomTypeId },
-        data: {
-          totalQuantity: Math.max(0, room.roomType.totalQuantity - 1),
-        },
-      });
+      // Note: We don't automatically decrease totalQuantity in RoomType
+      // because totalQuantity represents the capacity, not actual count
 
       // If this was the last room of this type, consider deleting the room type
       const remainingRooms = await tx.room.count({
         where: { roomTypeId: room.roomTypeId },
       });
 
+      // Optional: Clean up room type if no rooms remain
+      // This is business logic decision - maybe keep room types for future use
       if (remainingRooms === 0) {
         // Delete room type availabilities and peak rates
         await tx.availability.deleteMany({
@@ -300,10 +275,8 @@ class RoomRepository {
           where: { roomTypeId: room.roomTypeId },
         });
 
-        // Delete the room type
-        await tx.roomType.delete({
-          where: { id: room.roomTypeId },
-        });
+        // Note: We don't auto-delete room type here
+        // That should be a separate business decision
       }
     });
   }

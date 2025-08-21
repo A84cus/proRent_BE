@@ -23,6 +23,8 @@ export const PROPERTY_ERROR_MESSAGES = {
   PROPERTY_ADDRESS_REQUIRED: "Property address is required",
   INVALID_PROPERTY_TYPE: "Invalid property type",
   INVALID_PROPERTY_DATA: "Invalid property data",
+  RENTAL_TYPE_INVALID:
+    "Invalid rental type. Must be WHOLE_PROPERTY or ROOM_BY_ROOM",
 
   // Location errors
   INVALID_LOCATION: "Invalid location",
