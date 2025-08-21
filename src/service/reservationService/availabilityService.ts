@@ -1,7 +1,7 @@
 // services/availabilityService.ts
 import prisma from '../../prisma';
 
-async function getRoomTypeTotalQuantity (roomTypeId: string): Promise<number> {
+export async function getRoomTypeTotalQuantity (roomTypeId: string): Promise<number> {
    const roomType = await prisma.roomType.findUnique({
       where: { id: roomTypeId },
       select: { totalQuantity: true }
@@ -12,7 +12,7 @@ async function getRoomTypeTotalQuantity (roomTypeId: string): Promise<number> {
    return roomType.totalQuantity;
 }
 
-function generateDateRange (startDate: Date, endDate: Date): Date[] {
+export function generateDateRange (startDate: Date, endDate: Date): Date[] {
    if (startDate >= endDate) {
       throw new Error('End date must be after start date');
    }
@@ -28,7 +28,7 @@ function generateDateRange (startDate: Date, endDate: Date): Date[] {
    return dates;
 }
 
-async function getAvailabilityRecords (roomTypeId: string, datesToCheck: Date[]) {
+export async function getAvailabilityRecords (roomTypeId: string, datesToCheck: Date[]) {
    return await prisma.availability.findMany({
       where: {
          roomTypeId,
@@ -41,7 +41,7 @@ async function getAvailabilityRecords (roomTypeId: string, datesToCheck: Date[])
    });
 }
 
-function buildAvailabilityMap (availabilityRecords: any[]) {
+export function buildAvailabilityMap (availabilityRecords: any[]) {
    const map = new Map<string, number>();
    availabilityRecords.forEach(record => {
       // Consider using date formatting utilities for consistency
@@ -50,7 +50,7 @@ function buildAvailabilityMap (availabilityRecords: any[]) {
    return map;
 }
 
-function isDateAvailable (date: Date, availabilityMap: Map<string, number>, totalQuantity: number): boolean {
+export function isDateAvailable (date: Date, availabilityMap: Map<string, number>, totalQuantity: number): boolean {
    const dateKey = date.toISOString().split('T')[0];
    const availableCount = availabilityMap.has(dateKey) ? availabilityMap.get(dateKey)! : totalQuantity;
 
