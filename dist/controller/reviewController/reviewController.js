@@ -46,7 +46,7 @@ exports.replyToReviewController = exports.createReviewController = void 0;
 const reviewService_1 = require("../../service/reviewService/reviewService");
 const zod_1 = __importStar(require("zod"));
 const index_1 = require("../../config/index");
-const reviewValidation_1 = require("../../validations/reviewValidation"); // Import safeParse functions
+const reviewControllerValidation_1 = require("../../validations/review/reviewControllerValidation"); // Import safeParse functions
 // --- Helper Functions (Each <15 lines) ---
 function getUserIdFromRequest(req) {
     var _a;
@@ -84,7 +84,7 @@ const createReviewController = (req, res) => __awaiter(void 0, void 0, void 0, f
         const rawInputData = Object.assign(Object.assign({}, req.body), { userId // Add authenticated user ID
          });
         // 2. Validate input using Zod's safeParse
-        const validationResult = (0, reviewValidation_1.safeParseCreateReview)(rawInputData);
+        const validationResult = (0, reviewControllerValidation_1.safeParseCreateReview)(rawInputData);
         // 3. Check if validation failed
         if (!validationResult.success) {
             // If validation failed, pass the ZodError to handleError
@@ -114,7 +114,7 @@ const replyToReviewController = (req, res) => __awaiter(void 0, void 0, void 0, 
         const rawBodyData = Object.assign({}, req.body // This should contain 'content'
         );
         // 2. Validate ONLY the body content using the new schema helper
-        const validationResult = (0, reviewValidation_1.safeParseReplyToReviewBody)(rawBodyData);
+        const validationResult = (0, reviewControllerValidation_1.safeParseReplyToReviewBody)(rawBodyData);
         // 3. Check if validation failed
         if (!validationResult.success) {
             // If validation failed, pass the ZodError to handleError

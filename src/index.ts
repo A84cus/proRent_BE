@@ -14,6 +14,7 @@ import reviewRoute from './route/review/reviewRoute';
 import ownerRoutes from './route/property/ownerRoutes';
 import roomOperationsRoutes from './route/property/roomOperationsRoutes';
 import publicPropertyRoute from './route/property/publicPropertyRoutes';
+import reportRoute from './route/report/reportRoutes';
 import corsOptions from './config/app/corsOption';
 
 const express = require('express');
@@ -33,6 +34,7 @@ app.use('/api/users', userRoute);
 app.use('/api/reservation', reserveRoute);
 app.use('/api/review', reviewRoute);
 app.use('/api/cronjob', cronJobRoute);
+app.use('/api/report', reportRoute);
 app.use('/api/owner', ownerRoutes);
 app.use('/api/rooms', roomOperationsRoutes);
 

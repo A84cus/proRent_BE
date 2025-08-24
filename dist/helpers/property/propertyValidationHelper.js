@@ -18,7 +18,7 @@ class PropertyValidationHelper {
      * Validate property creation data
      */
     static validateCreatePropertyData(data) {
-        const { name, categoryId, description, mainPictureId, location, city, province, } = data;
+        const { name, categoryId, description, mainPictureId, location, city, province, latitude, longitude, rentalType, } = data;
         // Validate name
         if (!name || typeof name !== "string" || name.trim().length === 0) {
             return {
@@ -74,6 +74,15 @@ class PropertyValidationHelper {
                 error: property_1.PROPERTY_ERROR_MESSAGES.PROVINCE_REQUIRED,
             };
         }
+        // Validate rental type
+        if (!rentalType ||
+            typeof rentalType !== "string" ||
+            !["WHOLE_PROPERTY", "ROOM_BY_ROOM"].includes(rentalType)) {
+            return {
+                isValid: false,
+                error: property_1.PROPERTY_ERROR_MESSAGES.RENTAL_TYPE_INVALID,
+            };
+        }
         const propertyData = {
             name: name.trim(),
             categoryId: categoryId.trim(),
@@ -82,6 +91,9 @@ class PropertyValidationHelper {
             location: location.trim(),
             city: city.trim(),
             province: province.trim(),
+            latitude: latitude && latitude.trim() !== "" ? latitude.trim() : null,
+            longitude: longitude && longitude.trim() !== "" ? longitude.trim() : null,
+            rentalType: rentalType,
         };
         return {
             isValid: true,
@@ -92,7 +104,7 @@ class PropertyValidationHelper {
      * Validate property update data
      */
     static validateUpdatePropertyData(data) {
-        const { name, categoryId, description, mainPictureId, location, city, province, } = data;
+        const { name, categoryId, description, mainPictureId, location, city, province, latitude, longitude, } = data;
         // Check if at least one field is provided
         if (name === undefined &&
             categoryId === undefined &&
@@ -100,7 +112,9 @@ class PropertyValidationHelper {
             mainPictureId === undefined &&
             location === undefined &&
             city === undefined &&
-            province === undefined) {
+            province === undefined &&
+            latitude === undefined &&
+            longitude === undefined) {
             return {
                 isValid: false,
                 error: property_1.PROPERTY_ERROR_MESSAGES.UPDATE_FIELDS_REQUIRED,
@@ -175,6 +189,12 @@ class PropertyValidationHelper {
             updateData.city = city.trim();
         if (province !== undefined)
             updateData.province = province.trim();
+        if (latitude !== undefined)
+            updateData.latitude =
+                latitude && latitude.trim() !== "" ? latitude.trim() : null;
+        if (longitude !== undefined)
+            updateData.longitude =
+                longitude && longitude.trim() !== "" ? longitude.trim() : null;
         return {
             isValid: true,
             data: updateData,

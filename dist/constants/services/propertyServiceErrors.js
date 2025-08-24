@@ -11,6 +11,8 @@ exports.PROPERTY_SERVICE_ERRORS = {
     FAILED_TO_DELETE_PROPERTY: "Failed to delete property",
     // Category errors
     CATEGORY_NOT_FOUND: "Category not found",
+    // Validation errors
+    INVALID_RENTAL_TYPE: "Invalid rental type. Must be WHOLE_PROPERTY or ROOM_BY_ROOM",
     // Permission and access errors
     PROPERTY_NOT_FOUND_OR_NO_PERMISSION_UPDATE: "Property not found or you don't have permission to update it",
     PROPERTY_NOT_FOUND_OR_NO_PERMISSION_DELETE: "Property not found or you don't have permission to delete it",

@@ -48,6 +48,13 @@ enum PropertyRentalType {
   ROOM_BY_ROOM // menyewakan kamar dalam 1 property
 }
 
+enum JobStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  FAILED
+}
+
 //Bagian User dan auth
 
 model User {
@@ -182,24 +189,26 @@ model Category {
 }
 
 model Property {
-  id            String             @id @default(nanoid(12))
-  name          String
-  description   String
-  locationId    String
-  location      Location           @relation(fields: [locationId], references: [id])
-  categoryId    String
-  category      Category           @relation(fields: [categoryId], references: [id])
-  OwnerId       String
-  Owner         User               @relation("PropertyOwner", fields: [OwnerId], references: [id])
-  mainPicture   Picture?           @relation("PropertyMainPicture", fields: [mainPictureId], references: [id])
-  mainPictureId String?
-  gallery       PropertyPicture[]
-  rooms         Room[]
-  roomTypes     RoomType[]
-  rentalType    PropertyRentalType @default(ROOM_BY_ROOM)
-  createdAt     DateTime           @default(now())
-  updatedAt     DateTime           @updatedAt
-  Reservation   Reservation[]
+  id                         String                       @id @default(nanoid(12))
+  name                       String
+  description                String
+  locationId                 String
+  location                   Location                     @relation(fields: [locationId], references: [id])
+  categoryId                 String
+  category                   Category                     @relation(fields: [categoryId], references: [id])
+  OwnerId                    String
+  Owner                      User                         @relation("PropertyOwner", fields: [OwnerId], references: [id])
+  mainPicture                Picture?                     @relation("PropertyMainPicture", fields: [mainPictureId], references: [id])
+  mainPictureId              String?
+  gallery                    PropertyPicture[]
+  rooms                      Room[]
+  roomTypes                  RoomType[]
+  rentalType                 PropertyRentalType           @default(ROOM_BY_ROOM)
+  createdAt                  DateTime                     @default(now())
+  updatedAt                  DateTime                     @updatedAt
+  Reservation                Reservation[]
+  PropertyPerformanceSummary PropertyPerformanceSummary[]
+  RoomTypePerformanceSummary RoomTypePerformanceSummary[]
 
   @@index([locationId])
   @@index([categoryId])
@@ -208,21 +217,22 @@ model Property {
 }
 
 model RoomType {
-  id             String         @id @default(nanoid(12))
-  propertyId     String
-  property       Property       @relation(fields: [propertyId], references: [id])
-  name           String // contoh: "Standard Double Room", "Entire Luxury Villa"
-  description    String?
-  basePrice      Decimal // Harga per hari berdasarkan Tipe
-  capacity       Int // okupansi kamar maksimum
-  totalQuantity  Int // total kamar tersedia (fix 1 untuk tipe whole property)
-  isWholeUnit    Boolean        @default(false) // untuk identifikasi tipe whole property
-  rooms          Room[] // link untuk mengelompokkan kamar berdasarkan tipe (untuk management kamar dan checkin)
-  availabilities Availability[] // link untuk mengelompokkan ketersediaan berdasarkan availabilities
-  peakRates      PeakRate[] // link untuk mengelompokkan harga peak berdasarkan tipe
-  reservations   Reservation[] // link untuk mengelompokkan reservasi berdasarkan tipe
-  createdAt      DateTime       @default(now())
-  updatedAt      DateTime       @updatedAt
+  id                         String                       @id @default(nanoid(12))
+  propertyId                 String
+  property                   Property                     @relation(fields: [propertyId], references: [id])
+  name                       String // contoh: "Standard Double Room", "Entire Luxury Villa"
+  description                String?
+  basePrice                  Decimal // Harga per hari berdasarkan Tipe
+  capacity                   Int // okupansi kamar maksimum
+  totalQuantity              Int // total kamar tersedia (fix 1 untuk tipe whole property)
+  isWholeUnit                Boolean                      @default(false) // untuk identifikasi tipe whole property
+  rooms                      Room[] // link untuk mengelompokkan kamar berdasarkan tipe (untuk management kamar dan checkin)
+  availabilities             Availability[] // link untuk mengelompokkan ketersediaan berdasarkan availabilities
+  peakRates                  PeakRate[] // link untuk mengelompokkan harga peak berdasarkan tipe
+  reservations               Reservation[] // link untuk mengelompokkan reservasi berdasarkan tipe
+  createdAt                  DateTime                     @default(now())
+  updatedAt                  DateTime                     @updatedAt
+  RoomTypePerformanceSummary RoomTypePerformanceSummary[]
 
   @@unique([propertyId, name])
   @@index([propertyId])
@@ -435,4 +445,87 @@ enum EmailStatus {
   SENT // sudah dikirim
   FAILED // gagal kirim
   SKIPPED // telah dikirim, dilewati untuk menghindari duplikasi
+}
+
+model PropertyPerformanceSummary {
+  id                       String   @id @default(nanoid(12))
+  propertyId               String
+  property                 Property @relation(fields: [propertyId], references: [id], onDelete: Cascade) // Cascade delete if property is deleted
+  periodType               String // e.g., "MONTH", "YEAR"
+  periodKey                String // e.g., "2023-10" for month, "2023" for year
+  year                     Int
+  month                    Int? // Null for YEAR summaries
+  totalRevenue             Decimal  @default("0") // Use Decimal for monetary values
+  projectedRevenue         Decimal  @default("0")
+  totalReservations        Int      @default(0)
+  confirmedCount           Int      @default(0)
+  pendingPaymentCount      Int      @default(0)
+  pendingConfirmationCount Int      @default(0)
+  cancelledCount           Int      @default(0)
+  uniqueUsers              Int      @default(0) // If tracking unique users per period is needed
+  lastUpdated              DateTime @updatedAt
+
+  OwnerId String @db.VarChar(255)
+
+  @@unique([propertyId, periodType, periodKey]) // Ensure uniqueness
+  @@index([propertyId])
+  @@index([year, month]) // For filtering by time
+  @@index([periodType, periodKey]) // For filtering by period
+  @@index([OwnerId, periodType, periodKey])
+  @@index([OwnerId, periodType, periodKey, propertyId])
+}
+
+model RoomTypePerformanceSummary {
+  id                       String   @id @default(nanoid(12))
+  roomTypeId               String
+  roomType                 RoomType @relation(fields: [roomTypeId], references: [id], onDelete: Cascade) // Cascade delete if roomType is deleted
+  propertyId               String
+  property                 Property @relation(fields: [propertyId], references: [id]) // Denormalized for easier querying
+  periodType               String // e.g., "MONTH", "YEAR"
+  periodKey                String // e.g., "2023-10" for month, "2023" for year
+  year                     Int
+  month                    Int? // Null for YEAR summaries
+  totalRevenue             Decimal  @default("0")
+  projectedRevenue         Decimal  @default("0")
+  totalReservations        Int      @default(0)
+  confirmedCount           Int      @default(0)
+  pendingPaymentCount      Int      @default(0)
+  pendingConfirmationCount Int      @default(0)
+  cancelledCount           Int      @default(0)
+  totalNightsBooked        Int      @default(0) // Sum of (reservation.endDate - reservation.startDate) nights
+  uniqueUsers              Int      @default(0) // Count of distinct users who made reservations
+  lastUpdated              DateTime @updatedAt
+
+  OwnerId String @db.VarChar(255)
+
+  @@unique([roomTypeId, periodType, periodKey]) // Ensure uniqueness per room type and period
+  @@index([roomTypeId]) // Index for queries filtering by room type
+  @@index([propertyId]) // Index for queries filtering by property (e.g., all room types in a property)
+  @@index([year, month]) // Index for time-based filtering
+  @@index([periodType, periodKey]) // Index for period-based filtering
+  @@index([OwnerId, periodType, periodKey])
+  @@index([OwnerId, periodType, periodKey, propertyId])
+}
+
+model BatchJob {
+  id               String    @id @default(nanoid(12))
+  jobType          String // e.g., "RECALCULATE_PROPERTY_SUMMARIES"
+  status           JobStatus @default(PENDING)
+  targetOwnerId    String? // The ownerId this job is for (if applicable)
+  targetPeriodType String? // e.g., "DAY", "MONTH", "YEAR" (if applicable)
+  targetPeriodKey  String? // e.g., "2023-10-27", "2023-10" (if applicable)
+  startedAt        DateTime?
+  completedAt      DateTime?
+  errorMessage     String?
+  metadata         Json? // For storing additional details (e.g., processed count, batch size)
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  // Optional: Link to User if targetOwnerId is always present and refers to User.id
+  // owner      User?    @relation(fields: [targetOwnerId], references: [id])
+
+  @@index([jobType, status])
+  @@index([targetOwnerId])
+  @@index([createdAt])
+  @@index([status]) // Index for querying by status
 }

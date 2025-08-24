@@ -13,7 +13,7 @@ router.post('/', middleware_1.authUser, reviewController_1.createReviewControlle
 router.post('/:reviewId/reply', middleware_1.authOwner, reviewController_1.replyToReviewController);
 // Review Query Routes
 router.get('/property/:propertyId', reviewQueryController_1.getPublicReviewsController);
-router.get('/property/:propertyId/eligible-reservations', middleware_1.authAny, reviewQueryController_1.getEligibleReservationsController);
+router.get('/property/:propertyId/eligible-reservations', middleware_1.authUser, reviewQueryController_1.getEligibleReservationsController);
 router.get('/owner/property/:propertyId', middleware_1.authOwner, reviewQueryController_1.getOwnerReviewsController);
 // Review Management Routes
 router.patch('/:reviewId/visibility', middleware_1.authOwner, reviewQueryController_1.updateReviewVisibilityController);

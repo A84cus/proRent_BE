@@ -60,31 +60,26 @@ class RoomService {
                 if (!hasAccess) {
                     throw new Error(roomServiceErrors_1.ROOM_SERVICE_ERRORS.PROPERTY_NOT_FOUND_OR_NO_CREATE_PERMISSION);
                 }
-                // Validate price and capacity
-                if (data.basePrice <= 0) {
-                    throw new Error(roomServiceErrors_1.ROOM_SERVICE_ERRORS.BASE_PRICE_INVALID);
-                }
-                if (data.capacity <= 0) {
-                    throw new Error(roomServiceErrors_1.ROOM_SERVICE_ERRORS.CAPACITY_INVALID);
+                // Verify roomType exists and belongs to the property
+                const roomTypeExists = yield roomRepository_1.default.verifyRoomTypeOwnership(data.roomTypeId, data.propertyId, ownerId);
+                if (!roomTypeExists) {
+                    throw new Error(roomServiceErrors_1.ROOM_SERVICE_ERRORS.ROOM_TYPE_NOT_FOUND_OR_NO_PERMISSION);
                 }
                 const roomData = {
-                    name: data.name.trim(),
+                    name: (_a = data.name) === null || _a === void 0 ? void 0 : _a.trim(),
                     propertyId: data.propertyId,
-                    roomTypeName: data.roomTypeName.trim(),
-                    description: (_a = data.description) === null || _a === void 0 ? void 0 : _a.trim(),
-                    basePrice: data.basePrice,
-                    capacity: data.capacity,
+                    roomTypeId: data.roomTypeId,
                     pictures: data.pictures || [],
                 };
-                return yield roomRepository_1.default.createWithRoomType(roomData);
+                return yield roomRepository_1.default.create(roomData);
             }
             catch (error) {
                 logger_1.default.error("Error creating room:", error);
                 if (error instanceof Error) {
                     if (error.message ===
                         roomServiceErrors_1.ROOM_SERVICE_ERRORS.PROPERTY_NOT_FOUND_OR_NO_CREATE_PERMISSION ||
-                        error.message === roomServiceErrors_1.ROOM_SERVICE_ERRORS.BASE_PRICE_INVALID ||
-                        error.message === roomServiceErrors_1.ROOM_SERVICE_ERRORS.CAPACITY_INVALID) {
+                        error.message ===
+                            roomServiceErrors_1.ROOM_SERVICE_ERRORS.ROOM_TYPE_NOT_FOUND_OR_NO_PERMISSION) {
                         throw error;
                     }
                 }
@@ -102,34 +97,21 @@ class RoomService {
                 if (!existingRoom) {
                     throw new Error(roomServiceErrors_1.ROOM_SERVICE_ERRORS.ROOM_NOT_FOUND_OR_NO_PERMISSION_UPDATE);
                 }
-                // Validate price and capacity if provided
-                if (data.basePrice !== undefined && data.basePrice <= 0) {
-                    throw new Error(roomServiceErrors_1.ROOM_SERVICE_ERRORS.BASE_PRICE_INVALID);
-                }
-                if (data.capacity !== undefined && data.capacity <= 0) {
-                    throw new Error(roomServiceErrors_1.ROOM_SERVICE_ERRORS.CAPACITY_INVALID);
-                }
-                // Prepare update data
+                // Prepare update data - only room-specific fields
                 const updateData = {};
                 if (data.name !== undefined)
-                    updateData.name = data.name.trim();
-                if (data.description !== undefined)
-                    updateData.description = (_a = data.description) === null || _a === void 0 ? void 0 : _a.trim();
-                if (data.basePrice !== undefined)
-                    updateData.basePrice = data.basePrice;
-                if (data.capacity !== undefined)
-                    updateData.capacity = data.capacity;
+                    updateData.name = (_a = data.name) === null || _a === void 0 ? void 0 : _a.trim();
+                if (data.isAvailable !== undefined)
+                    updateData.isAvailable = data.isAvailable;
                 if (data.pictures !== undefined)
                     updateData.pictures = data.pictures;
-                return yield roomRepository_1.default.updateRoomAndType(id, updateData);
+                return yield roomRepository_1.default.update(id, updateData);
             }
             catch (error) {
                 logger_1.default.error(`Error updating room with ID ${id}:`, error);
                 if (error instanceof Error) {
                     if (error.message ===
                         roomServiceErrors_1.ROOM_SERVICE_ERRORS.ROOM_NOT_FOUND_OR_NO_PERMISSION_UPDATE ||
-                        error.message === roomServiceErrors_1.ROOM_SERVICE_ERRORS.BASE_PRICE_INVALID ||
-                        error.message === roomServiceErrors_1.ROOM_SERVICE_ERRORS.CAPACITY_INVALID ||
                         error.message === roomServiceErrors_1.ROOM_SERVICE_ERRORS.ROOM_NOT_FOUND) {
                         throw error;
                     }

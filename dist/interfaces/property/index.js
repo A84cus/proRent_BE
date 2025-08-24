@@ -19,3 +19,5 @@ __exportStar(require("./property.interface"), exports);
 __exportStar(require("./availability.interface"), exports);
 __exportStar(require("./category.interface"), exports);
 __exportStar(require("./peakRate.interface"), exports);
+__exportStar(require("./roomType.interface"), exports);
+__exportStar(require("./room.interface"), exports);
