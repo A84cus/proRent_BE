@@ -19,6 +19,7 @@ const reviewRoute_1 = __importDefault(require("./route/review/reviewRoute"));
 const ownerRoutes_1 = __importDefault(require("./route/property/ownerRoutes"));
 const roomOperationsRoutes_1 = __importDefault(require("./route/property/roomOperationsRoutes"));
 const publicPropertyRoutes_1 = __importDefault(require("./route/property/publicPropertyRoutes"));
+const reportRoutes_1 = __importDefault(require("./route/report/reportRoutes"));
 const corsOption_1 = __importDefault(require("./config/app/corsOption"));
 const express = require('express');
 const app = express();
@@ -34,6 +35,7 @@ app.use('/api/users', userRoute_1.default);
 app.use('/api/reservation', reservationRoute_1.default);
 app.use('/api/review', reviewRoute_1.default);
 app.use('/api/cronjob', cronjobRoute_1.default);
+app.use('/api/report', reportRoutes_1.default);
 app.use('/api/owner', ownerRoutes_1.default);
 app.use('/api/rooms', roomOperationsRoutes_1.default);
 app.get('/', (req, res) => {

@@ -105,51 +105,34 @@ class RoomRepository {
             });
         });
     }
-    // Create room with room type
-    createWithRoomType(roomData) {
+    // Create room (simple room creation)
+    create(roomData) {
         return __awaiter(this, void 0, void 0, function* () {
             return prisma.$transaction((tx) => __awaiter(this, void 0, void 0, function* () {
-                // First, create or get the room type
-                let roomType = yield tx.roomType.findFirst({
+                // Verify roomType exists and belongs to the property
+                const roomType = yield tx.roomType.findFirst({
                     where: {
+                        id: roomData.roomTypeId,
                         propertyId: roomData.propertyId,
-                        name: roomData.roomTypeName,
                     },
                 });
                 if (!roomType) {
-                    roomType = yield tx.roomType.create({
-                        data: {
-                            propertyId: roomData.propertyId,
-                            name: roomData.roomTypeName,
-                            description: roomData.description,
-                            basePrice: roomData.basePrice,
-                            capacity: roomData.capacity,
-                            totalQuantity: 1,
-                            isWholeUnit: false,
-                        },
-                    });
-                }
-                else {
-                    // Just increment quantity, don't override other properties
-                    roomType = yield tx.roomType.update({
-                        where: { id: roomType.id },
-                        data: {
-                            totalQuantity: roomType.totalQuantity + 1,
-                        },
-                    });
+                    throw new Error("Room type not found or doesn't belong to this property");
                 }
                 // Create the room
                 const room = yield tx.room.create({
                     data: {
                         name: roomData.name,
                         propertyId: roomData.propertyId,
-                        roomTypeId: roomType.id,
+                        roomTypeId: roomData.roomTypeId,
                     },
                     include: {
                         roomType: true,
                         property: true,
                     },
                 });
+                // Note: totalQuantity in RoomType represents the maximum capacity
+                // and should be set when creating the RoomType, not automatically incremented
                 // Add pictures if provided
                 if (roomData.pictures && roomData.pictures.length > 0) {
                     const roomPictures = roomData.pictures.map((pictureId) => ({
@@ -164,8 +147,8 @@ class RoomRepository {
             }));
         });
     }
-    // Update room and room type
-    updateRoomAndType(id, updateData) {
+    // Update room (only room-specific fields)
+    update(id, updateData) {
         return __awaiter(this, void 0, void 0, function* () {
             return prisma.$transaction((tx) => __awaiter(this, void 0, void 0, function* () {
                 const room = yield tx.room.findUnique({
@@ -175,30 +158,24 @@ class RoomRepository {
                 if (!room) {
                     throw new Error("Room not found");
                 }
-                // Update room name if provided
-                if (updateData.name) {
-                    yield tx.room.update({
-                        where: { id },
-                        data: { name: updateData.name },
-                    });
-                }
-                // Update room type if price, capacity, or description provided
-                if (updateData.basePrice !== undefined ||
-                    updateData.capacity !== undefined ||
-                    updateData.description !== undefined) {
-                    yield tx.roomType.update({
-                        where: { id: room.roomTypeId },
-                        data: Object.assign(Object.assign(Object.assign({}, (updateData.description !== undefined && {
-                            description: updateData.description,
-                        })), (updateData.basePrice !== undefined && {
-                            basePrice: updateData.basePrice,
-                        })), (updateData.capacity !== undefined && {
-                            capacity: updateData.capacity,
-                        })),
-                    });
-                }
+                // Update room fields
+                const updatedRoom = yield tx.room.update({
+                    where: { id },
+                    data: Object.assign(Object.assign({}, (updateData.name !== undefined && { name: updateData.name })), (updateData.isAvailable !== undefined && {
+                        isAvailable: updateData.isAvailable,
+                    })),
+                    include: {
+                        roomType: true,
+                        property: true,
+                        gallery: {
+                            include: {
+                                picture: true,
+                            },
+                        },
+                    },
+                });
                 // Update pictures if provided
-                if (updateData.pictures) {
+                if (updateData.pictures !== undefined) {
                     // Delete existing pictures
                     yield tx.roomPicture.deleteMany({
                         where: { roomId: id },
@@ -214,20 +191,23 @@ class RoomRepository {
                         });
                     }
                 }
-                // Return updated room with includes
-                return tx.room.findUnique({
-                    where: { id },
-                    include: {
-                        roomType: true,
-                        property: true,
-                        gallery: {
-                            include: {
-                                picture: true,
-                            },
-                        },
-                    },
-                });
+                return updatedRoom;
             }));
+        });
+    }
+    // Verify room type ownership
+    verifyRoomTypeOwnership(roomTypeId, propertyId, ownerId) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const roomType = yield prisma.roomType.findFirst({
+                where: {
+                    id: roomTypeId,
+                    propertyId: propertyId,
+                    property: {
+                        OwnerId: ownerId,
+                    },
+                },
+            });
+            return !!roomType;
         });
     }
     // Delete room
@@ -253,17 +233,14 @@ class RoomRepository {
                 yield tx.room.delete({
                     where: { id },
                 });
-                // Update room type quantity
-                yield tx.roomType.update({
-                    where: { id: room.roomTypeId },
-                    data: {
-                        totalQuantity: Math.max(0, room.roomType.totalQuantity - 1),
-                    },
-                });
+                // Note: We don't automatically decrease totalQuantity in RoomType
+                // because totalQuantity represents the capacity, not actual count
                 // If this was the last room of this type, consider deleting the room type
                 const remainingRooms = yield tx.room.count({
                     where: { roomTypeId: room.roomTypeId },
                 });
+                // Optional: Clean up room type if no rooms remain
+                // This is business logic decision - maybe keep room types for future use
                 if (remainingRooms === 0) {
                     // Delete room type availabilities and peak rates
                     yield tx.availability.deleteMany({
@@ -272,10 +249,8 @@ class RoomRepository {
                     yield tx.peakRate.deleteMany({
                         where: { roomTypeId: room.roomTypeId },
                     });
-                    // Delete the room type
-                    yield tx.roomType.delete({
-                        where: { id: room.roomTypeId },
-                    });
+                    // Note: We don't auto-delete room type here
+                    // That should be a separate business decision
                 }
             }));
         });

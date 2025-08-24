@@ -7,7 +7,7 @@ import {
    safeParseCreateReview,
    safeParseReplyToReview,
    safeParseReplyToReviewBody
-} from '../../validations/reviewValidation'; // Import safeParse functions
+} from '../../validations/review/reviewControllerValidation'; // Import safeParse functions
 
 // --- Helper Functions (Each <15 lines) ---
 

@@ -12,12 +12,12 @@ exports.propertyCreateSchema = zod_1.z.object({
         .string()
         .min(1, "Property name is required")
         .max(200, "Property name must not exceed 200 characters"),
-    categoryId: zod_1.z.string().uuid("Invalid category ID format"),
+    categoryId: zod_1.z.string().min(1, "Category ID is required"),
     description: zod_1.z
         .string()
         .min(10, "Description must be at least 10 characters")
         .max(2000, "Description must not exceed 2000 characters"),
-    mainPictureId: zod_1.z.string().uuid("Invalid main picture ID format"),
+    mainPictureId: zod_1.z.string().min(1, "Main picture ID is required"),
     location: zod_1.z
         .string()
         .min(1, "Location/address is required")
@@ -30,6 +30,8 @@ exports.propertyCreateSchema = zod_1.z.object({
         .string()
         .min(1, "Province is required")
         .max(100, "Province name must not exceed 100 characters"),
+    latitude: zod_1.z.string().optional(),
+    longitude: zod_1.z.string().optional(),
 });
 exports.propertyUpdateSchema = zod_1.z.object({
     name: zod_1.z
@@ -37,13 +39,13 @@ exports.propertyUpdateSchema = zod_1.z.object({
         .min(1, "Property name is required")
         .max(200, "Property name must not exceed 200 characters")
         .optional(),
-    categoryId: zod_1.z.string().uuid("Invalid category ID format").optional(),
+    categoryId: zod_1.z.string().min(1, "Category ID is required").optional(),
     description: zod_1.z
         .string()
         .min(10, "Description must be at least 10 characters")
         .max(2000, "Description must not exceed 2000 characters")
         .optional(),
-    mainPictureId: zod_1.z.string().uuid("Invalid main picture ID format").optional(),
+    mainPictureId: zod_1.z.string().min(1, "Main picture ID is required").optional(),
     location: zod_1.z
         .string()
         .min(1, "Location/address is required")
@@ -59,11 +61,29 @@ exports.propertyUpdateSchema = zod_1.z.object({
         .min(1, "Province is required")
         .max(100, "Province name must not exceed 100 characters")
         .optional(),
+    latitude: zod_1.z
+        .string()
+        .refine((val) => {
+        if (!val || val.trim() === "")
+            return true; // Allow empty/null
+        const num = parseFloat(val);
+        return !isNaN(num) && num >= -90 && num <= 90;
+    }, "Latitude must be a valid number between -90 and 90")
+        .optional(),
+    longitude: zod_1.z
+        .string()
+        .refine((val) => {
+        if (!val || val.trim() === "")
+            return true; // Allow empty/null
+        const num = parseFloat(val);
+        return !isNaN(num) && num >= -180 && num <= 180;
+    }, "Longitude must be a valid number between -180 and 180")
+        .optional(),
 });
 exports.propertyQuerySchema = zod_1.z.object({
     page: zod_1.z.number().int().min(1).default(1).optional(),
     limit: zod_1.z.number().int().min(1).max(100).default(10).optional(),
-    categoryId: zod_1.z.string().uuid("Invalid category ID format").optional(),
+    categoryId: zod_1.z.string().min(1, "Category ID is required").optional(),
     city: zod_1.z.string().optional(),
     province: zod_1.z.string().optional(),
     minPrice: zod_1.z.number().min(0).optional(),
@@ -74,10 +94,10 @@ exports.propertyQuerySchema = zod_1.z.object({
         .optional(),
     sortOrder: zod_1.z.enum(["asc", "desc"]).default("desc").optional(),
 });
-exports.propertyIdSchema = zod_1.z.string().uuid("Invalid property ID format");
+exports.propertyIdSchema = zod_1.z.string().min(1, "Property ID is required");
 // Room validation schemas
 exports.roomCreateSchema = zod_1.z.object({
-    propertyId: zod_1.z.string().uuid("Invalid property ID format"),
+    propertyId: zod_1.z.string().min(1, "Property ID is required"),
     roomType: zod_1.z
         .string()
         .min(1, "Room type is required")

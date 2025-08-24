@@ -15,6 +15,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.uploadMiddleware = void 0;
 const uploadService_1 = __importDefault(require("../../service/upload/uploadService"));
 const multerConfigService_1 = __importDefault(require("../../service/upload/multerConfigService"));
+const fileValidationService_1 = __importDefault(require("../../service/upload/fileValidationService"));
 const responseHelper_1 = __importDefault(require("../../helpers/system/responseHelper"));
 const authorizationHelper_1 = __importDefault(require("../../helpers/auth/authorizationHelper"));
 const logger_1 = __importDefault(require("../../utils/system/logger"));
@@ -26,12 +27,17 @@ class UploadController {
     uploadFile(req, res) {
         return __awaiter(this, void 0, void 0, function* () {
             try {
-                // Validate request body
-                const validatedData = validations_1.uploadFileSchema.parse(req.body);
-                const { type, alt } = validatedData;
                 // Check if file exists
                 if (!req.file) {
                     return responseHelper_1.default.badRequest(res, "No file provided. Please upload a file.");
+                }
+                // Validate request body
+                const validatedData = validations_1.uploadFileSchema.parse(req.body);
+                const { type, alt } = validatedData;
+                // Additional MIME type validation now that we have type
+                const mimeValidation = fileValidationService_1.default.validateMimeType(req.file.mimetype, type);
+                if (!mimeValidation.isValid) {
+                    return responseHelper_1.default.badRequest(res, mimeValidation.error || "Invalid file type for upload type");
                 }
                 // Check authorization
                 const authCheck = authorizationHelper_1.default.canUploadType(req, type);

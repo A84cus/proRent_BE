@@ -18,7 +18,7 @@ router.post('/:reviewId/reply', authOwner, replyToReviewController);
 
 // Review Query Routes
 router.get('/property/:propertyId', getPublicReviewsController);
-router.get('/property/:propertyId/eligible-reservations', authAny, getEligibleReservationsController);
+router.get('/property/:propertyId/eligible-reservations', authUser, getEligibleReservationsController);
 router.get('/owner/property/:propertyId', authOwner, getOwnerReviewsController);
 
 // Review Management Routes

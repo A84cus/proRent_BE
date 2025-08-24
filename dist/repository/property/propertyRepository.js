@@ -214,7 +214,7 @@ class PropertyRepository {
         });
     }
     // Get or create location
-    getOrCreateLocation(address, cityId) {
+    getOrCreateLocation(address, cityId, latitude, longitude) {
         return __awaiter(this, void 0, void 0, function* () {
             // First try to find existing location
             const existingLocation = yield prisma.location.findFirst({
@@ -224,6 +224,24 @@ class PropertyRepository {
                 },
             });
             if (existingLocation) {
+                // Update existing location with new lat/lng if provided
+                if (latitude !== undefined || longitude !== undefined) {
+                    yield prisma.location.update({
+                        where: { id: existingLocation.id },
+                        data: {
+                            latitude: latitude !== undefined &&
+                                latitude !== null &&
+                                latitude.trim() !== ""
+                                ? latitude
+                                : existingLocation.latitude,
+                            longitude: longitude !== undefined &&
+                                longitude !== null &&
+                                longitude.trim() !== ""
+                                ? longitude
+                                : existingLocation.longitude,
+                        },
+                    });
+                }
                 return existingLocation.id;
             }
             // Create new location
@@ -232,6 +250,14 @@ class PropertyRepository {
                     name: address, // Use address as name for now
                     address,
                     cityId,
+                    latitude: latitude !== undefined && latitude !== null && latitude.trim() !== ""
+                        ? latitude
+                        : null,
+                    longitude: longitude !== undefined &&
+                        longitude !== null &&
+                        longitude.trim() !== ""
+                        ? longitude
+                        : null,
                 },
             });
             return newLocation.id;
