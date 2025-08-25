@@ -26,8 +26,8 @@ exports.DashboardFiltersSchema = zod_1.z.object({
         .transform(s => s === null || s === void 0 ? void 0 : s.toLowerCase())
 });
 exports.DashboardOptionsSchema = zod_1.z.object({
-    page: zod_1.z.number().int().min(1).default(1),
-    pageSize: zod_1.z.number().int().min(1).max(100).default(20),
+    page: zod_1.z.preprocess(val => Number(val), zod_1.z.number().int().min(1).default(1)),
+    pageSize: zod_1.z.preprocess(val => Number(val), zod_1.z.number().int().min(1).max(100).default(20)),
     sortBy: zod_1.z.enum(['startDate', 'endDate', 'createdAt', 'paymentAmount']).optional().default('startDate'),
     sortDir: zod_1.z.enum(['asc', 'desc']).optional().default('desc')
 });
