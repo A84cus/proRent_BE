@@ -1,5 +1,4 @@
 "use strict";
-// src/services/report/dashboard/cases/case1_noProperty.ts
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -14,6 +13,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.handleCase1 = handleCase1;
+// src/services/report/dashboard/cases/case1_noProperty.ts
 const prisma_1 = __importDefault(require("../../../prisma"));
 const aggregateSummaries_1 = require("../utils/aggregateSummaries");
 const PerformanceSummaryService_1 = require("../PerformanceSummaryService");
@@ -21,11 +21,46 @@ const customReportService_1 = require("../customReportService");
 function handleCase1(context) {
     return __awaiter(this, void 0, void 0, function* () {
         const { ownerId, filters, options, period, periodConfig } = context;
-        const { page = 1, pageSize = 20 } = options;
+        const { page = 1, pageSize = 20, sortBy = 'startDate', sortDir = 'desc' } = options; // Extract sorting options
+        const { search } = filters; // Extract search filter
         const { periodType, periodKey, year, month } = periodConfig;
-        // Try cache
+        // --- Map sortBy option to PropertyPerformanceSummary field ---
+        let summaryOrderByClause = { property: { name: sortDir } }; // Default fallback
+        switch (sortBy) {
+            case 'paymentAmount':
+                summaryOrderByClause = { totalRevenue: sortDir }; // Sort by cached revenue
+                break;
+            case 'startDate':
+            case 'endDate':
+            case 'createdAt':
+                // These don't directly map to PropertyPerformanceSummary fields.
+                // Sorting by creation date of summary might be closest for 'createdAt'.
+                // For 'startDate'/'endDate', sorting by revenue or name is often acceptable default.
+                console.warn(`Sorting by ${sortBy} not directly supported on PropertyPerformanceSummary. Falling back to name.`);
+                summaryOrderByClause = { property: { name: sortDir } };
+                break;
+            // Add cases for fields that exist on Property model if needed (e.g., if you add a createdAt to Property)
+            default:
+                summaryOrderByClause = { property: { name: sortDir } }; // Default to name
+        }
+        // --- Build search filter for PropertyPerformanceSummary query ---
+        const propertySearchFilter = {
+            property: { OwnerId: ownerId },
+            periodType,
+            periodKey
+        };
+        if (search) {
+            propertySearchFilter.property.name = {
+                contains: search,
+                mode: 'insensitive' // Case-insensitive search
+            };
+            // If you want to search address/city, you'd need to adjust the query structure or use raw SQL
+            // as Prisma's nested filtering can become complex for OR conditions across different relations.
+            // For simplicity, this example focuses on property name.
+        }
+        // Try cache - Apply sorting and search filtering here
         const cachedSummaries = yield prisma_1.default.propertyPerformanceSummary.findMany({
-            where: { property: { OwnerId: ownerId }, periodType, periodKey },
+            where: propertySearchFilter,
             include: {
                 property: {
                     select: {
@@ -35,7 +70,10 @@ function handleCase1(context) {
                         location: { select: { address: true, city: { select: { name: true } } } }
                     }
                 }
-            }
+            },
+            orderBy: summaryOrderByClause, // <-- Use dynamic sorting
+            skip: (page - 1) * pageSize,
+            take: pageSize
         });
         if (cachedSummaries.length > 0) {
             const properties = cachedSummaries.map(s => {
@@ -64,20 +102,39 @@ function handleCase1(context) {
                     }
                 });
             });
-            const combined = (0, aggregateSummaries_1.aggregateSummaries)(properties.map(p => p.summary));
-            const totalCount = yield prisma_1.default.property.count({ where: { OwnerId: ownerId } });
+            // Important: Get the total count matching the search criteria for accurate pagination
+            const totalCount = yield prisma_1.default.propertyPerformanceSummary.count({
+                where: propertySearchFilter
+            });
             const totalPages = Math.ceil(totalCount / pageSize);
-            return { properties, summary: combined, period, pagination: { page, pageSize, total: totalCount, totalPages } };
+            const combined = (0, aggregateSummaries_1.aggregateSummaries)(properties.map(p => p.summary));
+            return {
+                properties,
+                summary: combined,
+                period,
+                pagination: { page, pageSize, total: totalCount, totalPages }
+            };
         }
-        // Cache miss
-        const totalCount = yield prisma_1.default.property.count({ where: { OwnerId: ownerId } });
+        // Cache miss - Proceed with fetching and calculating (less efficient)
+        // Note: This path might also need to apply search/sorting if critical.
+        const propertyBaseFilter = { OwnerId: ownerId };
+        if (search) {
+            propertyBaseFilter.name = {
+                contains: search,
+                mode: 'insensitive'
+            };
+        }
+        const totalCount = yield prisma_1.default.property.count({
+            where: propertyBaseFilter
+        });
         const totalPages = Math.ceil(totalCount / pageSize);
         const skip = (page - 1) * pageSize;
+        // On cache miss, fetch properties with search and basic sorting
         const properties = yield prisma_1.default.property.findMany({
-            where: { OwnerId: ownerId },
+            where: propertyBaseFilter,
             skip,
             take: pageSize,
-            orderBy: { name: 'asc' },
+            orderBy: { name: 'asc' }, // Basic sorting on cache miss, could be improved
             select: {
                 id: true,
                 name: true,
