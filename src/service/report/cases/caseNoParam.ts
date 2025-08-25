@@ -18,7 +18,12 @@ export async function handleCase1 (context: DashboardContext): Promise<ReportInt
       where: { property: { OwnerId: ownerId }, periodType, periodKey },
       include: {
          property: {
-            select: { id: true, name: true, location: { select: { address: true, city: { select: { name: true } } } } }
+            select: {
+               id: true,
+               name: true,
+               mainPicture: true,
+               location: { select: { address: true, city: { select: { name: true } } } }
+            }
          }
       }
    });
@@ -28,6 +33,7 @@ export async function handleCase1 (context: DashboardContext): Promise<ReportInt
          property: {
             id: s.property.id,
             name: s.property.name,
+            Picture: s.property.mainPicture?.url ?? null,
             address: s.property.location?.address ?? null,
             city: s.property.location?.city.name ?? null
          },
@@ -63,7 +69,12 @@ export async function handleCase1 (context: DashboardContext): Promise<ReportInt
       skip,
       take: pageSize,
       orderBy: { name: 'asc' },
-      select: { id: true, name: true, location: { select: { address: true, city: { select: { name: true } } } } }
+      select: {
+         id: true,
+         name: true,
+         mainPicture: true,
+         location: { select: { address: true, city: { select: { name: true } } } }
+      }
    });
 
    const propertySummaries = await Promise.all(
@@ -91,6 +102,7 @@ export async function handleCase1 (context: DashboardContext): Promise<ReportInt
             property: {
                id: prop.id,
                name: prop.name,
+               Picture: prop.mainPicture?.url ?? null,
                address: prop.location?.address ?? null,
                city: prop.location?.city.name ?? null
             },

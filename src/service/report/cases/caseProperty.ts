@@ -13,7 +13,12 @@ export async function handleCase2 (context: DashboardContext): Promise<ReportInt
 
    const property = await prisma.property.findUnique({
       where: { id: propertyId, OwnerId: ownerId },
-      select: { id: true, name: true, location: { select: { address: true, city: { select: { name: true } } } } }
+      select: {
+         id: true,
+         name: true,
+         mainPicture: true,
+         location: { select: { address: true, city: { select: { name: true } } } }
+      }
    });
 
    if (!property) {
@@ -88,6 +93,7 @@ export async function handleCase2 (context: DashboardContext): Promise<ReportInt
             property: {
                id: property.id,
                name: property.name,
+               Picture: property.mainPicture?.url ?? null,
                address: property.location?.address ?? null,
                city: property.location?.city.name ?? null
             },

@@ -53,7 +53,7 @@ const roomTypeSummaryService_1 = require("../roomTypeSummaryService");
 const availabilityService = __importStar(require("../../reservationService/availabilityService"));
 function handleCase3(context) {
     return __awaiter(this, void 0, void 0, function* () {
-        var _a, _b, _c, _d;
+        var _a, _b, _c, _d, _e, _f;
         const { ownerId, filters, options, period, periodConfig } = context;
         const { propertyId, roomTypeId } = filters;
         const roomType = yield prisma_1.default.roomType.findUnique({
@@ -65,6 +65,7 @@ function handleCase3(context) {
                     select: {
                         id: true,
                         name: true,
+                        mainPicture: true,
                         location: { select: { address: true, city: { select: { name: true } } } }
                     }
                 }
@@ -111,8 +112,9 @@ function handleCase3(context) {
             property: {
                 id: roomType.property.id,
                 name: roomType.property.name,
-                address: (_b = (_a = roomType.property.location) === null || _a === void 0 ? void 0 : _a.address) !== null && _b !== void 0 ? _b : null,
-                city: (_d = (_c = roomType.property.location) === null || _c === void 0 ? void 0 : _c.city.name) !== null && _d !== void 0 ? _d : null
+                Picture: (_b = (_a = roomType.property.mainPicture) === null || _a === void 0 ? void 0 : _a.url) !== null && _b !== void 0 ? _b : null,
+                address: (_d = (_c = roomType.property.location) === null || _c === void 0 ? void 0 : _c.address) !== null && _d !== void 0 ? _d : null,
+                city: (_f = (_e = roomType.property.location) === null || _e === void 0 ? void 0 : _e.city.name) !== null && _f !== void 0 ? _f : null
             },
             period,
             summary: fullReport.summary,

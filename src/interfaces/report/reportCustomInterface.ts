@@ -4,6 +4,7 @@ import { Status } from '@prisma/client';
 export interface PropertyMin {
    id: string;
    name: string;
+   Picture: string | null;
    address: string | null;
    city: string | null;
 }

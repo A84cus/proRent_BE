@@ -28,19 +28,25 @@ function handleCase1(context) {
             where: { property: { OwnerId: ownerId }, periodType, periodKey },
             include: {
                 property: {
-                    select: { id: true, name: true, location: { select: { address: true, city: { select: { name: true } } } } }
+                    select: {
+                        id: true,
+                        name: true,
+                        mainPicture: true,
+                        location: { select: { address: true, city: { select: { name: true } } } }
+                    }
                 }
             }
         });
         if (cachedSummaries.length > 0) {
             const properties = cachedSummaries.map(s => {
-                var _a, _b, _c, _d;
+                var _a, _b, _c, _d, _e, _f;
                 return ({
                     property: {
                         id: s.property.id,
                         name: s.property.name,
-                        address: (_b = (_a = s.property.location) === null || _a === void 0 ? void 0 : _a.address) !== null && _b !== void 0 ? _b : null,
-                        city: (_d = (_c = s.property.location) === null || _c === void 0 ? void 0 : _c.city.name) !== null && _d !== void 0 ? _d : null
+                        Picture: (_b = (_a = s.property.mainPicture) === null || _a === void 0 ? void 0 : _a.url) !== null && _b !== void 0 ? _b : null,
+                        address: (_d = (_c = s.property.location) === null || _c === void 0 ? void 0 : _c.address) !== null && _d !== void 0 ? _d : null,
+                        city: (_f = (_e = s.property.location) === null || _e === void 0 ? void 0 : _e.city.name) !== null && _f !== void 0 ? _f : null
                     },
                     period,
                     summary: {
@@ -72,18 +78,24 @@ function handleCase1(context) {
             skip,
             take: pageSize,
             orderBy: { name: 'asc' },
-            select: { id: true, name: true, location: { select: { address: true, city: { select: { name: true } } } } }
+            select: {
+                id: true,
+                name: true,
+                mainPicture: true,
+                location: { select: { address: true, city: { select: { name: true } } } }
+            }
         });
         const propertySummaries = yield Promise.all(properties.map((prop) => __awaiter(this, void 0, void 0, function* () {
-            var _a, _b, _c, _d;
+            var _a, _b, _c, _d, _e, _f;
             const report = yield (0, customReportService_1.getReservationReport)(Object.assign({ ownerId, propertyId: prop.id }, filters), { page: 1, pageSize: 1000 });
             yield (0, PerformanceSummaryService_1.upsertPropertyPerformanceSummary)(Object.assign(Object.assign({ propertyId: prop.id }, periodConfig), { totalRevenue: report.summary.revenue.actual, projectedRevenue: report.summary.revenue.projected, totalReservations: report.summary.totalReservations, confirmedCount: report.summary.counts.CONFIRMED, pendingPaymentCount: report.summary.counts.PENDING_PAYMENT, pendingConfirmationCount: report.summary.counts.PENDING_CONFIRMATION, cancelledCount: report.summary.counts.CANCELLED, uniqueUsers: new Set(report.data.map(r => r.userId)).size, OwnerId: ownerId }));
             return {
                 property: {
                     id: prop.id,
                     name: prop.name,
-                    address: (_b = (_a = prop.location) === null || _a === void 0 ? void 0 : _a.address) !== null && _b !== void 0 ? _b : null,
-                    city: (_d = (_c = prop.location) === null || _c === void 0 ? void 0 : _c.city.name) !== null && _d !== void 0 ? _d : null
+                    Picture: (_b = (_a = prop.mainPicture) === null || _a === void 0 ? void 0 : _a.url) !== null && _b !== void 0 ? _b : null,
+                    address: (_d = (_c = prop.location) === null || _c === void 0 ? void 0 : _c.address) !== null && _d !== void 0 ? _d : null,
+                    city: (_f = (_e = prop.location) === null || _e === void 0 ? void 0 : _e.city.name) !== null && _f !== void 0 ? _f : null
                 },
                 period,
                 summary: report.summary
