@@ -12,11 +12,11 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.dashboardReportController = void 0;
 const reportDashboardService_1 = require("../../service/report/reportDashboardService");
-const reservationController_1 = require("../reservationController");
+const paymentProofController_1 = require("../reservationController/paymentProofController");
 const dashboardReportController = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         // --- 1. Extract ownerId ---
-        const ownerId = (0, reservationController_1.getUserIdFromRequest)(req);
+        const ownerId = (0, paymentProofController_1.getUserIdFromRequest)(req);
         if (!ownerId) {
             res.status(401).json({ error: 'Unauthorized' });
             return;

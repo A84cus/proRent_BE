@@ -2,7 +2,7 @@
 
 import { Request, Response } from 'express';
 import { getOwnerDashboardReport } from '../../service/report/reportDashboardService';
-import { getUserIdFromRequest } from '../reservationController';
+import { getUserIdFromRequest } from '../reservationController/paymentProofController';
 
 export const dashboardReportController = async (req: Request, res: Response): Promise<void> => {
    try {

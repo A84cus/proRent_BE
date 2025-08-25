@@ -12,11 +12,11 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.exportDashboardExcel = void 0;
 const reportCustomController_1 = require("./reportCustomController"); // Reuse it!
-const reservationController_1 = require("../reservationController");
+const paymentProofController_1 = require("../reservationController/paymentProofController");
 const excelReport_1 = require("../../templates/report/excelReport");
 const exportDashboardExcel = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const ownerId = (0, reservationController_1.getUserIdFromRequest)(req);
+        const ownerId = (0, paymentProofController_1.getUserIdFromRequest)(req);
         if (!ownerId) {
             res.status(401).send('Unauthorized');
             return;

@@ -6,10 +6,11 @@ import {
    getMonthlyRevenueChart,
    getDailyRevenueChart
 } from '../../service/report/reportChartService';
+import { getUserIdFromRequest } from '../reservationController/paymentProofController';
 
 export const yearlyChartController = async (req: Request, res: Response): Promise<void> => {
    try {
-      const ownerId = (req as any).user.id; // Adjust based on your auth middleware
+      const ownerId = getUserIdFromRequest(req); // Adjust based on your auth middleware
       if (!ownerId) {
          res.status(401).json({ error: 'Unauthorized' });
          return;
@@ -52,7 +53,7 @@ export const yearlyChartController = async (req: Request, res: Response): Promis
 
 export const monthlyChartController = async (req: Request, res: Response): Promise<void> => {
    try {
-      const ownerId = (req as any).user.id;
+      const ownerId = getUserIdFromRequest(req);
       if (!ownerId) {
          res.status(401).json({ error: 'Unauthorized' });
          return;
@@ -88,7 +89,7 @@ export const monthlyChartController = async (req: Request, res: Response): Promi
 
 export const dailyChartController = async (req: Request, res: Response): Promise<void> => {
    try {
-      const ownerId = (req as any).user.id;
+      const ownerId = getUserIdFromRequest(req);
       if (!ownerId) {
          res.status(401).json({ error: 'Unauthorized' });
          return;
