@@ -12,9 +12,10 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.dailyChartController = exports.monthlyChartController = exports.yearlyChartController = void 0;
 const reportChartService_1 = require("../../service/report/reportChartService");
+const paymentProofController_1 = require("../reservationController/paymentProofController");
 const yearlyChartController = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const ownerId = req.user.id; // Adjust based on your auth middleware
+        const ownerId = (0, paymentProofController_1.getUserIdFromRequest)(req); // Adjust based on your auth middleware
         if (!ownerId) {
             res.status(401).json({ error: 'Unauthorized' });
             return;
@@ -56,7 +57,7 @@ const yearlyChartController = (req, res) => __awaiter(void 0, void 0, void 0, fu
 exports.yearlyChartController = yearlyChartController;
 const monthlyChartController = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const ownerId = req.user.id;
+        const ownerId = (0, paymentProofController_1.getUserIdFromRequest)(req);
         if (!ownerId) {
             res.status(401).json({ error: 'Unauthorized' });
             return;
@@ -89,7 +90,7 @@ const monthlyChartController = (req, res) => __awaiter(void 0, void 0, void 0, f
 exports.monthlyChartController = monthlyChartController;
 const dailyChartController = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const ownerId = req.user.id;
+        const ownerId = (0, paymentProofController_1.getUserIdFromRequest)(req);
         if (!ownerId) {
             res.status(401).json({ error: 'Unauthorized' });
             return;
