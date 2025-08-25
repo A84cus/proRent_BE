@@ -1,3 +1,4 @@
+import { z } from "zod";
 import { PROPERTY_ERROR_MESSAGES } from "../../constants/controllers/property";
 import {
   CreatePropertyData,
@@ -7,304 +8,256 @@ import {
   PropertyIdValidationResult,
 } from "../../interfaces/property";
 
+// Zod schemas
+const propertyIdSchema = z
+  .string()
+  .min(1, PROPERTY_ERROR_MESSAGES.PROPERTY_ID_REQUIRED);
+
+const createPropertySchema = z.object({
+  name: z
+    .string()
+    .min(1, PROPERTY_ERROR_MESSAGES.PROPERTY_NAME_REQUIRED)
+    .transform((val) => val.trim()),
+  categoryId: z
+    .string()
+    .min(1, PROPERTY_ERROR_MESSAGES.CATEGORY_ID_REQUIRED)
+    .transform((val) => val.trim()),
+  description: z
+    .string()
+    .min(1, PROPERTY_ERROR_MESSAGES.DESCRIPTION_REQUIRED)
+    .transform((val) => val.trim()),
+  mainPictureId: z.string().optional().nullable(),
+  location: z
+    .string()
+    .min(1, PROPERTY_ERROR_MESSAGES.LOCATION_ADDRESS_REQUIRED)
+    .transform((val) => val.trim()),
+  city: z
+    .string()
+    .min(1, PROPERTY_ERROR_MESSAGES.CITY_REQUIRED)
+    .transform((val) => val.trim()),
+  province: z
+    .string()
+    .min(1, PROPERTY_ERROR_MESSAGES.PROVINCE_REQUIRED)
+    .transform((val) => val.trim()),
+  rentalType: z
+    .enum(["WHOLE_PROPERTY", "ROOM_BY_ROOM"])
+    .refine((val) => ["WHOLE_PROPERTY", "ROOM_BY_ROOM"].includes(val), {
+      message: PROPERTY_ERROR_MESSAGES.RENTAL_TYPE_INVALID,
+    }),
+
+  latitude: z
+    .string()
+    .optional()
+    .transform((val) => (val && val.trim() !== "" ? val.trim() : null)),
+  longitude: z
+    .string()
+    .optional()
+    .transform((val) => (val && val.trim() !== "" ? val.trim() : null)),
+});
+
+const updatePropertySchema = z
+  .object({
+    name: z
+      .string()
+      .min(1, PROPERTY_ERROR_MESSAGES.PROPERTY_NAME_MUST_BE_NON_EMPTY_STRING)
+      .transform((val) => val.trim())
+      .optional(),
+    categoryId: z
+      .string()
+      .refine(
+        (val) => typeof val === "string",
+        PROPERTY_ERROR_MESSAGES.CATEGORY_ID_MUST_BE_STRING
+      )
+      .transform((val) => val.trim())
+      .optional(),
+    description: z
+      .string()
+      .min(1, PROPERTY_ERROR_MESSAGES.DESCRIPTION_MUST_BE_NON_EMPTY_STRING)
+      .transform((val) => val.trim())
+      .optional(),
+    mainPictureId: z
+      .string()
+      .refine(
+        (val) => typeof val === "string",
+        PROPERTY_ERROR_MESSAGES.MAIN_PICTURE_ID_MUST_BE_STRING
+      )
+      .transform((val) => val.trim())
+      .optional(),
+    location: z
+      .string()
+      .min(1, PROPERTY_ERROR_MESSAGES.LOCATION_MUST_BE_NON_EMPTY_STRING)
+      .transform((val) => val.trim())
+      .optional(),
+    city: z
+      .string()
+      .min(1, PROPERTY_ERROR_MESSAGES.CITY_MUST_BE_NON_EMPTY_STRING)
+      .transform((val) => val.trim())
+      .optional(),
+    province: z
+      .string()
+      .min(1, PROPERTY_ERROR_MESSAGES.PROVINCE_MUST_BE_NON_EMPTY_STRING)
+      .transform((val) => val.trim())
+      .optional(),
+    latitude: z
+      .string()
+      .transform((val) => (val && val.trim() !== "" ? val.trim() : null))
+      .optional(),
+    longitude: z
+      .string()
+      .transform((val) => (val && val.trim() !== "" ? val.trim() : null))
+      .optional(),
+  })
+  .refine(
+    (data) => Object.values(data).some((val) => val !== undefined),
+    PROPERTY_ERROR_MESSAGES.UPDATE_FIELDS_REQUIRED
+  );
+
+// Individual field schemas
+const propertyNameSchema = z
+  .string()
+  .min(1, PROPERTY_ERROR_MESSAGES.PROPERTY_NAME_REQUIRED);
+
+const categoryIdSchema = z
+  .string()
+  .min(1, PROPERTY_ERROR_MESSAGES.CATEGORY_ID_REQUIRED);
+
+const descriptionSchema = z
+  .string()
+  .min(1, PROPERTY_ERROR_MESSAGES.DESCRIPTION_REQUIRED);
+
 class PropertyValidationHelper {
   /**
    * Validate property ID parameter
    */
   static validatePropertyId(id: string): PropertyIdValidationResult {
-    if (!id) {
+    try {
+      propertyIdSchema.parse(id);
+      return { isValid: true };
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return {
+          isValid: false,
+          error: error.issues[0].message,
+        };
+      }
       return {
         isValid: false,
         error: PROPERTY_ERROR_MESSAGES.PROPERTY_ID_REQUIRED,
       };
     }
-    return { isValid: true };
   }
 
   /**
    * Validate property creation data
    */
   static validateCreatePropertyData(data: any): PropertyCreateValidationResult {
-    const {
-      name,
-      categoryId,
-      description,
-      mainPictureId,
-      location,
-      city,
-      province,
-      latitude,
-      longitude,
-      rentalType,
-    } = data;
+    try {
+      const validatedData = createPropertySchema.parse(data);
 
-    // Validate name
-    if (!name || typeof name !== "string" || name.trim().length === 0) {
+      return {
+        isValid: true,
+        data: validatedData as CreatePropertyData,
+      };
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return {
+          isValid: false,
+          error: error.issues[0].message,
+        };
+      }
       return {
         isValid: false,
-        error: PROPERTY_ERROR_MESSAGES.PROPERTY_NAME_REQUIRED,
+        error: "Validation failed",
       };
     }
-
-    // Validate categoryId
-    if (!categoryId || typeof categoryId !== "string") {
-      return {
-        isValid: false,
-        error: PROPERTY_ERROR_MESSAGES.CATEGORY_ID_REQUIRED,
-      };
-    }
-
-    // Validate description
-    if (
-      !description ||
-      typeof description !== "string" ||
-      description.trim().length === 0
-    ) {
-      return {
-        isValid: false,
-        error: PROPERTY_ERROR_MESSAGES.DESCRIPTION_REQUIRED,
-      };
-    }
-
-    // Validate mainPictureId
-    if (!mainPictureId || typeof mainPictureId !== "string") {
-      return {
-        isValid: false,
-        error: PROPERTY_ERROR_MESSAGES.MAIN_PICTURE_ID_REQUIRED,
-      };
-    }
-
-    // Validate location
-    if (
-      !location ||
-      typeof location !== "string" ||
-      location.trim().length === 0
-    ) {
-      return {
-        isValid: false,
-        error: PROPERTY_ERROR_MESSAGES.LOCATION_ADDRESS_REQUIRED,
-      };
-    }
-
-    // Validate city
-    if (!city || typeof city !== "string" || city.trim().length === 0) {
-      return {
-        isValid: false,
-        error: PROPERTY_ERROR_MESSAGES.CITY_REQUIRED,
-      };
-    }
-
-    // Validate province
-    if (
-      !province ||
-      typeof province !== "string" ||
-      province.trim().length === 0
-    ) {
-      return {
-        isValid: false,
-        error: PROPERTY_ERROR_MESSAGES.PROVINCE_REQUIRED,
-      };
-    }
-
-    // Validate rental type
-    if (
-      !rentalType ||
-      typeof rentalType !== "string" ||
-      !["WHOLE_PROPERTY", "ROOM_BY_ROOM"].includes(rentalType)
-    ) {
-      return {
-        isValid: false,
-        error: PROPERTY_ERROR_MESSAGES.RENTAL_TYPE_INVALID,
-      };
-    }
-
-    const propertyData: CreatePropertyData = {
-      name: name.trim(),
-      categoryId: categoryId.trim(),
-      description: description.trim(),
-      mainPictureId: mainPictureId.trim(),
-      location: location.trim(),
-      city: city.trim(),
-      province: province.trim(),
-      latitude: latitude && latitude.trim() !== "" ? latitude.trim() : null,
-      longitude: longitude && longitude.trim() !== "" ? longitude.trim() : null,
-      rentalType: rentalType as "WHOLE_PROPERTY" | "ROOM_BY_ROOM",
-    };
-
-    return {
-      isValid: true,
-      data: propertyData,
-    };
   }
 
   /**
    * Validate property update data
    */
   static validateUpdatePropertyData(data: any): PropertyUpdateValidationResult {
-    const {
-      name,
-      categoryId,
-      description,
-      mainPictureId,
-      location,
-      city,
-      province,
-      latitude,
-      longitude,
-    } = data;
+    try {
+      const validatedData = updatePropertySchema.parse(data);
 
-    // Check if at least one field is provided
-    if (
-      name === undefined &&
-      categoryId === undefined &&
-      description === undefined &&
-      mainPictureId === undefined &&
-      location === undefined &&
-      city === undefined &&
-      province === undefined &&
-      latitude === undefined &&
-      longitude === undefined
-    ) {
+      return {
+        isValid: true,
+        data: validatedData as UpdatePropertyData,
+      };
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return {
+          isValid: false,
+          error: error.issues[0].message,
+        };
+      }
       return {
         isValid: false,
-        error: PROPERTY_ERROR_MESSAGES.UPDATE_FIELDS_REQUIRED,
+        error: "Validation failed",
       };
     }
-
-    // Validate name if provided
-    if (
-      name !== undefined &&
-      (typeof name !== "string" || name.trim().length === 0)
-    ) {
-      return {
-        isValid: false,
-        error: PROPERTY_ERROR_MESSAGES.PROPERTY_NAME_MUST_BE_NON_EMPTY_STRING,
-      };
-    }
-
-    // Validate categoryId if provided
-    if (categoryId !== undefined && typeof categoryId !== "string") {
-      return {
-        isValid: false,
-        error: PROPERTY_ERROR_MESSAGES.CATEGORY_ID_MUST_BE_STRING,
-      };
-    }
-
-    // Validate description if provided
-    if (
-      description !== undefined &&
-      (typeof description !== "string" || description.trim().length === 0)
-    ) {
-      return {
-        isValid: false,
-        error: PROPERTY_ERROR_MESSAGES.DESCRIPTION_MUST_BE_NON_EMPTY_STRING,
-      };
-    }
-
-    // Validate mainPictureId if provided
-    if (mainPictureId !== undefined && typeof mainPictureId !== "string") {
-      return {
-        isValid: false,
-        error: PROPERTY_ERROR_MESSAGES.MAIN_PICTURE_ID_MUST_BE_STRING,
-      };
-    }
-
-    // Validate location if provided
-    if (
-      location !== undefined &&
-      (typeof location !== "string" || location.trim().length === 0)
-    ) {
-      return {
-        isValid: false,
-        error: PROPERTY_ERROR_MESSAGES.LOCATION_MUST_BE_NON_EMPTY_STRING,
-      };
-    }
-
-    // Validate city if provided
-    if (
-      city !== undefined &&
-      (typeof city !== "string" || city.trim().length === 0)
-    ) {
-      return {
-        isValid: false,
-        error: PROPERTY_ERROR_MESSAGES.CITY_MUST_BE_NON_EMPTY_STRING,
-      };
-    }
-
-    // Validate province if provided
-    if (
-      province !== undefined &&
-      (typeof province !== "string" || province.trim().length === 0)
-    ) {
-      return {
-        isValid: false,
-        error: PROPERTY_ERROR_MESSAGES.PROVINCE_MUST_BE_NON_EMPTY_STRING,
-      };
-    }
-
-    const updateData: UpdatePropertyData = {};
-    if (name !== undefined) updateData.name = name.trim();
-    if (categoryId !== undefined) updateData.categoryId = categoryId.trim();
-    if (description !== undefined) updateData.description = description.trim();
-    if (mainPictureId !== undefined)
-      updateData.mainPictureId = mainPictureId.trim();
-    if (location !== undefined) updateData.location = location.trim();
-    if (city !== undefined) updateData.city = city.trim();
-    if (province !== undefined) updateData.province = province.trim();
-    if (latitude !== undefined)
-      updateData.latitude =
-        latitude && latitude.trim() !== "" ? latitude.trim() : null;
-    if (longitude !== undefined)
-      updateData.longitude =
-        longitude && longitude.trim() !== "" ? longitude.trim() : null;
-
-    return {
-      isValid: true,
-      data: updateData,
-    };
   }
 
   /**
    * Validate individual fields for property
    */
   static validatePropertyName(name: any): { isValid: boolean; error?: string } {
-    if (!name || typeof name !== "string" || name.trim().length === 0) {
+    try {
+      propertyNameSchema.parse(name);
+      return { isValid: true };
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return {
+          isValid: false,
+          error: error.issues[0].message,
+        };
+      }
       return {
         isValid: false,
         error: PROPERTY_ERROR_MESSAGES.PROPERTY_NAME_REQUIRED,
       };
     }
-    return { isValid: true };
   }
 
   static validateCategoryId(categoryId: any): {
     isValid: boolean;
     error?: string;
   } {
-    if (!categoryId || typeof categoryId !== "string") {
+    try {
+      categoryIdSchema.parse(categoryId);
+      return { isValid: true };
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return {
+          isValid: false,
+          error: error.issues[0].message,
+        };
+      }
       return {
         isValid: false,
         error: PROPERTY_ERROR_MESSAGES.CATEGORY_ID_REQUIRED,
       };
     }
-    return { isValid: true };
   }
 
   static validateDescription(description: any): {
     isValid: boolean;
     error?: string;
   } {
-    if (
-      !description ||
-      typeof description !== "string" ||
-      description.trim().length === 0
-    ) {
+    try {
+      descriptionSchema.parse(description);
+      return { isValid: true };
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return {
+          isValid: false,
+          error: error.issues[0].message,
+        };
+      }
       return {
         isValid: false,
         error: PROPERTY_ERROR_MESSAGES.DESCRIPTION_REQUIRED,
       };
     }
-    return { isValid: true };
   }
 }
 

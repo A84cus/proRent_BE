@@ -121,6 +121,25 @@ class RoomService {
         updateData.isAvailable = data.isAvailable;
       if (data.pictures !== undefined) updateData.pictures = data.pictures;
 
+      // Jika ingin update roomTypeId, validasi dulu kepemilikan dan property
+      if (
+        data.roomTypeId !== undefined &&
+        data.roomTypeId !== existingRoom.roomTypeId
+      ) {
+        // Validasi roomTypeId baru milik property yang sama dan owner yang sama
+        const validRoomType = await roomRepository.verifyRoomTypeOwnership(
+          data.roomTypeId,
+          existingRoom.propertyId,
+          ownerId
+        );
+        if (!validRoomType) {
+          throw new Error(
+            ROOM_SERVICE_ERRORS.ROOM_TYPE_NOT_FOUND_OR_NO_PERMISSION
+          );
+        }
+        updateData.roomTypeId = data.roomTypeId;
+      }
+
       return await roomRepository.update(id, updateData);
     } catch (error) {
       logger.error(`Error updating room with ID ${id}:`, error);

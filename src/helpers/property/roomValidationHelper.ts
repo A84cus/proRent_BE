@@ -45,9 +45,9 @@ class RoomValidationHelper {
       isValid: true,
       errors: [],
       cleanData: {
-        roomTypeId: data.roomTypeId.trim(), // Changed from roomTypeName to roomTypeId
+        roomTypeId: data.roomTypeId.trim(),
         propertyId: data.propertyId.trim(),
-        name: data.name?.trim(), // Made optional
+        name: data.name?.trim(),
         pictures: data.pictures || [],
       },
     };
@@ -62,7 +62,7 @@ class RoomValidationHelper {
     const errors: string[] = [];
     const updateData: RoomUpdateData = {};
 
-    // Optional field validations (only include if provided)
+    // name validation
     if (data.name !== undefined) {
       if (typeof data.name !== "string" || data.name.trim().length === 0) {
         errors.push("Name must be a non-empty string");
@@ -71,14 +71,7 @@ class RoomValidationHelper {
       }
     }
 
-    if (data.name !== undefined) {
-      if (typeof data.name !== "string") {
-        errors.push("Name must be a string");
-      } else {
-        updateData.name = data.name.trim();
-      }
-    }
-
+    // isAvailable validation
     if (data.isAvailable !== undefined) {
       if (typeof data.isAvailable !== "boolean") {
         errors.push("isAvailable must be a boolean");
@@ -87,6 +80,7 @@ class RoomValidationHelper {
       }
     }
 
+    // pictures validation
     if (data.pictures !== undefined) {
       if (!Array.isArray(data.pictures)) {
         errors.push("Pictures must be an array of picture IDs");
@@ -96,6 +90,18 @@ class RoomValidationHelper {
         errors.push("All picture IDs must be strings");
       } else {
         updateData.pictures = data.pictures;
+      }
+    }
+
+    // roomTypeId validation
+    if (data.roomTypeId !== undefined) {
+      if (
+        typeof data.roomTypeId !== "string" ||
+        data.roomTypeId.trim().length === 0
+      ) {
+        errors.push("roomTypeId must be a non-empty string");
+      } else {
+        updateData.roomTypeId = data.roomTypeId.trim();
       }
     }
 
@@ -111,44 +117,44 @@ class RoomValidationHelper {
   }
 
   // Validate room ID parameter
-  static validateRoomId(roomId: unknown): {
+  static validateRoomId(roomId: any): {
     isValid: boolean;
+    errors: string[];
     error?: string;
     cleanId?: string;
   } {
+    const errors: string[] = [];
+
     if (!roomId || typeof roomId !== "string" || roomId.trim().length === 0) {
-      return {
-        isValid: false,
-        error: "Room ID is required and must be a valid string",
-      };
+      errors.push("Room ID is required and must be a non-empty string");
     }
 
     return {
-      isValid: true,
-      cleanId: roomId.trim(),
+      isValid: errors.length === 0,
+      errors,
     };
   }
 
   // Validate property ID parameter
-  static validatePropertyId(propertyId: unknown): {
+  static validatePropertyId(propertyId: any): {
     isValid: boolean;
+    errors: string[];
     error?: string;
     cleanId?: string;
   } {
+    const errors: string[] = [];
+
     if (
       !propertyId ||
       typeof propertyId !== "string" ||
       propertyId.trim().length === 0
     ) {
-      return {
-        isValid: false,
-        error: "Property ID is required as query parameter",
-      };
+      errors.push("Property ID is required and must be a non-empty string");
     }
 
     return {
-      isValid: true,
-      cleanId: propertyId.trim(),
+      isValid: errors.length === 0,
+      errors,
     };
   }
 }
