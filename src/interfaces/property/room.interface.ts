@@ -10,6 +10,7 @@ export interface RoomUpdateData {
   name?: string;
   isAvailable?: boolean;
   pictures?: string[]; // Update room gallery
+  roomTypeId?: string; // Optional: allow updating roomTypeId
 }
 
 // Response interfaces
