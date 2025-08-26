@@ -3,7 +3,7 @@
 import { Request, Response } from 'express';
 import { dashboardReportController } from './reportCustomController'; // Reuse it!
 import * as ReportInterface from '../../interfaces/report/reportCustomInterface';
-import { getUserIdFromRequest } from '../reservationController';
+import { getUserIdFromRequest } from '../reservationController/paymentProofController';
 import { generateDashboardExcel } from '../../templates/report/excelReport';
 
 export const exportDashboardExcel = async (req: Request, res: Response): Promise<void> => {
