@@ -18,7 +18,7 @@ export interface MonthValidationResult {
   month?: number;
 }
 
-export interface RoomIdValidationResult {
+export interface RoomTypeIdValidationResult {
   isValid: boolean;
   error?: string;
 }
@@ -30,14 +30,14 @@ export interface DateValidationResult {
 
 // Bulk availability operation request data
 export interface BulkAvailabilityRequest {
-  roomId: string;
+  roomTypeId: string;
   availability: AvailabilityItem[];
   userId: string;
 }
 
 // Monthly availability query parameters
 export interface MonthlyAvailabilityQuery {
-  roomId: string;
+  roomTypeId: string;
   year: number;
   month: number;
   userId: string;

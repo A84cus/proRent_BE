@@ -1,16 +1,17 @@
 "use strict";
+var _a;
 Object.defineProperty(exports, "__esModule", { value: true });
 const client_1 = require("@prisma/client");
 const property_1 = require("../../constants/controllers/property");
 class PeakRateValidationHelper {
     /**
-     * Validate room ID parameter
+     * Validate room type ID parameter
      */
-    static validateRoomId(id) {
+    static validateRoomTypeId(id) {
         if (!id) {
             return {
                 isValid: false,
-                error: property_1.PROPERTY_ERROR_MESSAGES.ROOM_ID_REQUIRED,
+                error: property_1.PROPERTY_ERROR_MESSAGES.ROOM_TYPE_ID_REQUIRED,
             };
         }
         return { isValid: true };
@@ -195,4 +196,9 @@ class PeakRateValidationHelper {
         return { isValid: true };
     }
 }
+_a = PeakRateValidationHelper;
+/**
+ * @deprecated Use validateRoomTypeId instead
+ */
+PeakRateValidationHelper.validateRoomId = _a.validateRoomTypeId;
 exports.default = PeakRateValidationHelper;

@@ -3,7 +3,7 @@ import { RateType } from "@prisma/client";
 
 export interface PeakRateItem {
   id: string;
-  roomId: string;
+  roomTypeId: string;
   startDate: string;
   endDate: string;
   rateType: RateType;
@@ -41,7 +41,7 @@ export interface PeakRateUpdateValidationResult {
   data?: PeakRateUpdateData;
 }
 
-export interface PeakRateRoomIdValidationResult {
+export interface PeakRateRoomTypeIdValidationResult {
   isValid: boolean;
   error?: string;
 }
@@ -53,20 +53,20 @@ export interface PeakRateDateValidationResult {
 
 // Service layer interfaces
 export interface AddPeakRateRequest {
-  roomId: string;
+  roomTypeId: string;
   peakRateData: PeakRateCreateData;
   userId: string;
 }
 
 export interface UpdatePeakRateRequest {
-  roomId: string;
+  roomTypeId: string;
   date: string;
   updateData: PeakRateUpdateData;
   userId: string;
 }
 
 export interface RemovePeakRateRequest {
-  roomId: string;
+  roomTypeId: string;
   date: string;
   userId: string;
 }

@@ -4,7 +4,7 @@ import { authOwner } from "../../middleware/auth/authMwr";
 
 const router = express.Router();
 
-// POST /api/rooms/:id/peak-price - Add peak rate rule
+// POST /api/rooms/:id/peak-price - Add peak rate rule for room/room-type
 router.post("/:id/peak-price", authOwner, peakRateController.addPeakRate);
 
 // PATCH /api/rooms/:id/peak-price/:date - Update peak rate for specific date
