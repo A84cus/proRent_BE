@@ -154,6 +154,7 @@ class RoomRepository {
       name?: string;
       isAvailable?: boolean;
       pictures?: string[];
+      roomTypeId?: string;
     }
   ): Promise<Room> {
     return prisma.$transaction(async (tx) => {
@@ -173,6 +174,9 @@ class RoomRepository {
           ...(updateData.name !== undefined && { name: updateData.name }),
           ...(updateData.isAvailable !== undefined && {
             isAvailable: updateData.isAvailable,
+          }),
+          ...(updateData.roomTypeId !== undefined && {
+            roomTypeId: updateData.roomTypeId,
           }),
         },
         include: {
