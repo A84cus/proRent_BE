@@ -27,8 +27,16 @@ export const DashboardFiltersSchema = z.object({
 });
 
 export const DashboardOptionsSchema = z.object({
-   page: z.preprocess(val => Number(val), z.number().int().min(1).default(1)),
-   pageSize: z.preprocess(val => Number(val), z.number().int().min(1).max(100).default(20)),
+   page: z.preprocess(val => {
+      if (val === undefined || val === null || val === '') {return undefined;}
+      const num = Number(val);
+      return isNaN(num) || !Number.isInteger(num) || num < 1 ? undefined : num;
+   }, z.number().int().min(1).default(1)),
+   pageSize: z.preprocess(val => {
+      if (val === undefined || val === null || val === '') {return undefined;}
+      const num = Number(val);
+      return isNaN(num) || !Number.isInteger(num) || num < 1 ? undefined : Math.min(num, 100);
+   }, z.number().int().min(1).max(100).default(20)),
    sortBy: z.enum([ 'startDate', 'endDate', 'createdAt', 'paymentAmount' ]).optional().default('startDate'),
    sortDir: z.enum([ 'asc', 'desc' ]).optional().default('desc')
 });
