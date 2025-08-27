@@ -32,8 +32,7 @@ function recalculatePropertySummaryForPeriod(ownerId, propertyId, periodType, pe
         const { startDate, endDate } = (0, cronjobDateService_1.getPeriodDateRange)(periodType, periodKey);
         const { totalRevenue, totalReservations } = yield (0, cronjobAggregationService_1.aggregateReservationData)(propertyId, startDate, endDate);
         if (totalReservations === 0) {
-            console.log(`Skipping summary for Property ${propertyId} (${periodType} ${periodKey}) - No reservations.`);
-            return; // Exit early, DO NOT call upsertPropertyPerformanceSummary
+            return;
         }
         const uniqueUsers = yield (0, cronjobAggregationService_1.fetchUniqueUsers)(propertyId, startDate, endDate);
         const property = yield prisma_1.default.property.findUnique({
@@ -66,8 +65,6 @@ function recalculateAllOwnersPropertiesSummaryForPeriod(periodType_1, periodKey_
         }
         yield validateParameters(finalizedParams, batchSize, delayMs);
         const { isCurrentYearCalculation, previousMonthKey } = (0, cronjobDateService_1.getCurrentYearAndPreviousMonthInfo)(finalizedParams.periodType, finalizedParams.periodKey, finalizedParams.year);
-        console.log(`Evaluated Period: ${finalizedParams.periodType} ${finalizedParams.periodKey} (Year: ${finalizedParams.year})`);
-        console.log(`Is Current Year Calculation: ${isCurrentYearCalculation}. Previous Month Key (for update): ${previousMonthKey}`);
         const mainJob = yield createMainBatchJob(finalizedParams, batchSize, delayMs, isCurrentYearCalculation, previousMonthKey !== null && previousMonthKey !== void 0 ? previousMonthKey : undefined);
         initiateBackgroundProcessing(mainJob.id, finalizedParams, batchSize, delayMs);
         return mainJob.id;
@@ -88,7 +85,6 @@ function validateParameters(params, batchSize, delayMs) {
 /** Creates the main tracking job record. */
 function createMainBatchJob(params, batchSize, delayMs, isCurrentYearCalculation, previousMonthKey) {
     return __awaiter(this, void 0, void 0, function* () {
-        console.log(`Creating main job for ${params.periodType} ${params.periodKey}`);
         return yield (0, cronjobTrackingService_1.createBatchJob)({
             jobType: 'RECALCULATE_ALL_OWNER_SUMMARIES',
             targetPeriodType: params.periodType,
@@ -111,7 +107,6 @@ function createMainBatchJob(params, batchSize, delayMs, isCurrentYearCalculation
 }
 /** Starts the asynchronous background processing task. */
 function initiateBackgroundProcessing(jobId, params, batchSize, delayMs, isCurrentYearCalculation, previousMonthKey) {
-    console.log(`Initiating background processing for job ${jobId}`);
     processAllOwnersInBackground(jobId, params.periodType, params.periodKey, params.year, params.month, batchSize, delayMs, isCurrentYearCalculation, previousMonthKey).catch(err => handleBackgroundError(jobId, err));
 }
 /** Handles errors occurring in the background processing task. */
@@ -143,7 +138,6 @@ function processAllOwnersInBackground(mainJobId_1, periodType_1, periodKey_1, ye
         let lastError = null;
         try {
             yield (0, cronjobTrackingService_1.updateBatchJob)({ jobId: mainJobId, status: client_1.JobStatus.IN_PROGRESS, startedAt: new Date() });
-            console.log(`Started processing for main batch job ${mainJobId}.`);
             while (hasMore) {
                 const ownersBatch = yield prisma_1.default.user.findMany({
                     where: { role: 'OWNER' },
@@ -168,7 +162,6 @@ function processAllOwnersInBackground(mainJobId_1, periodType_1, periodKey_1, ye
                     skip += limit;
                 }
                 if (hasMore && delayMs > 0) {
-                    console.log(`Waiting ${delayMs}ms before processing the next batch (Job ID: ${mainJobId})...`);
                     yield new Promise(resolve => setTimeout(resolve, delayMs));
                 }
             }

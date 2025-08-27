@@ -9,9 +9,7 @@ exports.getCustomPeriodKey = getCustomPeriodKey;
 const cronjobHelperService_1 = require("./cronjobHelperService");
 function getPeriodDateRange(periodType, periodKey, year, month) {
     try {
-        // Use the centralized, validated parameter resolution
         const params = (0, cronjobHelperService_1.getDefaultPeriodParams)(periodType, periodKey, year, month);
-        // Now compute date range based on resolved params
         let startDate, endDate;
         if (params.periodType === 'DAY') {
             startDate = new Date(`${params.periodKey}T00:00:00Z`);
@@ -28,10 +26,8 @@ function getPeriodDateRange(periodType, periodKey, year, month) {
             endDate = new Date(Date.UTC(y, 11, 31, 23, 59, 59, 999)); // Dec 31 UTC
         }
         else {
-            // Should never happen due to validation
             throw new Error(`Unexpected periodType after validation: ${params.periodType}`);
         }
-        console.log(`Calculated date range for ${params.periodType} ${params.periodKey}: ${startDate.toISOString()} to ${endDate.toISOString()}`);
         return { startDate, endDate };
     }
     catch (error) {
@@ -54,7 +50,6 @@ function getCurrentYearAndPreviousMonthInfo(periodType, periodKey, year) {
             const prevMonth = currentMonth === 1 ? 12 : currentMonth - 1;
             const prevYear = currentMonth === 1 ? currentYear - 1 : currentYear;
             previousMonthKey = `${prevYear}-${String(prevMonth).padStart(2, '0')}`;
-            console.log(`Identified current year calculation (${targetYear}). Targeting previous month key: ${previousMonthKey}`);
         }
     }
     else if (periodType === 'MONTH') {
@@ -68,7 +63,6 @@ function getCurrentYearAndPreviousMonthInfo(periodType, periodKey, year) {
                     const prevMonthForTarget = monthPart === 1 ? 12 : monthPart - 1;
                     const prevYearForTarget = monthPart === 1 ? yearPart - 1 : yearPart;
                     previousMonthKey = `${prevYearForTarget}-${String(prevMonthForTarget).padStart(2, '0')}`;
-                    console.log(`Identified MONTH ${periodKey} is in current year (${currentYear}). For YEAR update context, previous month key would be: ${previousMonthKey}`);
                 }
             }
         }

@@ -100,10 +100,8 @@ function handleCase2(context) {
         });
         const totalPages = Math.ceil(totalCount / pageSize);
         const roomTypeSummaries = yield Promise.all(cachedRoomTypeSummaries.map((summary) => __awaiter(this, void 0, void 0, function* () {
-            // 🔽 Fetch detailed report for this room type
             const report = yield (0, customReportService_1.getReservationReport)(Object.assign({ ownerId, propertyId, roomTypeId: summary.roomTypeId }, filters), { page: 1, pageSize: 1000 } // Fetch all reservations for this room type
             );
-            // 🔽 Extract customers
             const customerMap = new Map();
             for (const item of report.data) {
                 customerMap.set(item.user.id, {
@@ -113,7 +111,6 @@ function handleCase2(context) {
                     lastName: item.user.profile.lastName
                 });
             }
-            // 🔽 Fetch availability
             const totalQuantity = yield availabilityService.getRoomTypeTotalQuantity(summary.roomTypeId);
             const availabilityRecords = yield availabilityService.getActualAvailabilityRecords(summary.roomTypeId, filters.startDate, filters.endDate);
             const availability = availabilityRecords.map(record => {
@@ -124,7 +121,6 @@ function handleCase2(context) {
                     isAvailable: record.availableCount > 0
                 };
             });
-            // 🔽 Return enhanced room type object
             return {
                 roomType: { id: summary.roomTypeId, name: summary.roomType.name },
                 counts: {
@@ -139,7 +135,6 @@ function handleCase2(context) {
                     average: summary.confirmedCount > 0 ? Number(summary.totalRevenue) / summary.confirmedCount : 0
                 },
                 availability: { totalQuantity, dates: availability },
-                // ✅ Add customer & reservation data
                 data: report.data.map(item => ({
                     id: item.id,
                     userId: item.userId,
@@ -156,7 +151,6 @@ function handleCase2(context) {
                 uniqueCustomers: Array.from(customerMap.values())
             };
         })));
-        // 🔽 Aggregate property-level summary
         const propertySummaryData = {
             counts: {
                 PENDING_PAYMENT: roomTypeSummaries.reduce((sum, rt) => sum + rt.counts.PENDING_PAYMENT, 0),
@@ -191,7 +185,6 @@ function handleCase2(context) {
         };
     });
 }
-// 🔽 Helper to generate orderBy clause
 function getSummaryOrderByClause(sortBy, sortDir) {
     switch (sortBy) {
         case 'paymentAmount':

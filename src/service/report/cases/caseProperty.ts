@@ -61,13 +61,11 @@ export async function handleCase2 (context: DashboardContext): Promise<ReportInt
 
    const roomTypeSummaries: ReportInterface.RoomTypeWithAvailability[] = await Promise.all(
       cachedRoomTypeSummaries.map(async summary => {
-         // 🔽 Fetch detailed report for this room type
          const report = await getReservationReport(
             { ownerId, propertyId, roomTypeId: summary.roomTypeId, ...filters },
             { page: 1, pageSize: 1000 } // Fetch all reservations for this room type
          );
 
-         // 🔽 Extract customers
          const customerMap = new Map<string, ReportInterface.CustomerMin>();
          for (const item of report.data) {
             customerMap.set(item.user.id, {
@@ -78,7 +76,6 @@ export async function handleCase2 (context: DashboardContext): Promise<ReportInt
             });
          }
 
-         // 🔽 Fetch availability
          const totalQuantity = await availabilityService.getRoomTypeTotalQuantity(summary.roomTypeId);
          const availabilityRecords = await availabilityService.getActualAvailabilityRecords(
             summary.roomTypeId,
@@ -94,7 +91,6 @@ export async function handleCase2 (context: DashboardContext): Promise<ReportInt
             };
          });
 
-         // 🔽 Return enhanced room type object
          return {
             roomType: { id: summary.roomTypeId, name: summary.roomType.name },
             counts: {
@@ -109,7 +105,6 @@ export async function handleCase2 (context: DashboardContext): Promise<ReportInt
                average: summary.confirmedCount > 0 ? Number(summary.totalRevenue) / summary.confirmedCount : 0
             },
             availability: { totalQuantity, dates: availability },
-            // ✅ Add customer & reservation data
             data: report.data.map(item => ({
                id: item.id,
                userId: item.userId,
@@ -128,7 +123,6 @@ export async function handleCase2 (context: DashboardContext): Promise<ReportInt
       })
    );
 
-   // 🔽 Aggregate property-level summary
    const propertySummaryData = {
       counts: {
          PENDING_PAYMENT: roomTypeSummaries.reduce((sum, rt) => sum + rt.counts.PENDING_PAYMENT, 0),
@@ -164,7 +158,6 @@ export async function handleCase2 (context: DashboardContext): Promise<ReportInt
    };
 }
 
-// 🔽 Helper to generate orderBy clause
 function getSummaryOrderByClause (sortBy: string, sortDir: 'asc' | 'desc') {
    switch (sortBy) {
       case 'paymentAmount':

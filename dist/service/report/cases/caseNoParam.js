@@ -33,17 +33,12 @@ function handleCase1(context) {
             case 'startDate':
             case 'endDate':
             case 'createdAt':
-                // These don't directly map to PropertyPerformanceSummary fields.
-                // Sorting by creation date of summary might be closest for 'createdAt'.
-                // For 'startDate'/'endDate', sorting by revenue or name is often acceptable default.
                 console.warn(`Sorting by ${sortBy} not directly supported on PropertyPerformanceSummary. Falling back to name.`);
                 summaryOrderByClause = { property: { name: sortDir } };
                 break;
-            // Add cases for fields that exist on Property model if needed (e.g., if you add a createdAt to Property)
             default:
                 summaryOrderByClause = { property: { name: sortDir } }; // Default to name
         }
-        // --- Build search filter for PropertyPerformanceSummary query ---
         const propertySearchFilter = {
             property: { OwnerId: ownerId },
             periodType,
@@ -54,11 +49,7 @@ function handleCase1(context) {
                 contains: search,
                 mode: 'insensitive' // Case-insensitive search
             };
-            // If you want to search address/city, you'd need to adjust the query structure or use raw SQL
-            // as Prisma's nested filtering can become complex for OR conditions across different relations.
-            // For simplicity, this example focuses on property name.
         }
-        // Try cache - Apply sorting and search filtering here
         const cachedSummaries = yield prisma_1.default.propertyPerformanceSummary.findMany({
             where: propertySearchFilter,
             include: {
@@ -71,7 +62,7 @@ function handleCase1(context) {
                     }
                 }
             },
-            orderBy: summaryOrderByClause, // <-- Use dynamic sorting
+            orderBy: summaryOrderByClause,
             skip: (page - 1) * pageSize,
             take: pageSize
         });
@@ -102,7 +93,6 @@ function handleCase1(context) {
                     }
                 });
             });
-            // Important: Get the total count matching the search criteria for accurate pagination
             const totalCount = yield prisma_1.default.propertyPerformanceSummary.count({
                 where: propertySearchFilter
             });
@@ -115,8 +105,6 @@ function handleCase1(context) {
                 pagination: { page, pageSize, total: totalCount, totalPages }
             };
         }
-        // Cache miss - Proceed with fetching and calculating (less efficient)
-        // Note: This path might also need to apply search/sorting if critical.
         const propertyBaseFilter = { OwnerId: ownerId };
         if (search) {
             propertyBaseFilter.name = {
@@ -129,7 +117,6 @@ function handleCase1(context) {
         });
         const totalPages = Math.ceil(totalCount / pageSize);
         const skip = (page - 1) * pageSize;
-        // On cache miss, fetch properties with search and basic sorting
         const properties = yield prisma_1.default.property.findMany({
             where: propertyBaseFilter,
             skip,

@@ -16,17 +16,14 @@ export async function getReservationReport (
    options: ReservationReportOptions = {}
 ): Promise<ReservationReportResponse> {
    const { page = 1, pageSize = 20, sortBy = 'startDate', sortDir = 'desc' } = options;
-
    const skip = (page - 1) * pageSize;
 
-   // --- 🔐 Validate ownership ---
    if (filters.propertyId) {
       await validatePropertyOwnership(filters.ownerId, filters.propertyId);
    } else if (filters.roomTypeId) {
       await validateRoomTypeOwnership(filters.ownerId, filters.roomTypeId);
    }
 
-   // --- 🔍 Base where clause ---
    const where: any = {
       orderStatus: { not: 'CANCELLED' }, // Exclude cancelled by default (include only if requested)
       ...(filters.startDate && { startDate: { lte: filters.endDate || new Date() } }),
@@ -36,7 +33,6 @@ export async function getReservationReport (
       ...(filters.roomTypeId && { roomTypeId: filters.roomTypeId })
    };
 
-   // Add search filter
    if (filters.search) {
       where.OR = [
          { User: { email: { contains: filters.search, mode: 'insensitive' } } },
@@ -44,16 +40,12 @@ export async function getReservationReport (
       ];
    }
 
-   // If CANCELLED is explicitly requested
    if (filters.status?.includes('CANCELLED')) {
       delete where.orderStatus;
       where.orderStatus = { in: filters.status };
    }
-
-   // --- 🔢 Get total count ---
    const total = await prisma.reservation.count({ where });
 
-   // --- 📄 Get paginated data ---
    const data = await prisma.reservation.findMany({
       where,
       skip,
@@ -124,10 +116,8 @@ export async function getReservationReport (
       roomType: r.RoomType
    }));
 
-   // --- 📊 Compute summary ---
    const summary = await computeSummary(filters);
 
-   // --- 📦 Return response ---
    return {
       data: mappedData,
       summary,
@@ -140,7 +130,6 @@ export async function getReservationReport (
    };
 }
 
-// --- Helper: Sort order ---
 function getOrderBy (sortBy: string, sortDir: 'asc' | 'desc') {
    switch (sortBy) {
       case 'paymentAmount':
@@ -154,7 +143,6 @@ function getOrderBy (sortBy: string, sortDir: 'asc' | 'desc') {
    }
 }
 
-// --- Helper: Compute summary counts and revenue ---
 async function computeSummary (filters: ReservationReportFilters): Promise<ReportInterface.ReservationReportSummary> {
    const baseWhere: any = {
       ...(filters.startDate && { startDate: { lte: filters.endDate || new Date() } }),
@@ -163,7 +151,6 @@ async function computeSummary (filters: ReservationReportFilters): Promise<Repor
       ...(filters.roomTypeId && { roomTypeId: filters.roomTypeId })
    };
 
-   // Get counts and revenue by status
    const [ pendingPayment, pendingConfirmation, confirmed, cancelled ] = await Promise.all([
       prisma.reservation.findMany({
          where: {

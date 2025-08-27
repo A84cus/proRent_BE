@@ -5,7 +5,6 @@ import EmailService from '../email/emailService';
 import { Profile } from '../../interfaces';
 
 async function runPostRejectionExpiryCheck (reservationId: string): Promise<void> {
-   console.log(`Checking for expiry after rejecting reservation ${reservationId}...`);
    await cancelExpiredReservations();
 }
 
@@ -24,11 +23,8 @@ async function checkFinalReservationStatus (reservationId: string) {
    }
 
    if (finalReservationCheck.orderStatus === Status.CANCELLED) {
-      console.log(`Reservation ${reservationId} was automatically cancelled because it had expired.`);
       throw new Error('Reservation was automatically cancelled because it had expired.');
    }
-
-   console.log(`Reservation ${reservationId} successfully rejected (status PENDING_PAYMENT).`);
    return finalReservationCheck; // Optional: return data if needed elsewhere
 }
 
@@ -169,7 +165,7 @@ export async function confirmReservationByOwner (reservationId: string, ownerId:
             PaymentProof: { include: { picture: true } }
          }
       });
-      console.log(`Reservation ${reservationId} confirmed by owner ${ownerId}. Status changed to CONFIRMED.`);
+
       try {
          if (!updatedReservation.User || !updatedReservation.User.email) {
             throw new Error('User email not found for reservation.');
@@ -195,12 +191,7 @@ export async function confirmReservationByOwner (reservationId: string, ownerId:
             totalAmount: updatedReservation.payment?.amount || 0,
             paymentStatus: updatedReservation.payment?.paymentStatus || 'N/A'
          };
-         console.log('BookingDetails:', bookingDetails);
-         console.log('UserWithProfile:', userWithProfile);
          await EmailService.sendBookingConfirmation(userWithProfile, bookingDetails);
-         console.log(
-            `Booking confirmation email sent successfully to ${reservation.User.email} for reservation ${reservationId}.`
-         );
       } catch (emailError: any) {
          console.error(
             `Failed to send booking confirmation email for reservation ${reservationId} to ${
