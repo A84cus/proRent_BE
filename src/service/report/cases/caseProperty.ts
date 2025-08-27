@@ -6,11 +6,19 @@ import * as ReportInterface from '../../../interfaces/report/reportCustomInterfa
 import { upsertRoomTypePerformanceSummary } from '../roomTypeSummaryService';
 import * as availabilityService from '../../reservationService/availabilityService';
 
+// 🔽 Cache TTL: Only re-upsert if record is older than 24 hours
+const PERFORMANCE_SUMMARY_CACHE_TTL_HOURS = 24;
+
 export async function handleCase2 (context: DashboardContext): Promise<ReportInterface.DashboardReportResponse> {
    const { ownerId, filters, options, period, periodConfig } = context;
    const { propertyId } = filters;
+
+   // Top-level pagination: for room types
    const { page = 1, pageSize = 20, sortBy = 'startDate', sortDir = 'desc' } = options;
    const { search } = filters;
+
+   // 🔽 Pagination for reservations inside each room type
+   const { reservationPage = 1, reservationPageSize = 10 } = options;
 
    const property = await prisma.property.findUnique({
       where: { id: propertyId, OwnerId: ownerId },
@@ -38,7 +46,7 @@ export async function handleCase2 (context: DashboardContext): Promise<ReportInt
       };
    }
 
-   // Try cache for room type summaries
+   // Fetch room types (paginated)
    const cachedRoomTypeSummaries = await prisma.roomTypePerformanceSummary.findMany({
       where: roomTypeSearchFilter,
       include: {
@@ -59,15 +67,65 @@ export async function handleCase2 (context: DashboardContext): Promise<ReportInt
    });
    const totalPages = Math.ceil(totalCount / pageSize);
 
+   // 🔁 Process each room type with conditional upsert
    const roomTypeSummaries: ReportInterface.RoomTypeWithAvailability[] = await Promise.all(
       cachedRoomTypeSummaries.map(async summary => {
-         const report = await getReservationReport(
+         const cutoffDate = new Date();
+         cutoffDate.setHours(cutoffDate.getHours() - PERFORMANCE_SUMMARY_CACHE_TTL_HOURS);
+
+         // 🔽 Only re-fetch and upsert if summary is stale
+         let reportSummary;
+         if (!summary.lastUpdated || summary.lastUpdated < cutoffDate) {
+            // ✅ Cache is stale: re-fetch full report and update cache
+            const fullReport = await getReservationReport(
+               { ownerId, propertyId, roomTypeId: summary.roomTypeId, ...filters },
+               { page: 1, pageSize: 1000 }
+            );
+
+            await upsertRoomTypePerformanceSummary({
+               roomTypeId: summary.roomTypeId,
+               propertyId,
+               ...periodConfig,
+               totalRevenue: fullReport.summary.revenue.actual,
+               projectedRevenue: fullReport.summary.revenue.projected,
+               totalReservations: fullReport.summary.totalReservations,
+               totalNightsBooked: 0,
+               confirmedCount: fullReport.summary.counts.CONFIRMED,
+               pendingPaymentCount: fullReport.summary.counts.PENDING_PAYMENT,
+               pendingConfirmationCount: fullReport.summary.counts.PENDING_CONFIRMATION,
+               cancelledCount: fullReport.summary.counts.CANCELLED,
+               uniqueUsers: new Set(fullReport.data.map(r => r.userId)).size,
+               OwnerId: ownerId
+            });
+
+            reportSummary = fullReport.summary;
+         } else {
+            // ✅ Use cached summary data (skip DB call)
+            reportSummary = {
+               counts: {
+                  PENDING_PAYMENT: summary.pendingPaymentCount,
+                  PENDING_CONFIRMATION: summary.pendingConfirmationCount,
+                  CONFIRMED: summary.confirmedCount,
+                  CANCELLED: summary.cancelledCount
+               },
+               revenue: {
+                  actual: Number(summary.totalRevenue),
+                  projected: Number(summary.projectedRevenue),
+                  average: summary.confirmedCount > 0 ? Number(summary.totalRevenue) / summary.confirmedCount : 0
+               },
+               totalReservations: summary.totalReservations
+            };
+         }
+
+         // 🔽 Fetch paginated reservations for this room type (always fresh for UI)
+         const paginatedReport = await getReservationReport(
             { ownerId, propertyId, roomTypeId: summary.roomTypeId, ...filters },
-            { page: 1, pageSize: 1000 } // Fetch all reservations for this room type
+            { page: reservationPage, pageSize: reservationPageSize }
          );
 
+         // Extract unique customers from current page
          const customerMap = new Map<string, ReportInterface.CustomerMin>();
-         for (const item of report.data) {
+         for (const item of paginatedReport.data) {
             customerMap.set(item.user.id, {
                id: item.user.id,
                email: item.user.email,
@@ -93,19 +151,10 @@ export async function handleCase2 (context: DashboardContext): Promise<ReportInt
 
          return {
             roomType: { id: summary.roomTypeId, name: summary.roomType.name },
-            counts: {
-               PENDING_PAYMENT: summary.pendingPaymentCount,
-               PENDING_CONFIRMATION: summary.pendingConfirmationCount,
-               CONFIRMED: summary.confirmedCount,
-               CANCELLED: summary.cancelledCount
-            },
-            revenue: {
-               actual: Number(summary.totalRevenue),
-               projected: Number(summary.projectedRevenue),
-               average: summary.confirmedCount > 0 ? Number(summary.totalRevenue) / summary.confirmedCount : 0
-            },
+            counts: reportSummary.counts,
+            revenue: reportSummary.revenue,
             availability: { totalQuantity, dates: availability },
-            data: report.data.map(item => ({
+            data: paginatedReport.data.map(item => ({
                id: item.id,
                userId: item.userId,
                startDate: item.startDate,
@@ -118,11 +167,18 @@ export async function handleCase2 (context: DashboardContext): Promise<ReportInt
                   lastName: item.user.profile.lastName
                }
             })),
-            uniqueCustomers: Array.from(customerMap.values())
+            uniqueCustomers: Array.from(customerMap.values()),
+            pagination: {
+               page: reservationPage,
+               pageSize: reservationPageSize,
+               total: paginatedReport.pagination.total,
+               totalPages: paginatedReport.pagination.totalPages
+            }
          };
       })
    );
 
+   // Aggregate property-level summary
    const propertySummaryData = {
       counts: {
          PENDING_PAYMENT: roomTypeSummaries.reduce((sum, rt) => sum + rt.counts.PENDING_PAYMENT, 0),

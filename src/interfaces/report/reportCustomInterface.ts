@@ -61,14 +61,11 @@ export interface PropertySummary {
       counts: StatusCounts;
       revenue: RevenueSummary;
    };
-
-   // Only when propertyId is provided
    roomTypes?: RoomTypeWithAvailability[];
 
-   // Only when propertyId+roomTypeId
    uniqueCustomers?: CustomerMin[];
-   data?: any[]; // Will be filled only in Case 3
-   pagination?: any; // Will be filled only in Case 3
+   data?: any[];
+   pagination?: any;
 }
 
 export interface DashboardReportResponse {
@@ -157,7 +154,9 @@ export interface ReservationReportFilters {
 
 export interface ReservationReportOptions {
    page?: number;
+   reservationPage?: number;
    pageSize?: number;
+   reservationPageSize?: number;
    sortBy?: 'startDate' | 'endDate' | 'createdAt' | 'paymentAmount';
    sortDir?: 'asc' | 'desc';
 }
