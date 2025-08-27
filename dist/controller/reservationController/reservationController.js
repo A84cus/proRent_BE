@@ -57,7 +57,6 @@ exports.cancelReservationController = cancelReservationController;
 // --- New Controller Function ---
 const cancelExpiredReservationsController = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        console.log('Manual trigger: Running reservation expiry check...');
         const result = yield (0, reservationExpiryService_1.cancelExpiredReservations)();
         return res.status(200).json({
             message: `${reservation_1.RESERVATION_SUCCESS_MESSAGES.RESERVATION_EXPIRY_CHECK_COMPLETED} ${result.cancelledReservationIds.length} reservation(s) cancelled.`,
@@ -124,7 +123,6 @@ const confirmReservationByOwnerController = (req, res) => __awaiter(void 0, void
 exports.confirmReservationByOwnerController = confirmReservationByOwnerController;
 const sendBookingReminderController = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        console.log('Manual trigger: Running booking reminder job...');
         const result = yield (0, reservationReminderService_1.sendBookingReminderForTomorrow)();
         return res.status(200).json({
             message: `Booking reminder job completed successfully.`,

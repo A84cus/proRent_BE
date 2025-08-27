@@ -146,15 +146,15 @@ export interface ReservationReportFilters {
    propertyId?: string;
    roomTypeId?: string;
    ownerId: string;
-   startDate?: Date;
-   endDate?: Date;
+   startDate?: Date | null;
+   endDate?: Date | null;
    status?: ReservationStatus[];
    search?: string; // Search by user email/name
 }
 
 export interface ReservationReportOptions {
    page?: number;
-   reservationPage?: number;
+   reservationPage?: number | { [roomTypeId: string]: number };
    pageSize?: number;
    reservationPageSize?: number;
    sortBy?: 'startDate' | 'endDate' | 'createdAt' | 'paymentAmount';

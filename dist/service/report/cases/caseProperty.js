@@ -105,20 +105,17 @@ function handleCase2(context) {
             where: roomTypeSearchFilter
         });
         const totalPages = Math.ceil(totalCount / pageSize);
-        // 🔁 Process each room type with conditional upsert
         const roomTypeSummaries = yield Promise.all(cachedRoomTypeSummaries.map((summary) => __awaiter(this, void 0, void 0, function* () {
+            var _a, _b;
             const cutoffDate = new Date();
             cutoffDate.setHours(cutoffDate.getHours() - PERFORMANCE_SUMMARY_CACHE_TTL_HOURS);
-            // 🔽 Only re-fetch and upsert if summary is stale
             let reportSummary;
             if (!summary.lastUpdated || summary.lastUpdated < cutoffDate) {
-                // ✅ Cache is stale: re-fetch full report and update cache
                 const fullReport = yield (0, customReportService_1.getReservationReport)(Object.assign({ ownerId, propertyId, roomTypeId: summary.roomTypeId }, filters), { page: 1, pageSize: 1000 });
                 yield (0, roomTypeSummaryService_1.upsertRoomTypePerformanceSummary)(Object.assign(Object.assign({ roomTypeId: summary.roomTypeId, propertyId }, periodConfig), { totalRevenue: fullReport.summary.revenue.actual, projectedRevenue: fullReport.summary.revenue.projected, totalReservations: fullReport.summary.totalReservations, totalNightsBooked: 0, confirmedCount: fullReport.summary.counts.CONFIRMED, pendingPaymentCount: fullReport.summary.counts.PENDING_PAYMENT, pendingConfirmationCount: fullReport.summary.counts.PENDING_CONFIRMATION, cancelledCount: fullReport.summary.counts.CANCELLED, uniqueUsers: new Set(fullReport.data.map(r => r.userId)).size, OwnerId: ownerId }));
                 reportSummary = fullReport.summary;
             }
             else {
-                // ✅ Use cached summary data (skip DB call)
                 reportSummary = {
                     counts: {
                         PENDING_PAYMENT: summary.pendingPaymentCount,
@@ -134,9 +131,19 @@ function handleCase2(context) {
                     totalReservations: summary.totalReservations
                 };
             }
-            // 🔽 Fetch paginated reservations for this room type (always fresh for UI)
-            const paginatedReport = yield (0, customReportService_1.getReservationReport)(Object.assign({ ownerId, propertyId, roomTypeId: summary.roomTypeId }, filters), { page: reservationPage, pageSize: reservationPageSize });
-            // Extract unique customers from current page
+            const roomReservationPage = typeof reservationPage === 'object' ? reservationPage[summary.roomTypeId] || 1 : reservationPage;
+            const paginatedReport = yield (0, customReportService_1.getReservationReport)({
+                ownerId,
+                propertyId,
+                roomTypeId: summary.roomTypeId,
+                // ✅ Extract startDate and endDate to top level
+                startDate: filters.startDate,
+                endDate: filters.endDate
+                // Include other filters if needed
+            }, {
+                page: roomReservationPage,
+                pageSize: reservationPageSize
+            });
             const customerMap = new Map();
             for (const item of paginatedReport.data) {
                 customerMap.set(item.user.id, {
@@ -147,7 +154,7 @@ function handleCase2(context) {
                 });
             }
             const totalQuantity = yield availabilityService.getRoomTypeTotalQuantity(summary.roomTypeId);
-            const availabilityRecords = yield availabilityService.getActualAvailabilityRecords(summary.roomTypeId, filters.startDate, filters.endDate);
+            const availabilityRecords = yield availabilityService.getActualAvailabilityRecords(summary.roomTypeId, (_a = filters.startDate) !== null && _a !== void 0 ? _a : undefined, (_b = filters.endDate) !== null && _b !== void 0 ? _b : undefined);
             const availability = availabilityRecords.map(record => {
                 const dateKey = record.date.toISOString().split('T')[0];
                 return {
@@ -176,7 +183,7 @@ function handleCase2(context) {
                 })),
                 uniqueCustomers: Array.from(customerMap.values()),
                 pagination: {
-                    page: reservationPage,
+                    page: roomReservationPage,
                     pageSize: reservationPageSize,
                     total: paginatedReport.pagination.total,
                     totalPages: paginatedReport.pagination.totalPages
@@ -207,13 +214,16 @@ function handleCase2(context) {
                         address: (_d = (_c = property.location) === null || _c === void 0 ? void 0 : _c.address) !== null && _d !== void 0 ? _d : null,
                         city: (_f = (_e = property.location) === null || _e === void 0 ? void 0 : _e.city.name) !== null && _f !== void 0 ? _f : null
                     },
-                    period,
+                    period: {
+                        startDate: filters.startDate || null,
+                        endDate: filters.endDate || null
+                    },
                     summary: propertySummaryData,
                     roomTypes: roomTypeSummaries
                 }
             ],
             summary: propertySummaryData,
-            period,
+            period: { startDate: filters.startDate || null, endDate: filters.endDate || null },
             pagination: { page, pageSize, total: totalCount, totalPages }
         };
     });

@@ -6,15 +6,40 @@ import { caseNoParam, caseRoomType, caseProperty, Fallback } from './cases';
 import { validatePropertyOwnership, validateRoomTypeOwnership } from './cronJob/cronjobValidationService';
 import { buildPeriodConfig } from './utils/buildPeriodConfig';
 
+export function getPeriodConfig (startDate?: Date, endDate?: Date) {
+   if (!startDate || !endDate) {
+      const now = new Date();
+      return {
+         periodType: 'YEARLY' as const,
+         periodKey: now.getFullYear().toString(),
+         year: now.getFullYear(),
+         month: null
+      };
+   }
+   const year = startDate.getFullYear();
+   return {
+      periodType: 'YEARLY' as const,
+      periodKey: year.toString(),
+      year,
+      month: null
+   };
+}
+
 export async function getOwnerDashboardReport (
    ownerId: string,
    filters: Omit<ReportInterface.ReservationReportFilters, 'ownerId'>,
-   options: ReportInterface.ReservationReportOptions = {}
+   options: ReportInterface.ReservationReportOptions = {},
+   period?: { startDate?: Date | null; endDate?: Date | null }
 ): Promise<ReportInterface.DashboardReportResponse> {
    const result = DashboardInputSchema.safeParse({
       ownerId,
       filters,
-      options
+      options,
+      period: {
+         startDate: filters.startDate || null,
+         endDate: filters.endDate || null
+      },
+      periodConfig: getPeriodConfig(filters.startDate || undefined, filters.endDate || undefined)
    });
 
    if (result.success) {

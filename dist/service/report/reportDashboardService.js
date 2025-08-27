@@ -10,18 +10,42 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.getPeriodConfig = getPeriodConfig;
 exports.getOwnerDashboardReport = getOwnerDashboardReport;
 const dashboardSchema_1 = require("../../validations/report/dashboardSchema");
 const cases_1 = require("./cases");
 const cronjobValidationService_1 = require("./cronJob/cronjobValidationService");
 const buildPeriodConfig_1 = require("./utils/buildPeriodConfig");
+function getPeriodConfig(startDate, endDate) {
+    if (!startDate || !endDate) {
+        const now = new Date();
+        return {
+            periodType: 'YEARLY',
+            periodKey: now.getFullYear().toString(),
+            year: now.getFullYear(),
+            month: null
+        };
+    }
+    const year = startDate.getFullYear();
+    return {
+        periodType: 'YEARLY',
+        periodKey: year.toString(),
+        year,
+        month: null
+    };
+}
 function getOwnerDashboardReport(ownerId_1, filters_1) {
-    return __awaiter(this, arguments, void 0, function* (ownerId, filters, options = {}) {
+    return __awaiter(this, arguments, void 0, function* (ownerId, filters, options = {}, period) {
         var _a, _b;
         const result = dashboardSchema_1.DashboardInputSchema.safeParse({
             ownerId,
             filters,
-            options
+            options,
+            period: {
+                startDate: filters.startDate || null,
+                endDate: filters.endDate || null
+            },
+            periodConfig: getPeriodConfig(filters.startDate || undefined, filters.endDate || undefined)
         });
         if (result.success) {
             const { ownerId: validatedOwnerId, filters: validatedFilters, options: validatedOptions } = result.data;

@@ -37,7 +37,6 @@ export const prewarmReportsController = async (req: Request, res: Response): Pro
       const periodKey = `${year}-${String(month).padStart(2, '0')}`;
 
       // --- 🚀 Trigger pre-warm ---
-      console.log(`[CRON] Starting pre-warm for ${periodType} ${periodKey}`);
       const jobId = await prewarmDashboardReports(periodType, periodKey, year, month, 5, 1000);
 
       // --- ✅ Success ---

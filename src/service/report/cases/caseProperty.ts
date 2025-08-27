@@ -67,16 +67,13 @@ export async function handleCase2 (context: DashboardContext): Promise<ReportInt
    });
    const totalPages = Math.ceil(totalCount / pageSize);
 
-   // 🔁 Process each room type with conditional upsert
    const roomTypeSummaries: ReportInterface.RoomTypeWithAvailability[] = await Promise.all(
       cachedRoomTypeSummaries.map(async summary => {
          const cutoffDate = new Date();
          cutoffDate.setHours(cutoffDate.getHours() - PERFORMANCE_SUMMARY_CACHE_TTL_HOURS);
 
-         // 🔽 Only re-fetch and upsert if summary is stale
          let reportSummary;
          if (!summary.lastUpdated || summary.lastUpdated < cutoffDate) {
-            // ✅ Cache is stale: re-fetch full report and update cache
             const fullReport = await getReservationReport(
                { ownerId, propertyId, roomTypeId: summary.roomTypeId, ...filters },
                { page: 1, pageSize: 1000 }
@@ -100,7 +97,6 @@ export async function handleCase2 (context: DashboardContext): Promise<ReportInt
 
             reportSummary = fullReport.summary;
          } else {
-            // ✅ Use cached summary data (skip DB call)
             reportSummary = {
                counts: {
                   PENDING_PAYMENT: summary.pendingPaymentCount,
@@ -116,14 +112,25 @@ export async function handleCase2 (context: DashboardContext): Promise<ReportInt
                totalReservations: summary.totalReservations
             };
          }
+         const roomReservationPage =
+            typeof reservationPage === 'object' ? reservationPage[summary.roomTypeId] || 1 : reservationPage;
 
-         // 🔽 Fetch paginated reservations for this room type (always fresh for UI)
          const paginatedReport = await getReservationReport(
-            { ownerId, propertyId, roomTypeId: summary.roomTypeId, ...filters },
-            { page: reservationPage, pageSize: reservationPageSize }
+            {
+               ownerId,
+               propertyId,
+               roomTypeId: summary.roomTypeId,
+               // ✅ Extract startDate and endDate to top level
+               startDate: filters.startDate,
+               endDate: filters.endDate
+               // Include other filters if needed
+            },
+            {
+               page: roomReservationPage,
+               pageSize: reservationPageSize
+            }
          );
 
-         // Extract unique customers from current page
          const customerMap = new Map<string, ReportInterface.CustomerMin>();
          for (const item of paginatedReport.data) {
             customerMap.set(item.user.id, {
@@ -137,8 +144,8 @@ export async function handleCase2 (context: DashboardContext): Promise<ReportInt
          const totalQuantity = await availabilityService.getRoomTypeTotalQuantity(summary.roomTypeId);
          const availabilityRecords = await availabilityService.getActualAvailabilityRecords(
             summary.roomTypeId,
-            filters.startDate,
-            filters.endDate
+            filters.startDate ?? undefined,
+            filters.endDate ?? undefined
          );
          const availability = availabilityRecords.map(record => {
             const dateKey = record.date.toISOString().split('T')[0];
@@ -169,7 +176,7 @@ export async function handleCase2 (context: DashboardContext): Promise<ReportInt
             })),
             uniqueCustomers: Array.from(customerMap.values()),
             pagination: {
-               page: reservationPage,
+               page: roomReservationPage,
                pageSize: reservationPageSize,
                total: paginatedReport.pagination.total,
                totalPages: paginatedReport.pagination.totalPages
@@ -203,13 +210,16 @@ export async function handleCase2 (context: DashboardContext): Promise<ReportInt
                address: property.location?.address ?? null,
                city: property.location?.city.name ?? null
             },
-            period,
+            period: {
+               startDate: filters.startDate || null,
+               endDate: filters.endDate || null
+            },
             summary: propertySummaryData,
             roomTypes: roomTypeSummaries
          }
       ],
       summary: propertySummaryData,
-      period,
+      period: { startDate: filters.startDate || null, endDate: filters.endDate || null },
       pagination: { page, pageSize, total: totalCount, totalPages }
    };
 }
