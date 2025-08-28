@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.ownerRoutes = exports.categoryRoute = exports.peakRateRoutes = exports.availabilityRoute = exports.roomOperationsRoutes = exports.roomRoute = exports.publicPropertyRoutes = exports.propertyRoute = void 0;
+exports.roomTypeRoute = exports.ownerRoutes = exports.categoryRoute = exports.peakRateRoutes = exports.availabilityRoute = exports.roomOperationsRoutes = exports.roomRoute = exports.publicPropertyRoutes = exports.propertyRoute = void 0;
 // Property Routes Export
 var propertyRoute_1 = require("./propertyRoute");
 Object.defineProperty(exports, "propertyRoute", { enumerable: true, get: function () { return __importDefault(propertyRoute_1).default; } });
@@ -21,3 +21,5 @@ var categoryRoute_1 = require("./categoryRoute");
 Object.defineProperty(exports, "categoryRoute", { enumerable: true, get: function () { return __importDefault(categoryRoute_1).default; } });
 var ownerRoutes_1 = require("./ownerRoutes");
 Object.defineProperty(exports, "ownerRoutes", { enumerable: true, get: function () { return __importDefault(ownerRoutes_1).default; } });
+var roomTypeRoute_1 = require("./roomTypeRoute");
+Object.defineProperty(exports, "roomTypeRoute", { enumerable: true, get: function () { return __importDefault(roomTypeRoute_1).default; } });

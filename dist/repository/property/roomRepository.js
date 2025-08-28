@@ -161,8 +161,10 @@ class RoomRepository {
                 // Update room fields
                 const updatedRoom = yield tx.room.update({
                     where: { id },
-                    data: Object.assign(Object.assign({}, (updateData.name !== undefined && { name: updateData.name })), (updateData.isAvailable !== undefined && {
+                    data: Object.assign(Object.assign(Object.assign({}, (updateData.name !== undefined && { name: updateData.name })), (updateData.isAvailable !== undefined && {
                         isAvailable: updateData.isAvailable,
+                    })), (updateData.roomTypeId !== undefined && {
+                        roomTypeId: updateData.roomTypeId,
                     })),
                     include: {
                         roomType: true,
