@@ -19,6 +19,7 @@ export async function handleCase3 (context: DashboardContext): Promise<ReportInt
             select: {
                id: true,
                name: true,
+               mainPicture: true,
                location: { select: { address: true, city: { select: { name: true } } } }
             }
          }
@@ -74,8 +75,8 @@ export async function handleCase3 (context: DashboardContext): Promise<ReportInt
    const totalQuantity = await availabilityService.getRoomTypeTotalQuantity(roomType.id);
    const availabilityRecords = await availabilityService.getActualAvailabilityRecords(
       roomType.id,
-      filters.startDate,
-      filters.endDate
+      filters.startDate ?? undefined,
+      filters.endDate ?? undefined
    );
 
    const availability = availabilityRecords.map(record => {
@@ -91,6 +92,7 @@ export async function handleCase3 (context: DashboardContext): Promise<ReportInt
       property: {
          id: roomType.property.id,
          name: roomType.property.name,
+         Picture: roomType.property.mainPicture?.url ?? null,
          address: roomType.property.location?.address ?? null,
          city: roomType.property.location?.city.name ?? null
       },

@@ -53,7 +53,7 @@ const roomTypeSummaryService_1 = require("../roomTypeSummaryService");
 const availabilityService = __importStar(require("../../reservationService/availabilityService"));
 function handleCase3(context) {
     return __awaiter(this, void 0, void 0, function* () {
-        var _a, _b, _c, _d;
+        var _a, _b, _c, _d, _e, _f, _g, _h;
         const { ownerId, filters, options, period, periodConfig } = context;
         const { propertyId, roomTypeId } = filters;
         const roomType = yield prisma_1.default.roomType.findUnique({
@@ -65,6 +65,7 @@ function handleCase3(context) {
                     select: {
                         id: true,
                         name: true,
+                        mainPicture: true,
                         location: { select: { address: true, city: { select: { name: true } } } }
                     }
                 }
@@ -98,7 +99,7 @@ function handleCase3(context) {
         }));
         yield (0, roomTypeSummaryService_1.upsertRoomTypePerformanceSummary)(Object.assign(Object.assign({ roomTypeId: roomTypeId !== null && roomTypeId !== void 0 ? roomTypeId : '', propertyId }, periodConfig), { totalRevenue: fullReport.summary.revenue.actual, projectedRevenue: fullReport.summary.revenue.projected, totalReservations: fullReport.summary.totalReservations, totalNightsBooked: 0, confirmedCount: fullReport.summary.counts.CONFIRMED, pendingPaymentCount: fullReport.summary.counts.PENDING_PAYMENT, pendingConfirmationCount: fullReport.summary.counts.PENDING_CONFIRMATION, cancelledCount: fullReport.summary.counts.CANCELLED, uniqueUsers: customerMap.size, OwnerId: ownerId }));
         const totalQuantity = yield availabilityService.getRoomTypeTotalQuantity(roomType.id);
-        const availabilityRecords = yield availabilityService.getActualAvailabilityRecords(roomType.id, filters.startDate, filters.endDate);
+        const availabilityRecords = yield availabilityService.getActualAvailabilityRecords(roomType.id, (_a = filters.startDate) !== null && _a !== void 0 ? _a : undefined, (_b = filters.endDate) !== null && _b !== void 0 ? _b : undefined);
         const availability = availabilityRecords.map(record => {
             const dateKey = record.date.toISOString().split('T')[0];
             return {
@@ -111,8 +112,9 @@ function handleCase3(context) {
             property: {
                 id: roomType.property.id,
                 name: roomType.property.name,
-                address: (_b = (_a = roomType.property.location) === null || _a === void 0 ? void 0 : _a.address) !== null && _b !== void 0 ? _b : null,
-                city: (_d = (_c = roomType.property.location) === null || _c === void 0 ? void 0 : _c.city.name) !== null && _d !== void 0 ? _d : null
+                Picture: (_d = (_c = roomType.property.mainPicture) === null || _c === void 0 ? void 0 : _c.url) !== null && _d !== void 0 ? _d : null,
+                address: (_f = (_e = roomType.property.location) === null || _e === void 0 ? void 0 : _e.address) !== null && _f !== void 0 ? _f : null,
+                city: (_h = (_g = roomType.property.location) === null || _g === void 0 ? void 0 : _g.city.name) !== null && _h !== void 0 ? _h : null
             },
             period,
             summary: fullReport.summary,

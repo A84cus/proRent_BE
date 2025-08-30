@@ -83,7 +83,6 @@ export function deriveMonthFromPeriodKey (periodKey: string): number | null {
 }
 
 export function buildYearPeriod (year: number): { periodType: string; periodKey: string; month: null } {
-   console.log(`Deriving period: YEAR ${year} (from provided year only)`);
    return {
       periodType: 'YEAR',
       periodKey: `${year}`,
@@ -95,7 +94,6 @@ export function buildMonthPeriod (
    year: number,
    month: number
 ): { periodType: string; periodKey: string; month: number } {
-   console.log(`Deriving period: MONTH ${year}-${String(month).padStart(2, '0')} (from provided year and month)`);
    return {
       periodType: 'MONTH',
       periodKey: `${year}-${String(month).padStart(2, '0')}`,
@@ -106,7 +104,6 @@ export function buildMonthPeriod (
 export function buildDayPeriod (now: Date): { periodType: string; periodKey: string; year: number; month: number } {
    const yesterdayKey = deriveYesterdayKey(now);
    const yesterday = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1);
-   console.log(`Defaulted missing DAY periodKey to yesterday: ${yesterdayKey}`);
 
    return {
       periodType: 'DAY',
@@ -121,20 +118,12 @@ export function handleMissingPeriodTypeAndKey (
    month: number | null | undefined,
    now: Date
 ): { periodType: string; periodKey: string; year: number; month: number | null } {
-   // --- CHANGE DEFAULT LOGIC HERE ---
-   console.log("Period type and/or period key not specified for cron job, defaulting to 'YEAR' and current year.");
-
    if (isYearValid(year)) {
-      // If year is valid, default to YEAR type for that specific year
-      console.log(`Valid year ${year} provided, defaulting to YEAR ${year}.`);
       return handleValidYear(year!, month);
    } else {
-      // If no valid year, default to the CURRENT YEAR
-      console.log('No valid year provided, defaulting to CURRENT YEAR.');
       const currentYear = deriveYearFromDate(now);
-      // --- DEFAULT TO 'YEAR' TYPE ---
       return {
-         ...buildYearPeriod(currentYear), // Sets periodType: 'YEAR', periodKey: 'YYYY', month: null
+         ...buildYearPeriod(currentYear),
          year: currentYear
       };
    }
@@ -159,9 +148,6 @@ function handleInvalidMonth (year: number): { periodType: string; periodKey: str
 }
 
 function handleMissingYear (now: Date): { periodType: string; periodKey: string; year: number; month: null } {
-   console.log(
-      "Neither valid 'year' nor valid 'periodType/periodKey' provided. Defaulting to 'YEAR' for current year."
-   );
    const currentYear = deriveYearFromDate(now);
    return { ...buildYearPeriod(currentYear), year: currentYear };
 }

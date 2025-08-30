@@ -4,6 +4,7 @@ import { Status } from '@prisma/client';
 export interface PropertyMin {
    id: string;
    name: string;
+   Picture: string | null;
    address: string | null;
    city: string | null;
 }
@@ -60,14 +61,11 @@ export interface PropertySummary {
       counts: StatusCounts;
       revenue: RevenueSummary;
    };
-
-   // Only when propertyId is provided
    roomTypes?: RoomTypeWithAvailability[];
 
-   // Only when propertyId+roomTypeId
    uniqueCustomers?: CustomerMin[];
-   data?: any[]; // Will be filled only in Case 3
-   pagination?: any; // Will be filled only in Case 3
+   data?: any[];
+   pagination?: any;
 }
 
 export interface DashboardReportResponse {
@@ -148,15 +146,17 @@ export interface ReservationReportFilters {
    propertyId?: string;
    roomTypeId?: string;
    ownerId: string;
-   startDate?: Date;
-   endDate?: Date;
+   startDate?: Date | null;
+   endDate?: Date | null;
    status?: ReservationStatus[];
    search?: string; // Search by user email/name
 }
 
 export interface ReservationReportOptions {
    page?: number;
+   reservationPage?: number | { [roomTypeId: string]: number };
    pageSize?: number;
+   reservationPageSize?: number;
    sortBy?: 'startDate' | 'endDate' | 'createdAt' | 'paymentAmount';
    sortDir?: 'asc' | 'desc';
 }

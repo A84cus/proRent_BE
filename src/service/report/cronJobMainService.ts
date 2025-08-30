@@ -26,8 +26,7 @@ export async function recalculatePropertySummaryForPeriod (
    const { totalRevenue, totalReservations } = await aggregateReservationData(propertyId, startDate, endDate);
 
    if (totalReservations === 0) {
-      console.log(`Skipping summary for Property ${propertyId} (${periodType} ${periodKey}) - No reservations.`);
-      return; // Exit early, DO NOT call upsertPropertyPerformanceSummary
+      return;
    }
    const uniqueUsers = await fetchUniqueUsers(propertyId, startDate, endDate);
 
@@ -74,12 +73,6 @@ export async function recalculateAllOwnersPropertiesSummaryForPeriod (
       finalizedParams.periodKey,
       finalizedParams.year
    );
-   console.log(
-      `Evaluated Period: ${finalizedParams.periodType} ${finalizedParams.periodKey} (Year: ${finalizedParams.year})`
-   );
-   console.log(
-      `Is Current Year Calculation: ${isCurrentYearCalculation}. Previous Month Key (for update): ${previousMonthKey}`
-   );
 
    const mainJob = await createMainBatchJob(
       finalizedParams,
@@ -116,7 +109,6 @@ async function createMainBatchJob (
    isCurrentYearCalculation?: boolean,
    previousMonthKey?: string
 ): Promise<any> {
-   console.log(`Creating main job for ${params.periodType} ${params.periodKey}`);
    return await createBatchJob({
       jobType: 'RECALCULATE_ALL_OWNER_SUMMARIES',
       targetPeriodType: params.periodType,
@@ -145,7 +137,6 @@ export function initiateBackgroundProcessing (
    isCurrentYearCalculation?: boolean,
    previousMonthKey?: string
 ): void {
-   console.log(`Initiating background processing for job ${jobId}`);
    processAllOwnersInBackground(
       jobId,
       params.periodType,
@@ -196,7 +187,6 @@ async function processAllOwnersInBackground (
 
    try {
       await updateBatchJob({ jobId: mainJobId, status: JobStatus.IN_PROGRESS, startedAt: new Date() });
-      console.log(`Started processing for main batch job ${mainJobId}.`);
 
       while (hasMore) {
          const ownersBatch = await prisma.user.findMany({
@@ -236,7 +226,6 @@ async function processAllOwnersInBackground (
          }
 
          if (hasMore && delayMs > 0) {
-            console.log(`Waiting ${delayMs}ms before processing the next batch (Job ID: ${mainJobId})...`);
             await new Promise(resolve => setTimeout(resolve, delayMs));
          }
       }

@@ -54,8 +54,6 @@ export const cancelReservationController = async (req: Request, res: Response) =
 // --- New Controller Function ---
 export const cancelExpiredReservationsController = async (req: Request, res: Response) => {
    try {
-      console.log('Manual trigger: Running reservation expiry check...');
-
       const result = await cancelExpiredReservations();
 
       return res.status(200).json({
@@ -128,8 +126,6 @@ export const confirmReservationByOwnerController = async (req: Request, res: Res
 
 export const sendBookingReminderController = async (req: Request, res: Response) => {
    try {
-      console.log('Manual trigger: Running booking reminder job...');
-
       const result = await sendBookingReminderForTomorrow();
 
       return res.status(200).json({

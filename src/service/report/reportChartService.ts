@@ -1,3 +1,5 @@
+// src/service/report/reportChartService.ts
+
 import { DashboardReportResponse } from '../../interfaces/report/reportCustomInterface';
 import { ChartDataPoint } from '../../interfaces/report/reportDashboardInterface';
 import { getOwnerDashboardReport } from './reportDashboardService';
@@ -47,10 +49,20 @@ export async function getYearlyRevenueChart (
          const startDate = new Date(Date.UTC(year, 0, 1)); // Jan 1
          const endDate = new Date(Date.UTC(year, 11, 31)); // Dec 31
 
-         const report = await getOwnerDashboardReport(ownerId, {
-            startDate,
-            endDate
-         });
+         // Pass proper default options to avoid validation errors
+         const report = await getOwnerDashboardReport(
+            ownerId,
+            {
+               startDate,
+               endDate
+            },
+            {
+               page: 1,
+               pageSize: 20,
+               sortBy: 'startDate',
+               sortDir: 'desc'
+            }
+         );
 
          return formatReportForChart(report);
       })
@@ -64,10 +76,20 @@ export async function getMonthlyRevenueChart (ownerId: string, year: number): Pr
          const startDate = new Date(Date.UTC(year, monthIndex, 1));
          const endDate = new Date(Date.UTC(year, monthIndex + 1, 0)); // Last day
 
-         const report = await getOwnerDashboardReport(ownerId, {
-            startDate,
-            endDate
-         });
+         // Pass proper default options to avoid validation errors
+         const report = await getOwnerDashboardReport(
+            ownerId,
+            {
+               startDate,
+               endDate
+            },
+            {
+               page: 1,
+               pageSize: 20,
+               sortBy: 'startDate',
+               sortDir: 'desc'
+            }
+         );
 
          return formatReportForChart(report);
       })
@@ -84,10 +106,20 @@ export async function getDailyRevenueChart (ownerId: string, days: number = 30):
       const nextDay = new Date(date);
       nextDay.setDate(date.getDate() + 1);
 
-      const report = await getOwnerDashboardReport(ownerId, {
-         startDate: date,
-         endDate: nextDay
-      });
+      // Pass proper default options to avoid validation errors
+      const report = await getOwnerDashboardReport(
+         ownerId,
+         {
+            startDate: date,
+            endDate: nextDay
+         },
+         {
+            page: 1,
+            pageSize: 20,
+            sortBy: 'startDate',
+            sortDir: 'desc'
+         }
+      );
 
       points.push(formatReportForChart(report));
    }

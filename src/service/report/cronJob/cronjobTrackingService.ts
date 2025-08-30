@@ -80,10 +80,7 @@ export async function handleExistingJobs (): Promise<boolean> {
    const pendingJobs = await findPendingJobs('RECALCULATE_ALL_OWNER_SUMMARIES', 10);
 
    if (pendingJobs.length > 0) {
-      console.log(`Found ${pendingJobs.length} pending jobs. Resuming...`);
-      // Optionally: resume or re-queue them
       for (const job of pendingJobs) {
-         console.log(`Re-initiating background processing for job ${job.id}`);
          if (typeof job.metadata === 'object' && job.metadata !== null) {
             const metadata = job.metadata as {
                year: number;
@@ -108,7 +105,7 @@ export async function handleExistingJobs (): Promise<boolean> {
             );
          }
       }
-      return true; // Indicate resumption, block new job
+      return true;
    }
 
    return false;

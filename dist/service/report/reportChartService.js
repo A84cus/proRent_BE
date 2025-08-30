@@ -1,4 +1,5 @@
 "use strict";
+// src/service/report/reportChartService.ts
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -53,9 +54,15 @@ function getYearlyRevenueChart(ownerId, years // e.g., [2023, 2024, 2025]
         return yield Promise.all(years.map((year) => __awaiter(this, void 0, void 0, function* () {
             const startDate = new Date(Date.UTC(year, 0, 1)); // Jan 1
             const endDate = new Date(Date.UTC(year, 11, 31)); // Dec 31
+            // Pass proper default options to avoid validation errors
             const report = yield (0, reportDashboardService_1.getOwnerDashboardReport)(ownerId, {
                 startDate,
                 endDate
+            }, {
+                page: 1,
+                pageSize: 20,
+                sortBy: 'startDate',
+                sortDir: 'desc'
             });
             return formatReportForChart(report);
         })));
@@ -67,9 +74,15 @@ function getMonthlyRevenueChart(ownerId, year) {
         return yield Promise.all(months.map((monthIndex) => __awaiter(this, void 0, void 0, function* () {
             const startDate = new Date(Date.UTC(year, monthIndex, 1));
             const endDate = new Date(Date.UTC(year, monthIndex + 1, 0)); // Last day
+            // Pass proper default options to avoid validation errors
             const report = yield (0, reportDashboardService_1.getOwnerDashboardReport)(ownerId, {
                 startDate,
                 endDate
+            }, {
+                page: 1,
+                pageSize: 20,
+                sortBy: 'startDate',
+                sortDir: 'desc'
             });
             return formatReportForChart(report);
         })));
@@ -84,9 +97,15 @@ function getDailyRevenueChart(ownerId_1) {
             date.setDate(today.getDate() - i);
             const nextDay = new Date(date);
             nextDay.setDate(date.getDate() + 1);
+            // Pass proper default options to avoid validation errors
             const report = yield (0, reportDashboardService_1.getOwnerDashboardReport)(ownerId, {
                 startDate: date,
                 endDate: nextDay
+            }, {
+                page: 1,
+                pageSize: 20,
+                sortBy: 'startDate',
+                sortDir: 'desc'
             });
             points.push(formatReportForChart(report));
         }

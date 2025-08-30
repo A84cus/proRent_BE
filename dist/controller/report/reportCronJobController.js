@@ -41,7 +41,6 @@ const prewarmReportsController = (req, res) => __awaiter(void 0, void 0, void 0,
         const periodType = 'MONTH';
         const periodKey = `${year}-${String(month).padStart(2, '0')}`;
         // --- 🚀 Trigger pre-warm ---
-        console.log(`[CRON] Starting pre-warm for ${periodType} ${periodKey}`);
         const jobId = yield (0, cronjobDashboardService_1.prewarmDashboardReports)(periodType, periodKey, year, month, 5, 1000);
         // --- ✅ Success ---
         res.status(200).json({

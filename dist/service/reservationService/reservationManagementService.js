@@ -20,7 +20,6 @@ const reservationExpiryService_1 = require("./reservationExpiryService");
 const emailService_1 = __importDefault(require("../email/emailService"));
 function runPostRejectionExpiryCheck(reservationId) {
     return __awaiter(this, void 0, void 0, function* () {
-        console.log(`Checking for expiry after rejecting reservation ${reservationId}...`);
         yield (0, reservationExpiryService_1.cancelExpiredReservations)();
     });
 }
@@ -37,10 +36,8 @@ function checkFinalReservationStatus(reservationId) {
             throw new Error('Reservation not found after rejection.');
         }
         if (finalReservationCheck.orderStatus === client_1.Status.CANCELLED) {
-            console.log(`Reservation ${reservationId} was automatically cancelled because it had expired.`);
             throw new Error('Reservation was automatically cancelled because it had expired.');
         }
-        console.log(`Reservation ${reservationId} successfully rejected (status PENDING_PAYMENT).`);
         return finalReservationCheck; // Optional: return data if needed elsewhere
     });
 }
@@ -185,7 +182,6 @@ function confirmReservationByOwner(reservationId, ownerId) {
                     PaymentProof: { include: { picture: true } }
                 }
             });
-            console.log(`Reservation ${reservationId} confirmed by owner ${ownerId}. Status changed to CONFIRMED.`);
             try {
                 if (!updatedReservation.User || !updatedReservation.User.email) {
                     throw new Error('User email not found for reservation.');
@@ -210,10 +206,7 @@ function confirmReservationByOwner(reservationId, ownerId) {
                     totalAmount: ((_o = updatedReservation.payment) === null || _o === void 0 ? void 0 : _o.amount) || 0,
                     paymentStatus: ((_p = updatedReservation.payment) === null || _p === void 0 ? void 0 : _p.paymentStatus) || 'N/A'
                 };
-                console.log('BookingDetails:', bookingDetails);
-                console.log('UserWithProfile:', userWithProfile);
                 yield emailService_1.default.sendBookingConfirmation(userWithProfile, bookingDetails);
-                console.log(`Booking confirmation email sent successfully to ${reservation.User.email} for reservation ${reservationId}.`);
             }
             catch (emailError) {
                 console.error(`Failed to send booking confirmation email for reservation ${reservationId} to ${((_q = reservation.User) === null || _q === void 0 ? void 0 : _q.email) || 'N/A'}:`, emailError);
