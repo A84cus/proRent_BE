@@ -120,7 +120,6 @@ export async function handleCase2 (context: DashboardContext): Promise<ReportInt
                ownerId,
                propertyId,
                roomTypeId: summary.roomTypeId,
-               // ✅ Extract startDate and endDate to top level
                startDate: filters.startDate,
                endDate: filters.endDate
                // Include other filters if needed
