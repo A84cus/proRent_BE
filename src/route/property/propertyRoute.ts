@@ -1,5 +1,6 @@
 import { Router } from "express";
 import propertyController from "../../controller/property/propertyController";
+import propertyGalleryController from "../../controller/property/propertyGalleryController";
 import { authOwner } from "../../middleware/auth/authMwr";
 
 const router = Router();
@@ -37,6 +38,20 @@ router.delete(
   "/:id",
   authOwner,
   propertyController.deleteProperty.bind(propertyController)
+);
+
+// POST /api/owner/properties/:propertyId/gallery - Add image to property gallery
+router.post(
+  "/:propertyId/gallery",
+  authOwner,
+  propertyGalleryController.addToGallery.bind(propertyGalleryController)
+);
+
+// DELETE /api/owner/properties/:propertyId/gallery/:pictureId - Remove image from gallery
+router.delete(
+  "/:propertyId/gallery/:pictureId",
+  authOwner,
+  propertyGalleryController.removeFromGallery.bind(propertyGalleryController)
 );
 
 export default router;

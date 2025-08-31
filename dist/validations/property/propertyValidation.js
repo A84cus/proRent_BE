@@ -15,7 +15,7 @@ exports.propertyCreateSchema = zod_1.z.object({
     categoryId: zod_1.z.string().min(1, "Category ID is required"),
     description: zod_1.z
         .string()
-        .min(10, "Description must be at least 10 characters")
+        .min(1, "Description is required")
         .max(2000, "Description must not exceed 2000 characters"),
     mainPictureId: zod_1.z.string().min(1, "Main picture ID is required"),
     location: zod_1.z
@@ -42,7 +42,7 @@ exports.propertyUpdateSchema = zod_1.z.object({
     categoryId: zod_1.z.string().min(1, "Category ID is required").optional(),
     description: zod_1.z
         .string()
-        .min(10, "Description must be at least 10 characters")
+        .min(1, "Description is required")
         .max(2000, "Description must not exceed 2000 characters")
         .optional(),
     mainPictureId: zod_1.z.string().min(1, "Main picture ID is required").optional(),

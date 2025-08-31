@@ -4,14 +4,14 @@ import { authOwner } from "../../middleware/auth/authMwr";
 
 const router = Router();
 
-// POST /api/rooms/:id/availability - Bulk set availability
+// POST /api/rooms/:id/availability - Bulk set availability for room/room-type
 router.post(
   "/:id/availability",
   authOwner,
   availabilityController.setBulkAvailability.bind(availabilityController)
 );
 
-// GET /api/rooms/:id/availability?month=YYYY-MM - Get monthly availability
+// GET /api/rooms/:id/availability?month=YYYY-MM - Get monthly availability for room/room-type
 router.get(
   "/:id/availability",
   authOwner,

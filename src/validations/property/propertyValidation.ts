@@ -9,7 +9,7 @@ export const propertyCreateSchema = z.object({
   categoryId: z.string().min(1, "Category ID is required"),
   description: z
     .string()
-    .min(10, "Description must be at least 10 characters")
+    .min(1, "Description is required")
     .max(2000, "Description must not exceed 2000 characters"),
   mainPictureId: z.string().min(1, "Main picture ID is required"),
   location: z
@@ -37,7 +37,7 @@ export const propertyUpdateSchema = z.object({
   categoryId: z.string().min(1, "Category ID is required").optional(),
   description: z
     .string()
-    .min(10, "Description must be at least 10 characters")
+    .min(1, "Description is required")
     .max(2000, "Description must not exceed 2000 characters")
     .optional(),
   mainPictureId: z.string().min(1, "Main picture ID is required").optional(),

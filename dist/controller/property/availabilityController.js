@@ -14,7 +14,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const BaseController_1 = __importDefault(require("../BaseController"));
 const responseHelper_1 = __importDefault(require("../../helpers/system/responseHelper"));
-const availabilityService_1 = __importDefault(require("../../service/property/availabilityService"));
+const flexibleAvailabilityService_1 = __importDefault(require("../../service/property/flexibleAvailabilityService"));
 const property_1 = require("../../constants/controllers/property");
 const property_2 = require("../../helpers/property");
 class AvailabilityController extends BaseController_1.default {
@@ -46,7 +46,7 @@ class AvailabilityController extends BaseController_1.default {
                     return;
                 }
                 // Process bulk availability setting
-                yield availabilityService_1.default.setBulkAvailability(id, availabilityValidation.data, userValidation.userId);
+                yield flexibleAvailabilityService_1.default.setBulkAvailability(id, availabilityValidation.data, userValidation.userId);
                 responseHelper_1.default.success(res, property_1.PROPERTY_SUCCESS_MESSAGES.ROOM_AVAILABILITY_UPDATED);
             }
             catch (error) {
@@ -82,7 +82,7 @@ class AvailabilityController extends BaseController_1.default {
                     return;
                 }
                 // Get monthly availability
-                const availability = yield availabilityService_1.default.getMonthlyAvailability(id, monthValidation.year, monthValidation.month, userValidation.userId);
+                const availability = yield flexibleAvailabilityService_1.default.getMonthlyAvailability(id, monthValidation.year, monthValidation.month, userValidation.userId);
                 responseHelper_1.default.success(res, property_1.PROPERTY_SUCCESS_MESSAGES.MONTHLY_AVAILABILITY_RETRIEVED, availability);
             }
             catch (error) {

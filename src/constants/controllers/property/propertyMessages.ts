@@ -118,6 +118,7 @@ export const PROPERTY_ERROR_MESSAGES = {
 
   // Availability specific errors
   ROOM_ID_REQUIRED: "Room ID is required",
+  ROOM_TYPE_ID_REQUIRED: "Room Type ID is required",
   AVAILABILITY_ARRAY_REQUIRED: "Availability array is required",
   MONTH_PARAMETER_REQUIRED: "Month parameter is required in YYYY-MM format",
   INVALID_MONTH_FORMAT: "Invalid month format. Use YYYY-MM format",
