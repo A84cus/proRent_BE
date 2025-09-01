@@ -72,7 +72,6 @@ function validateAndDefaultYear(periodKey, year) {
     }
     const derivedYear = (0, cronjobValidationService_1.deriveYearFromPeriodKey)(periodKey);
     if (derivedYear !== undefined && !isNaN(derivedYear)) {
-        console.log(`Derived missing finalYear ${derivedYear} from periodKey ${periodKey}`);
         return derivedYear;
     }
     const currentYear = (0, cronjobValidationService_1.deriveYearFromDate)(new Date());
@@ -97,7 +96,6 @@ function handleMonthForPeriodType(type, periodKey, month) {
     }
     const derivedMonth = (0, cronjobValidationService_1.deriveMonthFromPeriodKey)(periodKey);
     if (derivedMonth !== null) {
-        console.log(`Derived missing/invalid finalMonth ${derivedMonth} for ${type} type from periodKey.`);
         return derivedMonth;
     }
     const currentMonth = (0, cronjobValidationService_1.deriveMonthFromDate)(new Date());
@@ -134,5 +132,4 @@ function validateFinalPeriodParams(params) {
     if (year === undefined || isNaN(year)) {
         throw new Error(`Invalid or missing final year after defaulting: ${year}. Must be a number.`);
     }
-    console.log(`Validated final period parameters: ${periodType} ${periodKey} (Year: ${year})`);
 }

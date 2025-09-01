@@ -1,5 +1,5 @@
 "use strict";
-// src/services/report/dashboard/utils/aggregateSummaries.ts
+// service/report/utils/aggregateSummaries.ts
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.aggregateSummaries = aggregateSummaries;
 function aggregateSummaries(summaries) {

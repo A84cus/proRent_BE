@@ -63,8 +63,6 @@ function sendBookingReminderForTomorrow() {
                     payment: { select: { id: true, amount: true, method: true, paymentStatus: true } }
                 }
             });
-            console.log(`Found ${reservations.length} reservations for tomorrow`);
-            // Send reminder emails for each reservation
             for (const reservation of reservations) {
                 try {
                     if (!reservation.User || !reservation.User.email) {
@@ -92,13 +90,11 @@ function sendBookingReminderForTomorrow() {
                         paymentStatus: ((_p = reservation.payment) === null || _p === void 0 ? void 0 : _p.paymentStatus) || 'N/A'
                     };
                     yield emailService_1.default.sendBookingReminder(userWithProfile, bookingDetails);
-                    console.log(`Booking reminder email sent successfully to ${reservation.User.email} for reservation ${reservation.id}`);
                 }
                 catch (emailError) {
                     console.error(`Failed to send booking reminder email for reservation ${reservation.id} to ${((_q = reservation.User) === null || _q === void 0 ? void 0 : _q.email) || 'N/A'}:`, emailError);
                 }
             }
-            console.log(`Completed sending ${reservations.length} booking reminder emails`);
             return { success: true, count: reservations.length };
         }
         catch (error) {
@@ -165,7 +161,6 @@ function sendBookingReminderByReservationId(reservationId) {
                 paymentStatus: ((_p = reservation.payment) === null || _p === void 0 ? void 0 : _p.paymentStatus) || 'N/A'
             };
             yield emailService_1.default.sendBookingReminder(userWithProfile, bookingDetails);
-            console.log(`Booking reminder email sent successfully to ${reservation.User.email} for reservation ${reservation.id}`);
             return { success: true, reservationId };
         }
         catch (error) {

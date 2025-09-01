@@ -49,9 +49,6 @@ export async function sendBookingReminderForTomorrow () {
          }
       });
 
-      console.log(`Found ${reservations.length} reservations for tomorrow`);
-
-      // Send reminder emails for each reservation
       for (const reservation of reservations) {
          try {
             if (!reservation.User || !reservation.User.email) {
@@ -82,9 +79,6 @@ export async function sendBookingReminderForTomorrow () {
             };
 
             await EmailService.sendBookingReminder(userWithProfile, bookingDetails);
-            console.log(
-               `Booking reminder email sent successfully to ${reservation.User.email} for reservation ${reservation.id}`
-            );
          } catch (emailError: any) {
             console.error(
                `Failed to send booking reminder email for reservation ${reservation.id} to ${
@@ -95,7 +89,6 @@ export async function sendBookingReminderForTomorrow () {
          }
       }
 
-      console.log(`Completed sending ${reservations.length} booking reminder emails`);
       return { success: true, count: reservations.length };
    } catch (error: any) {
       console.error('Error sending booking reminder emails:', error);
@@ -164,9 +157,6 @@ export async function sendBookingReminderByReservationId (reservationId: string)
       };
 
       await EmailService.sendBookingReminder(userWithProfile, bookingDetails);
-      console.log(
-         `Booking reminder email sent successfully to ${reservation.User.email} for reservation ${reservation.id}`
-      );
 
       return { success: true, reservationId };
    } catch (error: any) {

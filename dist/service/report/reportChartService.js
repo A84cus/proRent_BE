@@ -1,4 +1,5 @@
 "use strict";
+// src/service/report/reportChartService.ts
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -14,32 +15,30 @@ exports.getYearlyRevenueChart = getYearlyRevenueChart;
 exports.getMonthlyRevenueChart = getMonthlyRevenueChart;
 exports.getDailyRevenueChart = getDailyRevenueChart;
 const reportDashboardService_1 = require("./reportDashboardService");
+const getDailyChart_1 = require("./utils/getDailyChart");
 function formatReportForChart(report) {
-    const summary = report.summary;
-    const period = report.period;
-    // Generate label based on period
+    const summary = report.summary.Global;
+    const aggregate = report.summary.Aggregate;
+    const period = report.summary.period;
     let label = 'Unknown';
     if (period.startDate && period.endDate) {
         const start = new Date(period.startDate);
         const end = new Date(period.endDate);
         if (start.getDate() === 1 && isLastDayOfMonth(end)) {
-            // Month: "Aug 2025"
             label = start.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
         }
         else if (start.getMonth() === 0 && start.getDate() === 1 && end.getMonth() === 11 && end.getDate() === 31) {
-            // Year: "2025"
             label = start.getFullYear().toString();
         }
         else {
-            // Daily or custom: "2025-08-01"
             label = start.toISOString().split('T')[0];
         }
     }
     return {
         label,
-        actualRevenue: summary.revenue.actual,
-        projectedRevenue: summary.revenue.projected,
-        reservations: summary.counts.CONFIRMED + summary.counts.PENDING_PAYMENT + summary.counts.PENDING_CONFIRMATION
+        actualRevenue: summary.totalActualRevenue,
+        projectedRevenue: summary.totalProjectedRevenue,
+        reservations: aggregate.counts.CONFIRMED + aggregate.counts.PENDING_PAYMENT + aggregate.counts.PENDING_CONFIRMATION
     };
 }
 function isLastDayOfMonth(date) {
@@ -53,9 +52,15 @@ function getYearlyRevenueChart(ownerId, years // e.g., [2023, 2024, 2025]
         return yield Promise.all(years.map((year) => __awaiter(this, void 0, void 0, function* () {
             const startDate = new Date(Date.UTC(year, 0, 1)); // Jan 1
             const endDate = new Date(Date.UTC(year, 11, 31)); // Dec 31
+            // Pass proper default options to avoid validation errors
             const report = yield (0, reportDashboardService_1.getOwnerDashboardReport)(ownerId, {
                 startDate,
                 endDate
+            }, {
+                page: 1,
+                pageSize: 20,
+                sortBy: 'startDate',
+                sortDir: 'desc'
             });
             return formatReportForChart(report);
         })));
@@ -67,9 +72,15 @@ function getMonthlyRevenueChart(ownerId, year) {
         return yield Promise.all(months.map((monthIndex) => __awaiter(this, void 0, void 0, function* () {
             const startDate = new Date(Date.UTC(year, monthIndex, 1));
             const endDate = new Date(Date.UTC(year, monthIndex + 1, 0)); // Last day
+            // Pass proper default options to avoid validation errors
             const report = yield (0, reportDashboardService_1.getOwnerDashboardReport)(ownerId, {
                 startDate,
                 endDate
+            }, {
+                page: 1,
+                pageSize: 20,
+                sortBy: 'startDate',
+                sortDir: 'desc'
             });
             return formatReportForChart(report);
         })));
@@ -78,18 +89,16 @@ function getMonthlyRevenueChart(ownerId, year) {
 function getDailyRevenueChart(ownerId_1) {
     return __awaiter(this, arguments, void 0, function* (ownerId, days = 30) {
         const today = new Date();
-        const points = [];
-        for (let i = days - 1; i >= 0; i--) {
+        const summaries = yield Promise.all(Array.from({ length: days }, (_, i) => {
             const date = new Date(today);
-            date.setDate(today.getDate() - i);
-            const nextDay = new Date(date);
-            nextDay.setDate(date.getDate() + 1);
-            const report = yield (0, reportDashboardService_1.getOwnerDashboardReport)(ownerId, {
-                startDate: date,
-                endDate: nextDay
-            });
-            points.push(formatReportForChart(report));
-        }
-        return points;
+            date.setDate(today.getDate() - (days - 1 - i)); // from oldest to today
+            return (0, getDailyChart_1.getDailySummary)(ownerId, date);
+        }));
+        return summaries.map(s => ({
+            label: s.date,
+            actualRevenue: s.actualRevenue,
+            projectedRevenue: s.projectedRevenue,
+            reservations: s.confirmed + s.pending
+        }));
     });
 }

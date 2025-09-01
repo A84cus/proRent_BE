@@ -11,7 +11,6 @@ export async function findPropertyPerformanceSummary (
    periodType: string,
    periodKey: string
 ): Promise<PropertyPerformanceSummary | null> {
-   // First, verify the property belongs to the owner
    const propertyCheck = await prisma.property.findUnique({
       where: {
          id: propertyId,
@@ -23,11 +22,9 @@ export async function findPropertyPerformanceSummary (
    });
 
    if (!propertyCheck) {
-      // Property doesn't exist or doesn't belong to the owner
       return null;
    }
 
-   // If ownership is valid, find the summary record
    return await prisma.propertyPerformanceSummary.findUnique({
       where: {
          propertyId_periodType_periodKey: {

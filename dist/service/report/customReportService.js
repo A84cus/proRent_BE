@@ -19,109 +19,79 @@ const cronjobValidationService_1 = require("./cronJob/cronjobValidationService")
 // --- Main Function ---
 function getReservationReport(filters_1) {
     return __awaiter(this, arguments, void 0, function* (filters, options = {}) {
-        var _a;
         const { page = 1, pageSize = 20, sortBy = 'startDate', sortDir = 'desc' } = options;
         const skip = (page - 1) * pageSize;
-        // --- 🔐 Validate ownership ---
+        // 🔐 Ownership validation
         if (filters.propertyId) {
             yield (0, cronjobValidationService_1.validatePropertyOwnership)(filters.ownerId, filters.propertyId);
         }
-        else if (filters.roomTypeId) {
+        if (filters.roomTypeId && filters.propertyId) {
             yield (0, cronjobValidationService_1.validateRoomTypeOwnership)(filters.ownerId, filters.roomTypeId);
         }
-        // --- 🔍 Base where clause ---
-        const where = Object.assign(Object.assign(Object.assign(Object.assign(Object.assign({ orderStatus: { not: 'CANCELLED' } }, (filters.startDate && { startDate: { lte: filters.endDate || new Date() } })), (filters.endDate && { endDate: { gte: filters.startDate || new Date('1970') } })), (filters.status && { orderStatus: { in: filters.status } })), (filters.propertyId && { propertyId: filters.propertyId })), (filters.roomTypeId && { roomTypeId: filters.roomTypeId }));
-        // Add search filter
-        if (filters.search) {
-            where.OR = [
-                { User: { email: { contains: filters.search, mode: 'insensitive' } } },
-                { User: { name: { contains: filters.search, mode: 'insensitive' } } }
-            ];
+        // 🔹 Build WHERE clause
+        const where = Object.assign(Object.assign(Object.assign(Object.assign(Object.assign({}, (filters.propertyId && { propertyId: filters.propertyId })), (filters.roomTypeId && { roomTypeId: filters.roomTypeId })), (filters.startDate && { startDate: { lte: filters.endDate || new Date() } })), (filters.endDate && { endDate: { gte: filters.startDate || new Date('1970-01-01') } })), (filters.reservationStatus && { orderStatus: filters.reservationStatus }));
+        // 🔍 Text search
+        if (filters.customerName || filters.email || filters.invoiceNumber) {
+            where.OR = [];
+            if (filters.customerName) {
+                where.OR.push({ User: { profile: { firstName: { contains: filters.customerName, mode: 'insensitive' } } } }, { User: { profile: { lastName: { contains: filters.customerName, mode: 'insensitive' } } } });
+            }
+            if (filters.email) {
+                where.OR.push({
+                    User: { email: { contains: filters.email, mode: 'insensitive' } }
+                });
+            }
+            if (filters.invoiceNumber) {
+                where.OR.push({
+                    payment: { invoiceNumber: { equals: filters.invoiceNumber, mode: 'insensitive' } }
+                });
+            }
         }
-        // If CANCELLED is explicitly requested
-        if ((_a = filters.status) === null || _a === void 0 ? void 0 : _a.includes('CANCELLED')) {
-            delete where.orderStatus;
-            where.orderStatus = { in: filters.status };
-        }
-        // --- 🔢 Get total count ---
+        // 🔢 Count total
         const total = yield prisma_1.default.reservation.count({ where });
-        // --- 📄 Get paginated data ---
-        const data = yield prisma_1.default.reservation.findMany({
+        // 📥 Fetch data
+        const reservations = yield prisma_1.default.reservation.findMany({
             where,
             skip,
             take: pageSize,
             orderBy: getOrderBy(sortBy, sortDir),
-            select: {
-                id: true,
-                userId: true,
-                propertyId: true,
-                roomTypeId: true,
-                startDate: true,
-                endDate: true,
-                orderStatus: true,
-                createdAt: true,
+            include: {
+                User: {
+                    include: {
+                        profile: true
+                    }
+                },
                 payment: {
                     select: {
-                        amount: true,
-                        paidAt: true
-                    }
-                },
-                User: {
-                    select: {
-                        id: true,
-                        email: true,
-                        profile: {
-                            select: {
-                                firstName: true,
-                                lastName: true
-                            }
-                        }
-                    }
-                },
-                Property: {
-                    select: {
-                        id: true,
-                        name: true
-                    }
-                },
-                RoomType: {
-                    select: {
-                        id: true,
-                        name: true
+                        invoiceNumber: true,
+                        amount: true
                     }
                 }
             }
         });
-        const mappedData = data.map(r => {
-            var _a, _b, _c, _d, _e;
+        // 🔄 Map to ReservationListItem
+        const data = reservations.map(r => {
+            var _a, _b, _c, _d, _e, _f;
             return ({
                 id: r.id,
                 userId: r.userId,
-                propertyId: r.propertyId,
-                roomTypeId: r.roomTypeId,
+                roomId: r.roomId,
                 startDate: r.startDate,
                 endDate: r.endDate,
                 orderStatus: r.orderStatus,
-                paymentAmount: (_b = (_a = r.payment) === null || _a === void 0 ? void 0 : _a.amount) !== null && _b !== void 0 ? _b : null,
-                paidAt: (_d = (_c = r.payment) === null || _c === void 0 ? void 0 : _c.paidAt) !== null && _d !== void 0 ? _d : null,
-                createdAt: r.createdAt,
+                paymentAmount: (_b = (_a = r.payment) === null || _a === void 0 ? void 0 : _a.amount) !== null && _b !== void 0 ? _b : 0, // number, not null
+                invoiceNumber: (_d = (_c = r.payment) === null || _c === void 0 ? void 0 : _c.invoiceNumber) !== null && _d !== void 0 ? _d : null,
                 user: {
-                    id: r.User.id,
                     email: r.User.email,
-                    profile: (_e = r.User.profile) !== null && _e !== void 0 ? _e : {
-                        firstName: null,
-                        lastName: null
-                    }
-                },
-                property: r.Property,
-                roomType: r.RoomType
+                    firstName: ((_e = r.User.profile) === null || _e === void 0 ? void 0 : _e.firstName) || null,
+                    lastName: ((_f = r.User.profile) === null || _f === void 0 ? void 0 : _f.lastName) || null
+                }
             });
         });
-        // --- 📊 Compute summary ---
+        // 📊 Compute summary
         const summary = yield computeSummary(filters);
-        // --- 📦 Return response ---
         return {
-            data: mappedData,
+            data,
             summary,
             pagination: {
                 page,
@@ -132,36 +102,38 @@ function getReservationReport(filters_1) {
         };
     });
 }
-// --- Helper: Sort order ---
+// --- Sorting Logic ---
 function getOrderBy(sortBy, sortDir) {
     switch (sortBy) {
         case 'paymentAmount':
             return { payment: { amount: sortDir } };
         case 'createdAt':
             return { createdAt: sortDir };
+        case 'startDate':
+            return { startDate: sortDir };
         case 'endDate':
             return { endDate: sortDir };
+        case 'invoiceNumber':
+            return { payment: { invoiceNumber: sortDir } };
         default:
             return { startDate: sortDir };
     }
 }
-// --- Helper: Compute summary counts and revenue ---
+// --- Summary Calculation ---
 function computeSummary(filters) {
     return __awaiter(this, void 0, void 0, function* () {
-        const baseWhere = Object.assign(Object.assign(Object.assign(Object.assign({}, (filters.startDate && { startDate: { lte: filters.endDate || new Date() } })), (filters.endDate && { endDate: { gte: filters.startDate || new Date('1970') } })), (filters.propertyId && { propertyId: filters.propertyId })), (filters.roomTypeId && { roomTypeId: filters.roomTypeId }));
-        // Get counts and revenue by status
+        const baseWhere = Object.assign(Object.assign(Object.assign(Object.assign({}, (filters.propertyId && { propertyId: filters.propertyId })), (filters.roomTypeId && { roomTypeId: filters.roomTypeId })), (filters.startDate && { startDate: { lte: filters.endDate || new Date() } })), (filters.endDate && { endDate: { gte: filters.startDate || new Date('1970-01-01') } }));
         const [pendingPayment, pendingConfirmation, confirmed, cancelled] = yield Promise.all([
             prisma_1.default.reservation.findMany({
-                where: Object.assign(Object.assign({}, baseWhere), { orderStatus: 'PENDING_PAYMENT', payment: { paymentStatus: 'CONFIRMED' } // Only CONFIRMED ones contribute to revenue
-                 }),
+                where: Object.assign(Object.assign({}, baseWhere), { orderStatus: 'PENDING_PAYMENT', payment: { amount: { gt: 0 } } }),
                 select: { payment: { select: { amount: true } } }
             }),
             prisma_1.default.reservation.findMany({
-                where: Object.assign(Object.assign({}, baseWhere), { orderStatus: 'PENDING_CONFIRMATION', payment: { paymentStatus: 'CONFIRMED' } }),
+                where: Object.assign(Object.assign({}, baseWhere), { orderStatus: 'PENDING_CONFIRMATION', payment: { amount: { gt: 0 } } }),
                 select: { payment: { select: { amount: true } } }
             }),
             prisma_1.default.reservation.findMany({
-                where: Object.assign(Object.assign({}, baseWhere), { orderStatus: 'CONFIRMED', payment: { paymentStatus: 'CONFIRMED' } }),
+                where: Object.assign(Object.assign({}, baseWhere), { orderStatus: 'CONFIRMED', payment: { amount: { gt: 0 } } }),
                 select: { payment: { select: { amount: true } } }
             }),
             prisma_1.default.reservation.count({
@@ -169,7 +141,6 @@ function computeSummary(filters) {
             })
         ]);
         const sumRevenue = (reservations) => reservations.reduce((sum, r) => { var _a; return sum + (((_a = r.payment) === null || _a === void 0 ? void 0 : _a.amount) || 0); }, 0);
-        const avgRevenue = (reservations) => reservations.reduce((sum, r) => { var _a; return sum + (((_a = r.payment) === null || _a === void 0 ? void 0 : _a.amount) || 0); }, 0) / reservations.length;
         const actualRevenue = sumRevenue(confirmed);
         const projectedRevenue = sumRevenue(pendingPayment) + sumRevenue(pendingConfirmation) + actualRevenue;
         return {
@@ -182,7 +153,7 @@ function computeSummary(filters) {
             revenue: {
                 actual: actualRevenue,
                 projected: projectedRevenue,
-                average: avgRevenue(confirmed)
+                average: confirmed.length > 0 ? actualRevenue / confirmed.length : 0
             },
             totalReservations: pendingPayment.length + pendingConfirmation.length + confirmed.length + cancelled
         };

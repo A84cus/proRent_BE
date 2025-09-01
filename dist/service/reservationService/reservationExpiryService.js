@@ -48,10 +48,8 @@ function cancelExpiredReservations() {
                 }
             });
             if (expiredReservations.length === 0) {
-                console.log('No expired reservations found.');
                 return { cancelledReservationIds };
             }
-            console.log(`Found ${expiredReservations.length} expired reservation(s). Processing cancellations...`);
             for (const reservation of expiredReservations) {
                 try {
                     yield prisma_1.default.$transaction((tx) => __awaiter(this, void 0, void 0, function* () {
@@ -60,16 +58,12 @@ function cancelExpiredReservations() {
                             where: { id: reservation.id },
                             data: { orderStatus: client_1.Status.CANCELLED }
                         });
-                        console.log(`Reservation ${reservation.id} status updated to CANCELLED.`);
                         const updatedPayment = yield tx.payment.updateMany({
-                            where: { reservationId: reservation.id }, // Match payments for this specific reservation
+                            where: { reservationId: reservation.id },
                             data: { paymentStatus: client_1.Status.CANCELLED }
                         });
-                        console.log(`Payment(s) for reservation ${reservation.id} status updated to CANCELLED. Count: ${updatedPayment.count}`);
                         if (((_a = reservation.RoomType) === null || _a === void 0 ? void 0 : _a.id) && reservation.startDate && reservation.endDate) {
-                            yield (0, availabilityService_1.incrementAvailability)(tx, // Pass the transaction client
-                            reservation.RoomType.id, new Date(reservation.startDate), new Date(reservation.endDate));
-                            console.log(`Availability restored for RoomTypeId ${reservation.RoomType.id} from ${reservation.startDate} to ${reservation.endDate} due to reservation ${reservation.id} expiry.`);
+                            yield (0, availabilityService_1.incrementAvailability)(tx, reservation.RoomType.id, new Date(reservation.startDate), new Date(reservation.endDate));
                         }
                         else {
                             console.warn(`Could not restore availability for expired reservation ${reservation.id}: Missing RoomTypeId or dates.`);
@@ -78,29 +72,23 @@ function cancelExpiredReservations() {
                     }), { timeout: 30000 });
                 }
                 catch (error) {
-                    console.error(`Error cancelling reservation ${reservation.id}:`, error);
                     throw error(`Error cancelling reservation ${reservation.id}: ${error.message}`);
                 }
             }
-            console.log(`Finished processing expired reservations. Cancelled IDs: ${cancelledReservationIds.join(', ')}`);
             return { cancelledReservationIds };
         }
         catch (error) {
-            console.error('Error finding or cancelling expired reservations:', error);
             throw error;
         }
     });
 }
-// --- Optional: Function to run the check manually (e.g., for testing) ---
 function runExpiryCheckManually() {
     return __awaiter(this, void 0, void 0, function* () {
-        console.log('Running manual reservation expiry check...');
         try {
             const result = yield cancelExpiredReservations();
-            console.log('Manual check completed. Result:', result);
         }
         catch (err) {
-            console.error('Manual check failed:', err);
+            throw err;
         }
     });
 }

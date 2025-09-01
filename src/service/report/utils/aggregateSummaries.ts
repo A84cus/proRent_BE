@@ -1,4 +1,4 @@
-// src/services/report/dashboard/utils/aggregateSummaries.ts
+// service/report/utils/aggregateSummaries.ts
 
 import * as ReportInterface from '../../../interfaces/report/reportCustomInterface';
 
