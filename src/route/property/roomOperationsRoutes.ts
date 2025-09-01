@@ -4,8 +4,9 @@ import peakRateRoute from "./peakRateRoutes";
 
 const router = Router();
 
-// Room-specific operations - availability & pricing
-router.use("/availability", availabilityRoute);
-router.use("/peak-rates", peakRateRoute);
+// RoomType-specific operations - availability & pricing
+// Routes will be mounted as /api/room-types/...
+router.use("/", availabilityRoute);
+router.use("/", peakRateRoute);
 
 export default router;

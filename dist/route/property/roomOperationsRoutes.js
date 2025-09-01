@@ -7,7 +7,8 @@ const express_1 = require("express");
 const availabilityRoute_1 = __importDefault(require("./availabilityRoute"));
 const peakRateRoutes_1 = __importDefault(require("./peakRateRoutes"));
 const router = (0, express_1.Router)();
-// Room-specific operations - availability & pricing
-router.use("/availability", availabilityRoute_1.default);
-router.use("/peak-rates", peakRateRoutes_1.default);
+// RoomType-specific operations - availability & pricing
+// Routes will be mounted as /api/room-types/...
+router.use("/", availabilityRoute_1.default);
+router.use("/", peakRateRoutes_1.default);
 exports.default = router;

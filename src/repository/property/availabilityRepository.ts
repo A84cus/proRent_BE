@@ -161,6 +161,63 @@ class AvailabilityRepository {
       orderBy: { startDate: "asc" },
     });
   }
+
+  // Bulk upsert availability for a room type
+  async bulkUpsertRoomTypeAvailability(
+    roomTypeId: string,
+    availabilityData: { date: Date; isAvailable: boolean }[]
+  ): Promise<void> {
+    await prisma.$transaction(async (tx) => {
+      for (const { date, isAvailable } of availabilityData) {
+        await tx.availability.upsert({
+          where: {
+            roomTypeId_date: {
+              roomTypeId,
+              date,
+            },
+          },
+          update: {
+            availableCount: isAvailable ? 1 : 0, // Simplified: 1 if available, 0 if not
+          },
+          create: {
+            roomTypeId,
+            date,
+            availableCount: isAvailable ? 1 : 0,
+          },
+        });
+      }
+    });
+  }
+
+  // Find room type availability by month
+  async findRoomTypeAvailabilityByMonth(
+    roomTypeId: string,
+    year: number,
+    month: number
+  ): Promise<Availability[]> {
+    const startDate = new Date(year, month - 1, 1); // month is 0-indexed in JS Date
+    const endDate = new Date(year, month, 0, 23, 59, 59); // Last day of the month
+
+    return prisma.availability.findMany({
+      where: {
+        roomTypeId,
+        date: {
+          gte: startDate,
+          lte: endDate,
+        },
+      },
+      include: {
+        roomType: {
+          select: {
+            id: true,
+            name: true,
+            basePrice: true,
+          },
+        },
+      },
+      orderBy: { date: "asc" },
+    });
+  }
 }
 
 export default new AvailabilityRepository();

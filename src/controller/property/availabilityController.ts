@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import BaseController from "../BaseController";
 import ResponseHelper from "../../helpers/system/responseHelper";
-import availabilityService from "../../service/property/availabilityService";
+import flexibleAvailabilityService from "../../service/property/flexibleAvailabilityService";
 import {
   PROPERTY_SUCCESS_MESSAGES,
   PROPERTY_ERROR_MESSAGES,
@@ -53,7 +53,7 @@ class AvailabilityController extends BaseController {
       }
 
       // Process bulk availability setting
-      await availabilityService.setBulkAvailability(
+      await flexibleAvailabilityService.setBulkAvailability(
         id,
         availabilityValidation.data!,
         userValidation.userId!
@@ -109,12 +109,13 @@ class AvailabilityController extends BaseController {
       }
 
       // Get monthly availability
-      const availability = await availabilityService.getMonthlyAvailability(
-        id,
-        monthValidation.year!,
-        monthValidation.month!,
-        userValidation.userId!
-      );
+      const availability =
+        await flexibleAvailabilityService.getMonthlyAvailability(
+          id,
+          monthValidation.year!,
+          monthValidation.month!,
+          userValidation.userId!
+        );
 
       ResponseHelper.success(
         res,
