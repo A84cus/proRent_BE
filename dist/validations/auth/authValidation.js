@@ -10,7 +10,8 @@ exports.registerUserSchema = zod_1.z.object({
     socialLogin: zod_1.z.enum(['GOOGLE', 'FACEBOOK', 'TWITTER', 'NONE']).optional()
 });
 exports.verifyEmailSchema = zod_1.z.object({
-    token: zod_1.z.string().min(1, 'Token is required')
+    token: zod_1.z.string().min(1, 'Token is required'),
+    password: zod_1.z.string().optional() // Make password optional for backward compatibility
 });
 exports.resendVerificationSchema = zod_1.z.object({
     email: zod_1.z.email('Invalid email format')
