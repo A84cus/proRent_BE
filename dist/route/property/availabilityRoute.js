@@ -7,8 +7,8 @@ const express_1 = require("express");
 const availabilityController_1 = __importDefault(require("../../controller/property/availabilityController"));
 const authMwr_1 = require("../../middleware/auth/authMwr");
 const router = (0, express_1.Router)();
-// POST /api/rooms/:id/availability - Bulk set availability
+// POST /api/rooms/:id/availability - Bulk set availability for room/room-type
 router.post("/:id/availability", authMwr_1.authOwner, availabilityController_1.default.setBulkAvailability.bind(availabilityController_1.default));
-// GET /api/rooms/:id/availability?month=YYYY-MM - Get monthly availability
+// GET /api/rooms/:id/availability?month=YYYY-MM - Get monthly availability for room/room-type
 router.get("/:id/availability", authMwr_1.authOwner, availabilityController_1.default.getMonthlyAvailability.bind(availabilityController_1.default));
 exports.default = router;

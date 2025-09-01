@@ -3,23 +3,28 @@ import {
   AvailabilityItem,
   AvailabilityValidationResult,
   MonthValidationResult,
-  RoomIdValidationResult,
+  RoomTypeIdValidationResult,
   DateValidationResult,
 } from "../../interfaces/property";
 
 class AvailabilityValidationHelper {
   /**
-   * Validate room ID parameter
+   * Validate room type ID parameter
    */
-  static validateRoomId(id: string): RoomIdValidationResult {
+  static validateRoomTypeId(id: string): RoomTypeIdValidationResult {
     if (!id) {
       return {
         isValid: false,
-        error: PROPERTY_ERROR_MESSAGES.ROOM_ID_REQUIRED,
+        error: PROPERTY_ERROR_MESSAGES.ROOM_TYPE_ID_REQUIRED,
       };
     }
     return { isValid: true };
   }
+
+  /**
+   * @deprecated Use validateRoomTypeId instead
+   */
+  static validateRoomId = this.validateRoomTypeId;
 
   /**
    * Validate availability array for bulk operations

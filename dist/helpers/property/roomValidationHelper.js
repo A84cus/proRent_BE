@@ -95,10 +95,16 @@ class RoomValidationHelper {
         const errors = [];
         if (!roomId || typeof roomId !== "string" || roomId.trim().length === 0) {
             errors.push("Room ID is required and must be a non-empty string");
+            return {
+                isValid: false,
+                errors,
+                error: errors[0],
+            };
         }
         return {
-            isValid: errors.length === 0,
-            errors,
+            isValid: true,
+            errors: [],
+            cleanId: roomId.trim(),
         };
     }
     // Validate property ID parameter
@@ -108,10 +114,16 @@ class RoomValidationHelper {
             typeof propertyId !== "string" ||
             propertyId.trim().length === 0) {
             errors.push("Property ID is required and must be a non-empty string");
+            return {
+                isValid: false,
+                errors,
+                error: errors[0],
+            };
         }
         return {
-            isValid: errors.length === 0,
-            errors,
+            isValid: true,
+            errors: [],
+            cleanId: propertyId.trim(),
         };
     }
 }

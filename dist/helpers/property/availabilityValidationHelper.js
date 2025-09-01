@@ -1,15 +1,16 @@
 "use strict";
+var _a;
 Object.defineProperty(exports, "__esModule", { value: true });
 const property_1 = require("../../constants/controllers/property");
 class AvailabilityValidationHelper {
     /**
-     * Validate room ID parameter
+     * Validate room type ID parameter
      */
-    static validateRoomId(id) {
+    static validateRoomTypeId(id) {
         if (!id) {
             return {
                 isValid: false,
-                error: property_1.PROPERTY_ERROR_MESSAGES.ROOM_ID_REQUIRED,
+                error: property_1.PROPERTY_ERROR_MESSAGES.ROOM_TYPE_ID_REQUIRED,
             };
         }
         return { isValid: true };
@@ -120,4 +121,9 @@ class AvailabilityValidationHelper {
         };
     }
 }
+_a = AvailabilityValidationHelper;
+/**
+ * @deprecated Use validateRoomTypeId instead
+ */
+AvailabilityValidationHelper.validateRoomId = _a.validateRoomTypeId;
 exports.default = AvailabilityValidationHelper;

@@ -7,7 +7,7 @@ const express_1 = __importDefault(require("express"));
 const peakRateController_1 = __importDefault(require("../../controller/property/peakRateController"));
 const authMwr_1 = require("../../middleware/auth/authMwr");
 const router = express_1.default.Router();
-// POST /api/rooms/:id/peak-price - Add peak rate rule
+// POST /api/rooms/:id/peak-price - Add peak rate rule for room/room-type
 router.post("/:id/peak-price", authMwr_1.authOwner, peakRateController_1.default.addPeakRate);
 // PATCH /api/rooms/:id/peak-price/:date - Update peak rate for specific date
 router.patch("/:id/peak-price/:date", authMwr_1.authOwner, peakRateController_1.default.updatePeakRateForDate);
