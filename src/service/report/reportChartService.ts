@@ -3,34 +3,33 @@
 import { DashboardReportResponse } from '../../interfaces/report/reportCustomInterface';
 import { ChartDataPoint } from '../../interfaces/report/reportDashboardInterface';
 import { getOwnerDashboardReport } from './reportDashboardService';
+import { getDailySummary } from './utils/getDailyChart';
 
 export function formatReportForChart (report: DashboardReportResponse): ChartDataPoint {
-   const summary = report.summary;
-   const period = report.period;
+   const summary = report.summary.Global;
+   const aggregate = report.summary.Aggregate;
+   const period = report.summary.period;
 
-   // Generate label based on period
    let label = 'Unknown';
    if (period.startDate && period.endDate) {
       const start = new Date(period.startDate);
       const end = new Date(period.endDate);
 
       if (start.getDate() === 1 && isLastDayOfMonth(end)) {
-         // Month: "Aug 2025"
          label = start.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
       } else if (start.getMonth() === 0 && start.getDate() === 1 && end.getMonth() === 11 && end.getDate() === 31) {
-         // Year: "2025"
          label = start.getFullYear().toString();
       } else {
-         // Daily or custom: "2025-08-01"
          label = start.toISOString().split('T')[0];
       }
    }
 
    return {
       label,
-      actualRevenue: summary.revenue.actual,
-      projectedRevenue: summary.revenue.projected,
-      reservations: summary.counts.CONFIRMED + summary.counts.PENDING_PAYMENT + summary.counts.PENDING_CONFIRMATION
+      actualRevenue: summary.totalActualRevenue,
+      projectedRevenue: summary.totalProjectedRevenue,
+      reservations:
+         aggregate.counts.CONFIRMED + aggregate.counts.PENDING_PAYMENT + aggregate.counts.PENDING_CONFIRMATION
    };
 }
 
@@ -98,31 +97,18 @@ export async function getMonthlyRevenueChart (ownerId: string, year: number): Pr
 
 export async function getDailyRevenueChart (ownerId: string, days: number = 30): Promise<ChartDataPoint[]> {
    const today = new Date();
-   const points: ChartDataPoint[] = [];
+   const summaries = await Promise.all(
+      Array.from({ length: days }, (_, i) => {
+         const date = new Date(today);
+         date.setDate(today.getDate() - (days - 1 - i)); // from oldest to today
+         return getDailySummary(ownerId, date);
+      })
+   );
 
-   for (let i = days - 1; i >= 0; i--) {
-      const date = new Date(today);
-      date.setDate(today.getDate() - i);
-      const nextDay = new Date(date);
-      nextDay.setDate(date.getDate() + 1);
-
-      // Pass proper default options to avoid validation errors
-      const report = await getOwnerDashboardReport(
-         ownerId,
-         {
-            startDate: date,
-            endDate: nextDay
-         },
-         {
-            page: 1,
-            pageSize: 20,
-            sortBy: 'startDate',
-            sortDir: 'desc'
-         }
-      );
-
-      points.push(formatReportForChart(report));
-   }
-
-   return points;
+   return summaries.map(s => ({
+      label: s.date,
+      actualRevenue: s.actualRevenue,
+      projectedRevenue: s.projectedRevenue,
+      reservations: s.confirmed + s.pending
+   }));
 }
