@@ -1,12 +1,18 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.filterAndSortProperties = filterAndSortProperties;
-function filterAndSortProperties(propertyMap, roomTypeMap, // Not directly used for linking anymore, but might be needed for other checks
-reservations, // Might be used for complex sorting, but not for linking room types
-filters, options) {
+function filterAndSortProperties(propertyMap, roomTypeMap, reservations, filters, // Make sure propertyId is part of ReportFilters interface
+options) {
     // 1. Start with all properties from the map (which includes all owner's properties)
     let properties = Array.from(propertyMap.values());
-    // 2. Apply property-level filters
+    // 2. --- ADD THIS BLOCK: Apply propertyId filter ---
+    if (filters.propertyId) {
+        // Filter properties to only include the one specified by propertyId
+        properties = properties.filter(p => p.property.id === filters.propertyId);
+        // Note: If the propertyId is invalid, this will result in an empty list.
+    }
+    // --- END OF NEW BLOCK ---
+    // 3. Apply other property-level filters (existing code)
     if (filters.propertySearch) {
         const searchLower = filters.propertySearch.toLowerCase();
         properties = properties.filter(p => p.property.name.toLowerCase().includes(searchLower) ||
@@ -20,43 +26,28 @@ filters, options) {
     if (filters.province) {
         properties = properties.filter(p => p.property.province === filters.province);
     }
-    // 3. Apply room-type-specific filters to the roomTypes list *within* each property
-    // This modifies the roomTypes array of each PropertySummary in the 'properties' array
-    // We do this *before* pagination so pagination is based on properties that potentially have matching room types
+    // 4. Apply room-type-specific filters (existing code - remains unchanged)
     if (filters.roomTypeId || filters.roomTypeSearch) {
         properties = properties.map(propSummary => {
-            // Filter the roomTypes array of this specific property
-            let filteredRoomTypes = propSummary.roomTypes; // Start with all room types for this property
+            let filteredRoomTypes = propSummary.roomTypes;
             if (filters.roomTypeId) {
-                // Filter by specific RoomType ID
                 filteredRoomTypes = filteredRoomTypes.filter(rt => rt.roomType.id === filters.roomTypeId);
             }
             if (filters.roomTypeSearch) {
                 const rtSearchLower = filters.roomTypeSearch.toLowerCase();
-                // Filter by RoomType name
                 filteredRoomTypes = filteredRoomTypes.filter(rt => rt.roomType.name.toLowerCase().includes(rtSearchLower));
             }
-            // Return a new object (or modify the existing one) with the filtered roomTypes
-            // It's safer to create a new object to avoid mutating the original map values if they are reused elsewhere
-            return Object.assign(Object.assign({}, propSummary), { roomTypes: filteredRoomTypes // Use the filtered list
-             });
+            return Object.assign(Object.assign({}, propSummary), { roomTypes: filteredRoomTypes });
         });
-        // 4. Important: After filtering room types, remove properties that no longer have any matching room types
-        // This ensures properties are only shown if they have room types matching the room-type filters
         properties = properties.filter(prop => prop.roomTypes.length > 0);
     }
-    // If no room-type filters, properties retain their full list of room types (including those with 0 reservations)
-    // 5. Sort the properties list
+    // 5. Sort the properties list (existing code)
     properties.sort(getSortComparator(options.sortBy, options.sortDir));
-    // 6. Paginate the properties list
+    // 6. Paginate the properties list (existing code)
     const { page = 1, pageSize = 10 } = options;
     const total = properties.length;
     const totalPages = Math.ceil(total / pageSize);
     const paginatedProperties = properties.slice((page - 1) * pageSize, page * pageSize);
-    // 7. The paginatedProperties already contain the correct roomTypes arrays
-    // No need to re-assign prop.roomTypes here based on reservations.
-    // The assignment `prop.roomTypes = prop.roomTypes` or similar is redundant.
-    // The filtering and assignment happened in steps 3 & 4 above.
     return { paginatedProperties, total, totalPages };
 }
 function getSortComparator(sortBy = 'name', sortDir = 'asc') {

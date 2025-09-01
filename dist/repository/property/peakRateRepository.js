@@ -8,101 +8,100 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
-const client_1 = require("@prisma/client");
-const prisma = new client_1.PrismaClient();
+const prisma_1 = __importDefault(require("../../prisma"));
 class PeakRateRepository {
     // Get room with ownership verification
     findRoomWithOwnership(roomId) {
         return __awaiter(this, void 0, void 0, function* () {
-            return prisma.room.findUnique({
+            return prisma_1.default.room.findUnique({
                 where: { id: roomId },
                 include: {
                     property: {
                         select: {
                             id: true,
-                            OwnerId: true,
-                        },
+                            OwnerId: true
+                        }
                     },
                     roomType: {
                         select: {
                             id: true,
                             name: true,
-                            basePrice: true,
-                        },
-                    },
-                },
+                            basePrice: true
+                        }
+                    }
+                }
             });
         });
     }
     // Create peak rate
     create(data) {
         return __awaiter(this, void 0, void 0, function* () {
-            return prisma.peakRate.create({
+            return prisma_1.default.peakRate.create({
                 data: {
                     roomTypeId: data.roomTypeId,
                     startDate: data.startDate,
                     endDate: data.endDate,
                     rateType: data.rateType,
                     value: data.value,
-                    description: data.description,
+                    description: data.description
                 },
                 include: {
                     roomType: {
                         select: {
                             id: true,
                             name: true,
-                            basePrice: true,
-                        },
-                    },
-                },
+                            basePrice: true
+                        }
+                    }
+                }
             });
         });
     }
     // Find peak rates that overlap with date range
     findOverlappingRates(roomTypeId, startDate, endDate, excludeId) {
         return __awaiter(this, void 0, void 0, function* () {
-            return prisma.peakRate.findMany({
+            return prisma_1.default.peakRate.findMany({
                 where: Object.assign({ roomTypeId, AND: [
                         {
                             OR: [
                                 {
-                                    AND: [
-                                        { startDate: { lte: endDate } },
-                                        { endDate: { gte: startDate } },
-                                    ],
-                                },
-                            ],
-                        },
-                    ] }, (excludeId && { id: { not: excludeId } })),
+                                    AND: [{ startDate: { lte: endDate } }, { endDate: { gte: startDate } }]
+                                }
+                            ]
+                        }
+                    ] }, (excludeId && { id: { not: excludeId } }))
             });
         });
     }
     // Find peak rate for specific date
     findByRoomTypeAndDate(roomTypeId, date) {
         return __awaiter(this, void 0, void 0, function* () {
-            return prisma.peakRate.findFirst({
+            return prisma_1.default.peakRate.findFirst({
                 where: {
                     roomTypeId,
                     startDate: { lte: date },
-                    endDate: { gte: date },
+                    endDate: { gte: date }
                 },
                 include: {
                     roomType: {
                         select: {
                             id: true,
                             name: true,
-                            basePrice: true,
-                        },
-                    },
-                },
+                            basePrice: true
+                        }
+                    }
+                }
             });
         });
     }
     // Update peak rate
     update(id, data) {
         return __awaiter(this, void 0, void 0, function* () {
-            return prisma.peakRate.update({
+            return prisma_1.default.peakRate.update({
                 where: { id },
                 data,
                 include: {
@@ -110,25 +109,25 @@ class PeakRateRepository {
                         select: {
                             id: true,
                             name: true,
-                            basePrice: true,
-                        },
-                    },
-                },
+                            basePrice: true
+                        }
+                    }
+                }
             });
         });
     }
     // Delete peak rate
     delete(id) {
         return __awaiter(this, void 0, void 0, function* () {
-            return prisma.peakRate.delete({
-                where: { id },
+            return prisma_1.default.peakRate.delete({
+                where: { id }
             });
         });
     }
     // Find peak rate by ID
     findById(id) {
         return __awaiter(this, void 0, void 0, function* () {
-            return prisma.peakRate.findUnique({
+            return prisma_1.default.peakRate.findUnique({
                 where: { id },
                 include: {
                     roomType: {
@@ -136,12 +135,12 @@ class PeakRateRepository {
                             property: {
                                 select: {
                                     id: true,
-                                    OwnerId: true,
-                                },
-                            },
-                        },
-                    },
-                },
+                                    OwnerId: true
+                                }
+                            }
+                        }
+                    }
+                }
             });
         });
     }

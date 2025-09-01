@@ -8,31 +8,33 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
-const client_1 = require("@prisma/client");
-const prisma = new client_1.PrismaClient();
+const prisma_1 = __importDefault(require("../../prisma"));
 class RoomTypeRepository {
     // Get all room types by property ID
     findAllByProperty(propertyId) {
         return __awaiter(this, void 0, void 0, function* () {
-            return prisma.roomType.findMany({
+            return prisma_1.default.roomType.findMany({
                 where: { propertyId },
                 include: {
                     property: {
                         select: {
                             id: true,
                             name: true,
-                            OwnerId: true,
-                        },
+                            OwnerId: true
+                        }
                     },
                     rooms: {
                         include: {
                             gallery: {
                                 include: {
-                                    picture: true,
-                                },
-                            },
-                        },
+                                    picture: true
+                                }
+                            }
+                        }
                     },
                     availabilities: true,
                     peakRates: true,
@@ -40,18 +42,18 @@ class RoomTypeRepository {
                         select: {
                             rooms: true,
                             reservations: true,
-                            availabilities: true,
-                        },
-                    },
+                            availabilities: true
+                        }
+                    }
                 },
-                orderBy: { createdAt: "desc" },
+                orderBy: { createdAt: 'desc' }
             });
         });
     }
     // Find room type by ID with full details
     findById(id) {
         return __awaiter(this, void 0, void 0, function* () {
-            return prisma.roomType.findUnique({
+            return prisma_1.default.roomType.findUnique({
                 where: { id },
                 include: {
                     property: {
@@ -59,58 +61,58 @@ class RoomTypeRepository {
                             Owner: {
                                 select: {
                                     id: true,
-                                    email: true,
-                                },
-                            },
-                        },
+                                    email: true
+                                }
+                            }
+                        }
                     },
                     rooms: {
                         include: {
                             gallery: {
                                 include: {
-                                    picture: true,
-                                },
+                                    picture: true
+                                }
                             },
                             reservations: {
                                 where: {
                                     orderStatus: {
-                                        in: ["PENDING_PAYMENT", "PENDING_CONFIRMATION", "CONFIRMED"],
+                                        in: ['PENDING_PAYMENT', 'PENDING_CONFIRMATION', 'CONFIRMED']
                                     },
-                                    deletedAt: null,
-                                },
-                            },
-                        },
+                                    deletedAt: null
+                                }
+                            }
+                        }
                     },
                     availabilities: true,
                     peakRates: true,
                     reservations: {
                         where: {
                             orderStatus: {
-                                in: ["PENDING_PAYMENT", "PENDING_CONFIRMATION", "CONFIRMED"],
+                                in: ['PENDING_PAYMENT', 'PENDING_CONFIRMATION', 'CONFIRMED']
                             },
-                            deletedAt: null,
-                        },
+                            deletedAt: null
+                        }
                     },
                     _count: {
                         select: {
                             rooms: true,
                             reservations: true,
-                            availabilities: true,
-                        },
-                    },
-                },
+                            availabilities: true
+                        }
+                    }
+                }
             });
         });
     }
     // Find room type by ID and check property ownership
     findByIdAndOwner(id, ownerId) {
         return __awaiter(this, void 0, void 0, function* () {
-            return prisma.roomType.findFirst({
+            return prisma_1.default.roomType.findFirst({
                 where: {
                     id,
                     property: {
-                        OwnerId: ownerId,
-                    },
+                        OwnerId: ownerId
+                    }
                 },
                 include: {
                     property: true,
@@ -118,54 +120,54 @@ class RoomTypeRepository {
                         include: {
                             gallery: {
                                 include: {
-                                    picture: true,
-                                },
-                            },
-                        },
+                                    picture: true
+                                }
+                            }
+                        }
                     },
                     availabilities: true,
                     peakRates: true,
                     _count: {
                         select: {
-                            rooms: true,
-                        },
-                    },
-                },
+                            rooms: true
+                        }
+                    }
+                }
             });
         });
     }
     // Find room type by name and property
     findByNameAndProperty(name, propertyId) {
         return __awaiter(this, void 0, void 0, function* () {
-            return prisma.roomType.findFirst({
+            return prisma_1.default.roomType.findFirst({
                 where: {
                     name,
-                    propertyId,
-                },
+                    propertyId
+                }
             });
         });
     }
     // Create room type
     create(roomTypeData) {
         return __awaiter(this, void 0, void 0, function* () {
-            return prisma.roomType.create({
+            return prisma_1.default.roomType.create({
                 data: roomTypeData,
                 include: {
                     property: true,
                     rooms: true,
                     _count: {
                         select: {
-                            rooms: true,
-                        },
-                    },
-                },
+                            rooms: true
+                        }
+                    }
+                }
             });
         });
     }
     // Update room type
     update(id, updateData) {
         return __awaiter(this, void 0, void 0, function* () {
-            return prisma.roomType.update({
+            return prisma_1.default.roomType.update({
                 where: { id },
                 data: updateData,
                 include: {
@@ -174,36 +176,36 @@ class RoomTypeRepository {
                         include: {
                             gallery: {
                                 include: {
-                                    picture: true,
-                                },
-                            },
-                        },
+                                    picture: true
+                                }
+                            }
+                        }
                     },
                     availabilities: true,
                     peakRates: true,
                     _count: {
                         select: {
-                            rooms: true,
-                        },
-                    },
-                },
+                            rooms: true
+                        }
+                    }
+                }
             });
         });
     }
     // Delete room type
     delete(id) {
         return __awaiter(this, void 0, void 0, function* () {
-            yield prisma.$transaction((tx) => __awaiter(this, void 0, void 0, function* () {
+            yield prisma_1.default.$transaction((tx) => __awaiter(this, void 0, void 0, function* () {
                 // Delete related data first
                 yield tx.availability.deleteMany({
-                    where: { roomTypeId: id },
+                    where: { roomTypeId: id }
                 });
                 yield tx.peakRate.deleteMany({
-                    where: { roomTypeId: id },
+                    where: { roomTypeId: id }
                 });
                 // Delete the room type
                 yield tx.roomType.delete({
-                    where: { id },
+                    where: { id }
                 });
             }));
         });
@@ -211,8 +213,8 @@ class RoomTypeRepository {
     // Check if room type has assigned rooms
     hasAssignedRooms(roomTypeId) {
         return __awaiter(this, void 0, void 0, function* () {
-            const roomCount = yield prisma.room.count({
-                where: { roomTypeId },
+            const roomCount = yield prisma_1.default.room.count({
+                where: { roomTypeId }
             });
             return roomCount > 0;
         });
@@ -220,11 +222,11 @@ class RoomTypeRepository {
     // Verify property ownership
     verifyPropertyOwnership(propertyId, ownerId) {
         return __awaiter(this, void 0, void 0, function* () {
-            const property = yield prisma.property.findFirst({
+            const property = yield prisma_1.default.property.findFirst({
                 where: {
                     id: propertyId,
-                    OwnerId: ownerId,
-                },
+                    OwnerId: ownerId
+                }
             });
             return !!property;
         });

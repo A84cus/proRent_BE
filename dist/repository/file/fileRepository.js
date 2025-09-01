@@ -8,60 +8,62 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
-const client_1 = require("@prisma/client");
-const prisma = new client_1.PrismaClient();
+const prisma_1 = __importDefault(require("../../prisma"));
 class FileRepository {
     // Create file record
     create(data) {
         return __awaiter(this, void 0, void 0, function* () {
-            return prisma.picture.create({ data });
+            return prisma_1.default.picture.create({ data });
         });
     }
     // Find file by ID
     findById(id) {
         return __awaiter(this, void 0, void 0, function* () {
-            return prisma.picture.findUnique({
-                where: { id },
+            return prisma_1.default.picture.findUnique({
+                where: { id }
             });
         });
     }
     // Delete file record
     deleteById(id) {
         return __awaiter(this, void 0, void 0, function* () {
-            return prisma.picture.delete({
-                where: { id },
+            return prisma_1.default.picture.delete({
+                where: { id }
             });
         });
     }
     // List files with pagination
     findMany(options) {
         return __awaiter(this, void 0, void 0, function* () {
-            return prisma.picture.findMany(options);
+            return prisma_1.default.picture.findMany(options);
         });
     }
     // Count files
     count(where) {
         return __awaiter(this, void 0, void 0, function* () {
-            return prisma.picture.count({ where });
+            return prisma_1.default.picture.count({ where });
         });
     }
     // Find files by type
     findByType(type, limit) {
         return __awaiter(this, void 0, void 0, function* () {
-            return prisma.picture.findMany({
+            return prisma_1.default.picture.findMany({
                 where: { type },
                 take: limit,
-                orderBy: { createdAt: "desc" },
+                orderBy: { createdAt: 'desc' }
             });
         });
     }
     // Update file record
     update(id, data) {
         return __awaiter(this, void 0, void 0, function* () {
-            return prisma.picture.update({
+            return prisma_1.default.picture.update({
                 where: { id },
-                data,
+                data
             });
         });
     }
