@@ -9,7 +9,8 @@ export const registerUserSchema = z.object({
 });
 
 export const verifyEmailSchema = z.object({
-   token: z.string().min(1, 'Token is required')
+   token: z.string().min(1, 'Token is required'),
+   password: z.string().optional() // Make password optional for backward compatibility
 });
 
 export const resendVerificationSchema = z.object({
