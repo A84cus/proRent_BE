@@ -47,15 +47,30 @@ exports.loadAvailability = loadAvailability;
 const availabilityService = __importStar(require("../../reservationService/availabilityService"));
 function loadAvailability(roomTypeMap, reportStart, reportEnd) {
     return __awaiter(this, void 0, void 0, function* () {
-        yield Promise.all(Array.from(roomTypeMap.keys()).map((rtid) => __awaiter(this, void 0, void 0, function* () {
-            const totalQuantity = yield availabilityService.getRoomTypeTotalQuantity(rtid);
-            const records = yield availabilityService.getActualAvailabilityRecords(rtid, reportStart, reportEnd);
-            const dates = records.map((r) => ({
-                date: r.date.toISOString().split('T')[0],
-                available: r.availableCount,
-                isAvailable: r.availableCount > 0
-            }));
-            roomTypeMap.get(rtid).availability = { totalQuantity, dates };
-        })));
+        for (const rtid of roomTypeMap.keys()) {
+            try {
+                const totalQuantity = yield availabilityService.getRoomTypeTotalQuantity(rtid);
+                const records = yield availabilityService.getActualAvailabilityRecords(rtid, reportStart, reportEnd);
+                const dates = records.map((r) => ({
+                    date: r.date.toISOString().split('T')[0],
+                    available: r.availableCount,
+                    isAvailable: r.availableCount > 0
+                }));
+                const roomTypeEntry = roomTypeMap.get(rtid);
+                if (roomTypeEntry) {
+                    // Add safety check
+                    roomTypeEntry.availability = { totalQuantity, dates };
+                }
+            }
+            catch (error) {
+                console.error(`Error loading availability for room type ${rtid}:`, error);
+                // Decide how to handle individual errors - maybe set default availability or log
+                const roomTypeEntry = roomTypeMap.get(rtid);
+                if (roomTypeEntry) {
+                    roomTypeEntry.availability = { totalQuantity: 0, dates: [] }; // Default
+                }
+            }
+        }
+        return roomTypeMap;
     });
 }

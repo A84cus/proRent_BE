@@ -22,12 +22,37 @@ function groupByPropertyAndRoomType(reservations, ownerId) {
         // Step 1: Load ALL room types for the owner
         const allRoomTypes = yield prisma_1.default.roomType.findMany({
             where: { property: { OwnerId: ownerId } },
-            include: {
+            select: {
+                // Use 'select'
+                id: true,
+                name: true,
+                propertyId: true,
                 property: {
-                    include: {
-                        mainPicture: true,
-                        roomTypes: true, // Needed for totalRoomTypes count
-                        location: { include: { city: { include: { province: true } } } }
+                    select: {
+                        // Select only needed property fields
+                        id: true,
+                        name: true,
+                        rentalType: true, // Needed?
+                        mainPicture: {
+                            select: { url: true } // Only URL needed
+                        },
+                        location: {
+                            select: {
+                                // Select only needed location fields
+                                address: true,
+                                city: {
+                                    select: {
+                                        name: true,
+                                        province: {
+                                            select: { name: true }
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        roomTypes: {
+                            select: { id: true } // Only IDs needed for count
+                        }
                     }
                 }
             }

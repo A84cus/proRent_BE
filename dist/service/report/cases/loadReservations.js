@@ -41,17 +41,67 @@ function loadReservations(ownerId, filters, reportStart, reportEnd) {
         }
         return prisma_1.default.reservation.findMany({
             where,
-            include: {
-                User: { include: { profile: true } },
-                Property: {
-                    include: {
-                        location: { include: { city: { include: { province: true } } } },
-                        mainPicture: true,
-                        roomTypes: true
+            select: {
+                // Use 'select' - adjust fields based on actual usage in later steps
+                id: true,
+                userId: true,
+                propertyId: true,
+                roomTypeId: true,
+                startDate: true,
+                endDate: true,
+                orderStatus: true,
+                User: {
+                    select: {
+                        email: true,
+                        profile: {
+                            select: {
+                                firstName: true,
+                                lastName: true
+                            }
+                        }
                     }
                 },
-                RoomType: { select: { id: true, name: true } },
-                payment: { select: { invoiceNumber: true, amount: true } }
+                Property: {
+                    select: {
+                        // Select only needed property fields
+                        id: true, // Needed?
+                        name: true, // Needed for display/filtering?
+                        mainPicture: {
+                            select: { url: true } // Only URL needed
+                        },
+                        location: {
+                            select: {
+                                // Select only needed location fields
+                                address: true,
+                                city: {
+                                    select: {
+                                        name: true,
+                                        province: {
+                                            select: { name: true }
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        roomTypes: {
+                            select: { id: true } // Only IDs needed for count?
+                        }
+                    }
+                },
+                RoomType: {
+                    select: {
+                        // Select only needed room type fields
+                        id: true,
+                        name: true
+                    }
+                },
+                payment: {
+                    select: {
+                        // Select only needed payment fields
+                        invoiceNumber: true,
+                        amount: true
+                    }
+                }
             },
             orderBy: { startDate: 'asc' }
         });
