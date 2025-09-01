@@ -145,6 +145,7 @@ export interface ReportFilters {
 
    // 🔹 Owner context
    ownerId: string;
+   search?: string;
 }
 
 // --- Options ---

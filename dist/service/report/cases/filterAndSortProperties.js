@@ -13,6 +13,13 @@ options) {
     }
     // --- END OF NEW BLOCK ---
     // 3. Apply other property-level filters (existing code)
+    if (filters.search && !filters.propertySearch) {
+        const searchLower = filters.search.toLowerCase();
+        properties = properties.filter(p => p.property.name.toLowerCase().includes(searchLower) ||
+            (p.property.address || '').toLowerCase().includes(searchLower) ||
+            (p.property.city || '').toLowerCase().includes(searchLower) ||
+            (p.property.province || '').toLowerCase().includes(searchLower));
+    }
     if (filters.propertySearch) {
         const searchLower = filters.propertySearch.toLowerCase();
         properties = properties.filter(p => p.property.name.toLowerCase().includes(searchLower) ||

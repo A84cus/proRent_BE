@@ -25,6 +25,17 @@ function loadReservations(ownerId, filters, reportStart, reportEnd) {
         if (filters.email) {
             orConditions.push({ User: { email: { contains: filters.email, mode: 'insensitive' } } });
         }
+        if (filters.search) {
+            // Use search term for customer name or email if specific filters aren't provided
+            if (!filters.customerName) {
+                orConditions.push({ User: { profile: { firstName: { contains: filters.search, mode: 'insensitive' } } } }, { User: { profile: { lastName: { contains: filters.search, mode: 'insensitive' } } } });
+            }
+            if (!filters.email) {
+                orConditions.push({ User: { email: { contains: filters.search, mode: 'insensitive' } } });
+            }
+            // Optionally, if you want search to also filter properties (requires join or separate query logic)
+            // This is more complex and might not be intended for loadReservations.
+        }
         if (orConditions.length > 0) {
             where.OR = orConditions;
         }
