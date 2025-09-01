@@ -1,10 +1,10 @@
 // src/controllers/report/excelController.ts
 
 import { Request, Response } from 'express';
-import { dashboardReportController } from './reportCustomController'; // Reuse it!
 import * as ReportInterface from '../../interfaces/report/reportCustomInterface';
 import { getUserIdFromRequest } from '../reservationController/paymentProofController';
 import { generateDashboardExcel } from '../../templates/report/excelReport';
+import { buildContextFromRequest } from '../../service/report/buildContextByRequest';
 
 export const exportDashboardExcel = async (req: Request, res: Response): Promise<void> => {
    try {
@@ -14,44 +14,30 @@ export const exportDashboardExcel = async (req: Request, res: Response): Promise
          return;
       }
 
-      // --- 🎯 Reuse dashboard controller logic ---
-      // We'll capture the report instead of sending it
-      const mockRes: any = {
-         status: () => mockRes,
-         json: (data: ReportInterface.DashboardReportResponse) => {
-            // ✅ Intercept the report
-            return sendExcel(res, data, { ownerId, filters: req.query });
-         },
-         send: () => {}
-      };
+      // ✅ 1. Build context from request
+      const context = buildContextFromRequest(req, ownerId);
 
-      // Call the same logic
-      await dashboardReportController(req, mockRes);
-   } catch (error: any) {
-      console.error('Excel export failed:', error);
-      res.status(500).send('Failed to generate Excel report');
-   }
-};
+      // ✅ 2. Get export format: FULL | PROPERTY | ROOM_TYPE
+      const format = (req.query.format as string)?.toUpperCase();
+      if (![ 'FULL', 'PROPERTY', 'ROOM_TYPE' ].includes(format)) {
+         res.status(400).send('Invalid format. Use: FULL, PROPERTY, ROOM_TYPE');
+         return;
+      }
 
-// --- Helper: Generate and send Excel ---
-async function sendExcel (
-   res: Response,
-   report: ReportInterface.DashboardReportResponse,
-   filters: { ownerId: string; filters: any }
-) {
-   try {
-      const buffer = await generateDashboardExcel(report, { ownerId: filters.ownerId, ...filters.filters });
+      // ✅ 3. Generate Excel buffer
+      const buffer = await generateDashboardExcel(context, format as 'FULL' | 'PROPERTY' | 'ROOM_TYPE');
 
+      // ✅ 4. Send file
       const dateStr = new Date().toISOString().split('T')[0];
-      const filename = `dashboard-report-${dateStr}.xlsx`;
+      const filename = `dashboard-report-${format.toLowerCase()}-${dateStr}.xlsx`;
 
       res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
       res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
       res.setHeader('Content-Length', buffer.length);
 
       res.send(buffer);
-   } catch (err: any) {
-      console.error('Failed to generate Excel:', err);
-      res.status(500).send('Failed to generate Excel');
+   } catch (error: any) {
+      console.error('Excel export failed:', error);
+      res.status(500).send('Failed to generate Excel report');
    }
-}
+};

@@ -1,12 +1,15 @@
-import { Status } from '@prisma/client';
+// src/interfaces/report/reportCustomInterface.ts
+import { Status, PropertyRentalType } from '@prisma/client';
 
-// --- Types ---
+// --- Basic Models (aligned with Prisma) ---
 export interface PropertyMin {
    id: string;
    name: string;
    Picture: string | null;
    address: string | null;
    city: string | null;
+   province: string | null;
+   rentalType: PropertyRentalType;
 }
 
 export interface RoomTypeMin {
@@ -19,8 +22,10 @@ export interface CustomerMin {
    email: string;
    firstName: string | null;
    lastName: string | null;
+   phone: string | null;
 }
 
+// --- Summary Types ---
 export interface StatusCounts {
    PENDING_PAYMENT: number;
    PENDING_CONFIRMATION: number;
@@ -29,9 +34,9 @@ export interface StatusCounts {
 }
 
 export interface RevenueSummary {
-   actual: number;
-   projected: number;
-   average: number;
+   actual: number; // sum of confirmed paymentAmount
+   projected: number; // sum of pending_payment + pending_confirmation
+   average: number; // actual / confirmedCount
 }
 
 export interface PeriodDetail {
@@ -39,11 +44,29 @@ export interface PeriodDetail {
    endDate: Date | null;
 }
 
-// --- Response Types ---
+// --- Reservation List Item ---
+export interface ReservationListItem {
+   id: string;
+   userId: string;
+   roomId: string | null;
+   startDate: Date;
+   endDate: Date;
+   orderStatus: Status;
+   paymentAmount: number;
+   invoiceNumber: string | null;
+   user: {
+      email: string;
+      firstName: string | null;
+      lastName: string | null;
+   };
+}
+
+// --- Room Type Full View ---
 export interface RoomTypeWithAvailability {
    roomType: RoomTypeMin;
    counts: StatusCounts;
    revenue: RevenueSummary;
+   uniqueCustomers: number;
    availability: {
       totalQuantity: number;
       dates: Array<{
@@ -52,115 +75,108 @@ export interface RoomTypeWithAvailability {
          isAvailable: boolean;
       }>;
    };
+   reservationListItems: ReservationListItem[];
+   pagination: Pagination;
+   totalAmount: number;
 }
 
+// --- Property Full View ---
 export interface PropertySummary {
    property: PropertyMin;
    period: PeriodDetail;
    summary: {
       counts: StatusCounts;
       revenue: RevenueSummary;
+      totalRoomTypes: number;
    };
-   roomTypes?: RoomTypeWithAvailability[];
+   roomTypes: RoomTypeWithAvailability[];
+}
 
-   uniqueCustomers?: CustomerMin[];
-   data?: any[];
-   pagination?: any;
+// --- Dashboard Summary ---
+export interface DashboardGlobalSummary {
+   totalProperties: number;
+   totalActiveBookings: number; // active stays (startDate >= now)
+   totalActualRevenue: number;
+   totalProjectedRevenue: number;
+}
+
+export interface DashboardAggregateSummary {
+   counts: StatusCounts;
+   revenue: RevenueSummary;
 }
 
 export interface DashboardReportResponse {
    properties: PropertySummary[];
    summary: {
-      // Combined summary across all filtered data
-      counts: StatusCounts;
-      revenue: RevenueSummary;
-   };
-   period: PeriodDetail;
-   pagination: {
-      page: number;
-      pageSize: number;
-      total: number;
-      totalPages: number;
+      Global: DashboardGlobalSummary;
+      Aggregate: DashboardAggregateSummary;
+      period: PeriodDetail;
+      pagination: Pagination;
    };
 }
 
-export type ReservationStatus = Status;
-
-export interface ReservationReportItem {
-   id: string;
-   userId: string;
-   propertyId: string;
-   roomTypeId: string;
-   startDate: Date;
-   endDate: Date;
-   orderStatus: ReservationStatus;
-   paymentAmount: number | null;
-   paidAt: Date | null;
-   createdAt: Date;
-   user: {
-      id: string;
-      email: string;
-      profile: {
-         firstName: string | null;
-         lastName: string | null;
-      };
-   };
-   property: {
-      id: string;
-      name: string;
-   };
-   roomType: {
-      id: string;
-      name: string;
-   };
+// --- Pagination ---
+export interface Pagination {
+   page: number;
+   pageSize: number;
+   total: number;
+   totalPages: number;
 }
 
-export interface ReservationReportSummary {
-   counts: {
-      PENDING_PAYMENT: number;
-      PENDING_CONFIRMATION: number;
-      CONFIRMED: number;
-      CANCELLED: number;
-   };
-   revenue: {
-      actual: number; // CONFIRMED only
-      projected: number; // All non-CANCELLED
-      average: number;
-   };
-   totalReservations: number;
-}
-
-export interface ReservationReportResponse {
-   data: ReservationReportItem[];
-   summary: ReservationReportSummary;
-   pagination: {
-      page: number;
-      pageSize: number;
-      total: number;
-      totalPages: number;
-   };
-}
-
-// --- Input Params ---
-export interface ReservationReportFilters {
+// --- Filters (aligned with Prisma queries) ---
+export interface ReportFilters {
+   // 🔹 Property-level filters
    propertyId?: string;
+   propertySearch?: string; // Search: property.name, location.address, city.name, province.name
+   city?: string;
+   province?: string;
+
+   // 🔹 RoomType-level filters
    roomTypeId?: string;
-   ownerId: string;
+   roomTypeSearch?: string; // Search: roomType.name
+
+   // 🔹 Reservation-level filters
+   customerName?: string; // Search: user.profile.firstName, lastName
+   email?: string;
+   invoiceNumber?: string;
+   reservationStatus?: Status;
    startDate?: Date | null;
    endDate?: Date | null;
-   status?: ReservationStatus[];
-   search?: string; // Search by user email/name
+
+   // 🔹 Owner context
+   ownerId: string;
 }
 
-export interface ReservationReportOptions {
-   page?: number;
-   reservationPage?: number | { [roomTypeId: string]: number };
-   pageSize?: number;
-   reservationPageSize?: number;
-   sortBy?: 'startDate' | 'endDate' | 'createdAt' | 'paymentAmount';
+// --- Options ---
+export interface ReportOptions {
+   // 🔹 Pagination
+   page?: number; // for properties
+   pageSize?: number; // default: 10
+
+   reservationPage?: number | { [roomTypeId: string]: number }; // per-room-type page
+   reservationPageSize?: number; // default: 10
+   fetchAllData?: boolean;
+
+   // 🔹 Sorting
+   sortBy?:
+      | 'name'
+      | 'revenue'
+      | 'confirmed'
+      | 'pending'
+      | 'city'
+      | 'address'
+      | 'province'
+      | 'startDate'
+      | 'endDate'
+      | 'createdAt'
+      | 'paymentAmount';
    sortDir?: 'asc' | 'desc';
+
+   // 🔹 Search
+   search?: string; // general search (property, room type, customer)
 }
 
+// --- Period Config ---
 export type PeriodConfig = {
    periodType: 'YEAR' | 'MONTH' | 'CUSTOM';
    periodKey: string;
@@ -168,10 +184,21 @@ export type PeriodConfig = {
    month: number | null;
 };
 
+// --- Dashboard Context (Input) ---
 export type DashboardContext = {
    ownerId: string;
-   filters: Omit<ReservationReportFilters, 'ownerId'>;
-   options: ReservationReportOptions;
+   filters: Omit<ReportFilters, 'ownerId'>;
+   options: ReportOptions;
    period: PeriodDetail;
    periodConfig: PeriodConfig;
 };
+
+export interface ReservationReportSummary {
+   counts: StatusCounts;
+   revenue: {
+      actual: number;
+      projected: number;
+      average: number;
+   };
+   totalReservations: number;
+}
