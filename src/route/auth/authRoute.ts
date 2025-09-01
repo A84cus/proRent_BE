@@ -12,6 +12,9 @@ router.post("/register/user", authController.registerUser);
 // GET /auth/verify-email?token=... - Verify email and set password (1-hour expiry)
 router.get("/verify-email", authController.verifyEmail);
 
+// POST /auth/verify-email - Verify email with token in body (for frontend compatibility)
+router.post("/verify-email", authController.verifyEmail);
+
 // POST /auth/resend-verify - Resend verification email if not verified
 router.post("/resend-verify", authController.resendVerification);
 

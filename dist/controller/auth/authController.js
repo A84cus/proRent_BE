@@ -44,7 +44,10 @@ class AuthController {
     verifyEmail(req, res) {
         return __awaiter(this, void 0, void 0, function* () {
             try {
-                const validatedData = validations_1.verifyEmailSchema.parse(req.query);
+                // Support both GET (query params) and POST (body) requests
+                const isGetRequest = req.method === 'GET';
+                const dataSource = isGetRequest ? req.query : req.body;
+                const validatedData = validations_1.verifyEmailSchema.parse(dataSource);
                 const result = yield authService_1.default.verifyEmail(validatedData.token);
                 if (result.success) {
                     logger_1.default.info("Email verification successful");
