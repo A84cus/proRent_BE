@@ -11,28 +11,34 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.exportDashboardExcel = void 0;
-const reportCustomController_1 = require("./reportCustomController"); // Reuse it!
 const paymentProofController_1 = require("../reservationController/paymentProofController");
 const excelReport_1 = require("../../templates/report/excelReport");
+const buildContextByRequest_1 = require("../../service/report/buildContextByRequest");
 const exportDashboardExcel = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    var _a;
     try {
         const ownerId = (0, paymentProofController_1.getUserIdFromRequest)(req);
         if (!ownerId) {
             res.status(401).send('Unauthorized');
             return;
         }
-        // --- 🎯 Reuse dashboard controller logic ---
-        // We'll capture the report instead of sending it
-        const mockRes = {
-            status: () => mockRes,
-            json: (data) => {
-                // ✅ Intercept the report
-                return sendExcel(res, data, { ownerId, filters: req.query });
-            },
-            send: () => { }
-        };
-        // Call the same logic
-        yield (0, reportCustomController_1.dashboardReportController)(req, mockRes);
+        // ✅ 1. Build context from request
+        const context = (0, buildContextByRequest_1.buildContextFromRequest)(req, ownerId);
+        // ✅ 2. Get export format: FULL | PROPERTY | ROOM_TYPE
+        const format = (_a = req.query.format) === null || _a === void 0 ? void 0 : _a.toUpperCase();
+        if (!['FULL', 'PROPERTY', 'ROOM_TYPE'].includes(format)) {
+            res.status(400).send('Invalid format. Use: FULL, PROPERTY, ROOM_TYPE');
+            return;
+        }
+        // ✅ 3. Generate Excel buffer
+        const buffer = yield (0, excelReport_1.generateDashboardExcel)(context, format);
+        // ✅ 4. Send file
+        const dateStr = new Date().toISOString().split('T')[0];
+        const filename = `dashboard-report-${format.toLowerCase()}-${dateStr}.xlsx`;
+        res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+        res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        res.setHeader('Content-Length', buffer.length);
+        res.send(buffer);
     }
     catch (error) {
         console.error('Excel export failed:', error);
@@ -40,21 +46,3 @@ const exportDashboardExcel = (req, res) => __awaiter(void 0, void 0, void 0, fun
     }
 });
 exports.exportDashboardExcel = exportDashboardExcel;
-// --- Helper: Generate and send Excel ---
-function sendExcel(res, report, filters) {
-    return __awaiter(this, void 0, void 0, function* () {
-        try {
-            const buffer = yield (0, excelReport_1.generateDashboardExcel)(report, Object.assign({ ownerId: filters.ownerId }, filters.filters));
-            const dateStr = new Date().toISOString().split('T')[0];
-            const filename = `dashboard-report-${dateStr}.xlsx`;
-            res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
-            res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-            res.setHeader('Content-Length', buffer.length);
-            res.send(buffer);
-        }
-        catch (err) {
-            console.error('Failed to generate Excel:', err);
-            res.status(500).send('Failed to generate Excel');
-        }
-    });
-}

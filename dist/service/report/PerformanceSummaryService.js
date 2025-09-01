@@ -21,7 +21,6 @@ const library_1 = require("@prisma/client/runtime/library");
 // --- Service Functions ---
 function findPropertyPerformanceSummary(ownerId, propertyId, periodType, periodKey) {
     return __awaiter(this, void 0, void 0, function* () {
-        // First, verify the property belongs to the owner
         const propertyCheck = yield prisma_1.default.property.findUnique({
             where: {
                 id: propertyId,
@@ -32,10 +31,8 @@ function findPropertyPerformanceSummary(ownerId, propertyId, periodType, periodK
             }
         });
         if (!propertyCheck) {
-            // Property doesn't exist or doesn't belong to the owner
             return null;
         }
-        // If ownership is valid, find the summary record
         return yield prisma_1.default.propertyPerformanceSummary.findUnique({
             where: {
                 propertyId_periodType_periodKey: {

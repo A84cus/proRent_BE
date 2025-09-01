@@ -50,7 +50,6 @@ function validateParameters(params, batchSize, delayMs) {
 // --- Create Main Job ---
 function createMainBatchJob(params, batchSize, delayMs) {
     return __awaiter(this, void 0, void 0, function* () {
-        console.log(`Creating pre-warm job for ${params.periodType} ${params.periodKey}`);
         return yield (0, cronjobTrackingService_1.createBatchJob)({
             jobType: 'PREWARM_DASHBOARD_REPORTS',
             targetPeriodType: params.periodType,
@@ -71,7 +70,6 @@ function createMainBatchJob(params, batchSize, delayMs) {
 }
 // --- Initiate Background Processing ---
 function initiateBackgroundProcessing(jobId, params, batchSize, delayMs) {
-    console.log(`Initiating pre-warm background processing for job ${jobId}`);
     processAllOwnersInBackground(jobId, params, batchSize, delayMs).catch(err => handleBackgroundError(jobId, err));
 }
 // --- Handle Background Error ---
@@ -102,7 +100,6 @@ function processAllOwnersInBackground(mainJobId, params, batchSize, delayMs) {
         const failedOwnerIds = [];
         try {
             yield (0, cronjobTrackingService_1.updateBatchJob)({ jobId: mainJobId, status: client_1.JobStatus.IN_PROGRESS, startedAt: new Date() });
-            console.log(`Started pre-warm job ${mainJobId}`);
             while (hasMore) {
                 const ownersBatch = yield prisma_1.default.user.findMany({
                     where: { role: 'OWNER' },
@@ -127,7 +124,6 @@ function processAllOwnersInBackground(mainJobId, params, batchSize, delayMs) {
                     skip += limit;
                 }
                 if (hasMore && delayMs > 0) {
-                    console.log(`Waiting ${delayMs}ms before next batch (Job ID: ${mainJobId})...`);
                     yield new Promise(resolve => setTimeout(resolve, delayMs));
                 }
             }
@@ -145,14 +141,10 @@ function processOwnerBatchWithDashboardPrewarm(owners, mainJobId, periodType, pe
         const now = new Date();
         const currentYear = now.getFullYear();
         const currentMonth = now.getMonth() + 1; // JS months are 0-indexed
-        // Skip if this is the current month
         if (periodType === 'MONTH' && year === currentYear && month === currentMonth) {
-            console.log(`Skipping pre-warm for current month ${year}-${month}`);
             return;
         }
-        // Skip if this is the current year and period is YEAR
         if (periodType === 'YEAR' && year === currentYear) {
-            console.log(`Skipping pre-warm for current year ${year}`);
             return;
         }
         // Determine startDate/endDate from period
@@ -164,15 +156,13 @@ function processOwnerBatchWithDashboardPrewarm(owners, mainJobId, periodType, pe
                     startDate,
                     endDate
                 });
-                console.log(`✅ Pre-warmed dashboard for Owner ${owner.id} - ${periodType} ${periodKey}`);
             }
             catch (error) {
-                console.error(`❌ Failed to pre-warm dashboard for Owner ${owner.id}:`, error.message);
+                console.error(`Failed to pre-warm dashboard for Owner ${owner.id}:`, error.message);
             }
         }
     });
 }
-// --- Helper: Get Date Range from Period ---
 function getPeriodRange(periodType, year, month) {
     const start = new Date(Date.UTC(year, 0, 1)); // Jan 1
     const end = new Date(Date.UTC(year, 11, 31)); // Dec 31

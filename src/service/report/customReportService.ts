@@ -5,131 +5,111 @@ import prisma from '../../prisma';
 import { validatePropertyOwnership, validateRoomTypeOwnership } from './cronJob/cronjobValidationService';
 import * as ReportInterface from '../../interfaces/report/reportCustomInterface';
 
-// --- Types ---
-type ReservationReportFilters = ReportInterface.ReservationReportFilters;
-type ReservationReportOptions = ReportInterface.ReservationReportOptions;
-type ReservationReportResponse = ReportInterface.ReservationReportResponse;
+/**
+ * Response type for getReservationReport
+ * Used internally by handleUnifiedReport and caching
+ */
+export interface SimpleReservationResponse {
+   data: ReportInterface.ReservationListItem[];
+   summary: ReportInterface.ReservationReportSummary;
+   pagination: ReportInterface.Pagination;
+}
 
 // --- Main Function ---
 export async function getReservationReport (
-   filters: ReservationReportFilters,
-   options: ReservationReportOptions = {}
-): Promise<ReservationReportResponse> {
+   filters: ReportInterface.ReportFilters,
+   options: ReportInterface.ReportOptions = {}
+): Promise<SimpleReservationResponse> {
    const { page = 1, pageSize = 20, sortBy = 'startDate', sortDir = 'desc' } = options;
-
    const skip = (page - 1) * pageSize;
 
-   // --- 🔐 Validate ownership ---
+   // 🔐 Ownership validation
    if (filters.propertyId) {
       await validatePropertyOwnership(filters.ownerId, filters.propertyId);
-   } else if (filters.roomTypeId) {
+   }
+   if (filters.roomTypeId && filters.propertyId) {
       await validateRoomTypeOwnership(filters.ownerId, filters.roomTypeId);
    }
 
-   // --- 🔍 Base where clause ---
+   // 🔹 Build WHERE clause
    const where: any = {
-      orderStatus: { not: 'CANCELLED' }, // Exclude cancelled by default (include only if requested)
-      ...(filters.startDate && { startDate: { lte: filters.endDate || new Date() } }),
-      ...(filters.endDate && { endDate: { gte: filters.startDate || new Date('1970') } }),
-      ...(filters.status && { orderStatus: { in: filters.status } }),
       ...(filters.propertyId && { propertyId: filters.propertyId }),
-      ...(filters.roomTypeId && { roomTypeId: filters.roomTypeId })
+      ...(filters.roomTypeId && { roomTypeId: filters.roomTypeId }),
+      ...(filters.startDate && { startDate: { lte: filters.endDate || new Date() } }),
+      ...(filters.endDate && { endDate: { gte: filters.startDate || new Date('1970-01-01') } }),
+      ...(filters.reservationStatus && { orderStatus: filters.reservationStatus })
    };
 
-   // Add search filter
-   if (filters.search) {
-      where.OR = [
-         { User: { email: { contains: filters.search, mode: 'insensitive' } } },
-         { User: { name: { contains: filters.search, mode: 'insensitive' } } }
-      ];
+   // 🔍 Text search
+   if (filters.customerName || filters.email || filters.invoiceNumber) {
+      where.OR = [];
+
+      if (filters.customerName) {
+         where.OR.push(
+            { User: { profile: { firstName: { contains: filters.customerName, mode: 'insensitive' } } } },
+            { User: { profile: { lastName: { contains: filters.customerName, mode: 'insensitive' } } } }
+         );
+      }
+
+      if (filters.email) {
+         where.OR.push({
+            User: { email: { contains: filters.email, mode: 'insensitive' } }
+         });
+      }
+
+      if (filters.invoiceNumber) {
+         where.OR.push({
+            payment: { invoiceNumber: { equals: filters.invoiceNumber, mode: 'insensitive' } }
+         });
+      }
    }
 
-   // If CANCELLED is explicitly requested
-   if (filters.status?.includes('CANCELLED')) {
-      delete where.orderStatus;
-      where.orderStatus = { in: filters.status };
-   }
-
-   // --- 🔢 Get total count ---
+   // 🔢 Count total
    const total = await prisma.reservation.count({ where });
 
-   // --- 📄 Get paginated data ---
-   const data = await prisma.reservation.findMany({
+   // 📥 Fetch data
+   const reservations = await prisma.reservation.findMany({
       where,
       skip,
       take: pageSize,
       orderBy: getOrderBy(sortBy, sortDir),
-      select: {
-         id: true,
-         userId: true,
-         propertyId: true,
-         roomTypeId: true,
-         startDate: true,
-         endDate: true,
-         orderStatus: true,
-         createdAt: true,
+      include: {
+         User: {
+            include: {
+               profile: true
+            }
+         },
          payment: {
             select: {
-               amount: true,
-               paidAt: true
-            }
-         },
-         User: {
-            select: {
-               id: true,
-               email: true,
-               profile: {
-                  select: {
-                     firstName: true,
-                     lastName: true
-                  }
-               }
-            }
-         },
-         Property: {
-            select: {
-               id: true,
-               name: true
-            }
-         },
-         RoomType: {
-            select: {
-               id: true,
-               name: true
+               invoiceNumber: true,
+               amount: true
             }
          }
       }
    });
 
-   const mappedData: ReportInterface.ReservationReportItem[] = data.map(r => ({
+   // 🔄 Map to ReservationListItem
+   const data: ReportInterface.ReservationListItem[] = reservations.map(r => ({
       id: r.id,
       userId: r.userId,
-      propertyId: r.propertyId,
-      roomTypeId: r.roomTypeId,
+      roomId: r.roomId,
       startDate: r.startDate,
       endDate: r.endDate,
       orderStatus: r.orderStatus,
-      paymentAmount: r.payment?.amount ?? null,
-      paidAt: r.payment?.paidAt ?? null,
-      createdAt: r.createdAt,
+      paymentAmount: r.payment?.amount ?? 0, // number, not null
+      invoiceNumber: r.payment?.invoiceNumber ?? null,
       user: {
-         id: r.User.id,
          email: r.User.email,
-         profile: r.User.profile ?? {
-            firstName: null,
-            lastName: null
-         }
-      },
-      property: r.Property,
-      roomType: r.RoomType
+         firstName: r.User.profile?.firstName || null,
+         lastName: r.User.profile?.lastName || null
+      }
    }));
 
-   // --- 📊 Compute summary ---
+   // 📊 Compute summary
    const summary = await computeSummary(filters);
 
-   // --- 📦 Return response ---
    return {
-      data: mappedData,
+      data,
       summary,
       pagination: {
          page,
@@ -140,36 +120,41 @@ export async function getReservationReport (
    };
 }
 
-// --- Helper: Sort order ---
+// --- Sorting Logic ---
 function getOrderBy (sortBy: string, sortDir: 'asc' | 'desc') {
    switch (sortBy) {
       case 'paymentAmount':
          return { payment: { amount: sortDir } };
       case 'createdAt':
          return { createdAt: sortDir };
+      case 'startDate':
+         return { startDate: sortDir };
       case 'endDate':
          return { endDate: sortDir };
+      case 'invoiceNumber':
+         return { payment: { invoiceNumber: sortDir } };
       default:
          return { startDate: sortDir };
    }
 }
 
-// --- Helper: Compute summary counts and revenue ---
-async function computeSummary (filters: ReservationReportFilters): Promise<ReportInterface.ReservationReportSummary> {
+// --- Summary Calculation ---
+async function computeSummary (
+   filters: ReportInterface.ReportFilters
+): Promise<ReportInterface.ReservationReportSummary> {
    const baseWhere: any = {
-      ...(filters.startDate && { startDate: { lte: filters.endDate || new Date() } }),
-      ...(filters.endDate && { endDate: { gte: filters.startDate || new Date('1970') } }),
       ...(filters.propertyId && { propertyId: filters.propertyId }),
-      ...(filters.roomTypeId && { roomTypeId: filters.roomTypeId })
+      ...(filters.roomTypeId && { roomTypeId: filters.roomTypeId }),
+      ...(filters.startDate && { startDate: { lte: filters.endDate || new Date() } }),
+      ...(filters.endDate && { endDate: { gte: filters.startDate || new Date('1970-01-01') } })
    };
 
-   // Get counts and revenue by status
    const [ pendingPayment, pendingConfirmation, confirmed, cancelled ] = await Promise.all([
       prisma.reservation.findMany({
          where: {
             ...baseWhere,
             orderStatus: 'PENDING_PAYMENT',
-            payment: { paymentStatus: 'CONFIRMED' } // Only CONFIRMED ones contribute to revenue
+            payment: { amount: { gt: 0 } }
          },
          select: { payment: { select: { amount: true } } }
       }),
@@ -177,7 +162,7 @@ async function computeSummary (filters: ReservationReportFilters): Promise<Repor
          where: {
             ...baseWhere,
             orderStatus: 'PENDING_CONFIRMATION',
-            payment: { paymentStatus: 'CONFIRMED' }
+            payment: { amount: { gt: 0 } }
          },
          select: { payment: { select: { amount: true } } }
       }),
@@ -185,7 +170,7 @@ async function computeSummary (filters: ReservationReportFilters): Promise<Repor
          where: {
             ...baseWhere,
             orderStatus: 'CONFIRMED',
-            payment: { paymentStatus: 'CONFIRMED' }
+            payment: { amount: { gt: 0 } }
          },
          select: { payment: { select: { amount: true } } }
       }),
@@ -197,9 +182,8 @@ async function computeSummary (filters: ReservationReportFilters): Promise<Repor
       })
    ]);
 
-   const sumRevenue = (reservations: any[]) => reservations.reduce((sum, r) => sum + (r.payment?.amount || 0), 0);
-   const avgRevenue = (reservations: any[]) =>
-      reservations.reduce((sum, r) => sum + (r.payment?.amount || 0), 0) / reservations.length;
+   const sumRevenue = (reservations: { payment: { amount: number } | null }[]) =>
+      reservations.reduce((sum, r) => sum + (r.payment?.amount || 0), 0);
 
    const actualRevenue = sumRevenue(confirmed);
    const projectedRevenue = sumRevenue(pendingPayment) + sumRevenue(pendingConfirmation) + actualRevenue;
@@ -214,7 +198,7 @@ async function computeSummary (filters: ReservationReportFilters): Promise<Repor
       revenue: {
          actual: actualRevenue,
          projected: projectedRevenue,
-         average: avgRevenue(confirmed)
+         average: confirmed.length > 0 ? actualRevenue / confirmed.length : 0
       },
       totalReservations: pendingPayment.length + pendingConfirmation.length + confirmed.length + cancelled
    };

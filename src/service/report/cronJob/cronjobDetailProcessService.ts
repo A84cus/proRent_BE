@@ -28,8 +28,7 @@ export async function recalculateRoomTypeSummaryForPeriod (
    );
 
    if (totalReservations === 0) {
-      console.log(`Skipping summary for Property ${roomTypeId} (${periodType} ${periodKey}) - No reservations.`);
-      return; // Exit early, DO NOT call upsertPropertyPerformanceSummary
+      return;
    }
 
    const uniqueUsers = await fetchRoomTypeUniqueUsers(roomTypeId, startDate, endDate); // Specific unique user fetch
@@ -74,11 +73,9 @@ export async function recalculateOwnerSummariesForPeriod ( // Renamed for clarit
    });
 
    if (properties.length === 0) {
-      console.log(`No properties found for owner ${ownerId}. Skipping recalculation.`);
       return;
    }
 
-   // --- Process Properties ---
    await processPropertiesBatch(
       ownerId,
       properties,
@@ -90,9 +87,6 @@ export async function recalculateOwnerSummariesForPeriod ( // Renamed for clarit
       previousMonthKey
    );
 
-   // --- Process RoomTypes for all Properties ---
-   // We can either iterate through properties again or fetch all room types directly.
-   // Fetching directly might be slightly more efficient.
    const roomTypes = await prisma.roomType.findMany({
       where: {
          propertyId: {
@@ -118,7 +112,6 @@ export async function recalculateOwnerSummariesForPeriod ( // Renamed for clarit
    }
 }
 
-// --- Property Batch Processing (Extracted/Kept) ---
 async function processPropertiesBatch (
    ownerId: string,
    properties: { id: string }[],
@@ -146,15 +139,8 @@ async function processPropertiesBatch (
             return { status: 'rejected', propertyId: prop.id, reason: err }; // Return propertyId and error on failure
          })
    );
-
-   const results = await Promise.allSettled(promises); // Changed to allSettled for individual result handling if needed later
-   // Basic logging as before, or enhance based on individual results if needed
-   const successful = results.filter(r => r.status === 'fulfilled').length;
-   const failed = results.filter(r => r.status === 'rejected').length;
-   console.log(`Property recalculation for owner ${ownerId} completed. Successful: ${successful}, Failed: ${failed}`);
 }
 
-// --- New RoomType Batch Processing ---
 async function processRoomTypesBatch (
    ownerId: string,
    roomTypes: { id: string }[],
@@ -182,9 +168,4 @@ async function processRoomTypesBatch (
             return { status: 'rejected', roomTypeId: rt.id, reason: err };
          })
    );
-
-   const results = await Promise.allSettled(promises);
-   const successful = results.filter(r => r.status === 'fulfilled').length;
-   const failed = results.filter(r => r.status === 'rejected').length;
-   console.log(`RoomType recalculation for owner ${ownerId} completed. Successful: ${successful}, Failed: ${failed}`);
 }

@@ -99,7 +99,6 @@ function deriveMonthFromPeriodKey(periodKey) {
     return null;
 }
 function buildYearPeriod(year) {
-    console.log(`Deriving period: YEAR ${year} (from provided year only)`);
     return {
         periodType: 'YEAR',
         periodKey: `${year}`,
@@ -107,7 +106,6 @@ function buildYearPeriod(year) {
     };
 }
 function buildMonthPeriod(year, month) {
-    console.log(`Deriving period: MONTH ${year}-${String(month).padStart(2, '0')} (from provided year and month)`);
     return {
         periodType: 'MONTH',
         periodKey: `${year}-${String(month).padStart(2, '0')}`,
@@ -117,7 +115,6 @@ function buildMonthPeriod(year, month) {
 function buildDayPeriod(now) {
     const yesterdayKey = deriveYesterdayKey(now);
     const yesterday = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1);
-    console.log(`Defaulted missing DAY periodKey to yesterday: ${yesterdayKey}`);
     return {
         periodType: 'DAY',
         periodKey: yesterdayKey,
@@ -126,18 +123,11 @@ function buildDayPeriod(now) {
     };
 }
 function handleMissingPeriodTypeAndKey(year, month, now) {
-    // --- CHANGE DEFAULT LOGIC HERE ---
-    console.log("Period type and/or period key not specified for cron job, defaulting to 'YEAR' and current year.");
     if (isYearValid(year)) {
-        // If year is valid, default to YEAR type for that specific year
-        console.log(`Valid year ${year} provided, defaulting to YEAR ${year}.`);
         return handleValidYear(year, month);
     }
     else {
-        // If no valid year, default to the CURRENT YEAR
-        console.log('No valid year provided, defaulting to CURRENT YEAR.');
         const currentYear = deriveYearFromDate(now);
-        // --- DEFAULT TO 'YEAR' TYPE ---
         return Object.assign(Object.assign({}, buildYearPeriod(currentYear)), { year: currentYear });
     }
 }
@@ -157,7 +147,6 @@ function handleInvalidMonth(year) {
     return Object.assign(Object.assign({}, buildYearPeriod(year)), { year });
 }
 function handleMissingYear(now) {
-    console.log("Neither valid 'year' nor valid 'periodType/periodKey' provided. Defaulting to 'YEAR' for current year.");
     const currentYear = deriveYearFromDate(now);
     return Object.assign(Object.assign({}, buildYearPeriod(currentYear)), { year: currentYear });
 }

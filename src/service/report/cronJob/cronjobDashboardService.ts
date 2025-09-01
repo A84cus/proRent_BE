@@ -49,7 +49,6 @@ async function validateParameters (params: FinalizedPeriodParams, batchSize: num
 
 // --- Create Main Job ---
 async function createMainBatchJob (params: FinalizedPeriodParams, batchSize: number, delayMs: number) {
-   console.log(`Creating pre-warm job for ${params.periodType} ${params.periodKey}`);
    return await createBatchJob({
       jobType: 'PREWARM_DASHBOARD_REPORTS',
       targetPeriodType: params.periodType,
@@ -75,7 +74,6 @@ export function initiateBackgroundProcessing (
    batchSize: number,
    delayMs: number
 ): void {
-   console.log(`Initiating pre-warm background processing for job ${jobId}`);
    processAllOwnersInBackground(jobId, params, batchSize, delayMs).catch(err => handleBackgroundError(jobId, err));
 }
 
@@ -110,8 +108,6 @@ async function processAllOwnersInBackground (
 
    try {
       await updateBatchJob({ jobId: mainJobId, status: JobStatus.IN_PROGRESS, startedAt: new Date() });
-      console.log(`Started pre-warm job ${mainJobId}`);
-
       while (hasMore) {
          const ownersBatch = await prisma.user.findMany({
             where: { role: 'OWNER' },
@@ -148,7 +144,6 @@ async function processAllOwnersInBackground (
          }
 
          if (hasMore && delayMs > 0) {
-            console.log(`Waiting ${delayMs}ms before next batch (Job ID: ${mainJobId})...`);
             await new Promise(resolve => setTimeout(resolve, delayMs));
          }
       }
@@ -173,15 +168,11 @@ async function processOwnerBatchWithDashboardPrewarm (
    const currentYear = now.getFullYear();
    const currentMonth = now.getMonth() + 1; // JS months are 0-indexed
 
-   // Skip if this is the current month
    if (periodType === 'MONTH' && year === currentYear && month === currentMonth) {
-      console.log(`Skipping pre-warm for current month ${year}-${month}`);
       return;
    }
 
-   // Skip if this is the current year and period is YEAR
    if (periodType === 'YEAR' && year === currentYear) {
-      console.log(`Skipping pre-warm for current year ${year}`);
       return;
    }
 
@@ -195,14 +186,12 @@ async function processOwnerBatchWithDashboardPrewarm (
             startDate,
             endDate
          });
-         console.log(`✅ Pre-warmed dashboard for Owner ${owner.id} - ${periodType} ${periodKey}`);
       } catch (error: any) {
-         console.error(`❌ Failed to pre-warm dashboard for Owner ${owner.id}:`, error.message);
+         console.error(`Failed to pre-warm dashboard for Owner ${owner.id}:`, error.message);
       }
    }
 }
 
-// --- Helper: Get Date Range from Period ---
 function getPeriodRange (periodType: string, year: number, month: number | null) {
    const start = new Date(Date.UTC(year, 0, 1)); // Jan 1
    const end = new Date(Date.UTC(year, 11, 31)); // Dec 31

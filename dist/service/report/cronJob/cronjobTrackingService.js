@@ -111,10 +111,7 @@ function handleExistingJobs() {
     return __awaiter(this, void 0, void 0, function* () {
         const pendingJobs = yield findPendingJobs('RECALCULATE_ALL_OWNER_SUMMARIES', 10);
         if (pendingJobs.length > 0) {
-            console.log(`Found ${pendingJobs.length} pending jobs. Resuming...`);
-            // Optionally: resume or re-queue them
             for (const job of pendingJobs) {
-                console.log(`Re-initiating background processing for job ${job.id}`);
                 if (typeof job.metadata === 'object' && job.metadata !== null) {
                     const metadata = job.metadata;
                     (0, cronJobMainService_1.initiateBackgroundProcessing)(job.id, {
@@ -125,7 +122,7 @@ function handleExistingJobs() {
                     }, metadata.batchSize, metadata.delayMs, metadata.isCurrentYearCalculation, metadata.previousMonthKey);
                 }
             }
-            return true; // Indicate resumption, block new job
+            return true;
         }
         return false;
     });

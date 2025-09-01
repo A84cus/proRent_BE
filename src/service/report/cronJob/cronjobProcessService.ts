@@ -16,14 +16,9 @@ export async function processOwnerBatch (
    isCurrentYearCalculation?: boolean,
    previousMonthKey?: string
 ): Promise<void> {
-   console.log(`Processing batch of ${ownersBatch.length} owners for summaries (Job ID: ${mainJobId})`);
-   console.log(`  Context: ${periodType} ${periodKey} (Year: ${year}, Month: ${month})`);
-   console.log(`  Current Year Mode: ${isCurrentYearCalculation}, Previous Month Key: ${previousMonthKey}`);
-
    const ownerJobPromises = ownersBatch.map(async owner => {
-      // --- Create a sub-job for the specific owner's calculations ---
       const ownerJob = await createBatchJob({
-         jobType: 'RECALCULATE_OWNER_SUMMARIES', // Updated job type for combined work
+         jobType: 'RECALCULATE_OWNER_SUMMARIES',
          targetOwnerId: owner.id,
          targetPeriodType: periodType,
          targetPeriodKey: periodKey,
@@ -31,8 +26,6 @@ export async function processOwnerBatch (
       });
 
       try {
-         // --- Call the function that processes ONE owner ---
-         // This function should internally handle both Property and RoomType calculations for this owner.
          await recalculateOwnerSummariesForPeriod(
             owner.id,
             periodType,
@@ -44,9 +37,6 @@ export async function processOwnerBatch (
          );
 
          await updateBatchJob({ jobId: ownerJob.id, status: JobStatus.COMPLETED, completedAt: new Date() });
-         console.log(
-            `Successfully recalculated ALL summaries (Property & RoomType) for owner ${owner.id} (Sub-Job ID: ${ownerJob.id})`
-         );
       } catch (err: any) {
          console.error(`Error recalculating ALL summaries for owner ${owner.id} (Sub-Job ID: ${ownerJob.id}):`, err);
          failedOwnerIds.push(owner.id);
@@ -56,7 +46,6 @@ export async function processOwnerBatch (
             errorMessage: err.message,
             completedAt: new Date()
          });
-         // Don't re-throw here, let other owners in the batch continue
       }
    });
 
@@ -108,10 +97,6 @@ export async function finalizeMainJob (
          failedOwnerIds
       } as Prisma.JsonValue
    });
-
-   console.log(
-      `Global recalculation job ${jobId} completed. Status: ${finalStatus}, Processed: ${totalProcessedOwners}, Failed: ${failedOwnerIds.length}`
-   );
 }
 
 export async function processOwnerRoomTypeBatch (
@@ -120,23 +105,18 @@ export async function processOwnerRoomTypeBatch (
    periodKey: string,
    year: number,
    month: number | null = null,
-   failedOwnerIds: string[] // Reference to accumulate failed owner IDs from the main process
+   failedOwnerIds: string[]
 ): Promise<void> {
-   console.log(`Starting RoomType summary recalculation for owner ${ownerId} (Period: ${periodType}:${periodKey})`);
-
    try {
-      // --- 1. Fetch all properties for the owner ---
       const properties = await prisma.property.findMany({
          where: { OwnerId: ownerId },
          select: { id: true }
       });
 
       if (properties.length === 0) {
-         console.log(`No properties found for owner ${ownerId} during RoomType recalculation. Skipping.`);
          return;
       }
 
-      // --- 2. Fetch all RoomTypes for those properties ---
       const roomTypes = await prisma.roomType.findMany({
          where: {
             propertyId: {
@@ -149,13 +129,9 @@ export async function processOwnerRoomTypeBatch (
       });
 
       if (roomTypes.length === 0) {
-         console.log(`No room types found for owner ${ownerId}'s properties during RoomType recalculation. Skipping.`);
          return;
       }
 
-      console.log(`Found ${roomTypes.length} room types for owner ${ownerId}. Starting calculations...`);
-
-      // --- 3. Process Each RoomType ---
       const roomTypePromises = roomTypes.map(rt =>
          recalculateRoomTypeSummaryForPeriod(ownerId, rt.id, periodType, periodKey, year, month)
             .then(() => ({ status: 'fulfilled', roomTypeId: rt.id }))
@@ -164,29 +140,8 @@ export async function processOwnerRoomTypeBatch (
                return { status: 'rejected', roomTypeId: rt.id, reason: err };
             })
       );
-
-      // --- 4. Wait for all calculations ---
-      const results = await Promise.allSettled(roomTypePromises);
-
-      const successful = results.filter(r => r.status === 'fulfilled').length;
-      const failed = results.filter(r => r.status === 'rejected').length;
-
-      // --- 5. Log Results ---
-      // Note: We don't throw an error here to let the main process continue.
-      // Failed owner tracking might need refinement based on whether *any* room type failing marks the owner as failed.
-      console.log(
-         `RoomType recalculation for owner ${ownerId} completed. Successful: ${successful}, Failed: ${failed}`
-      );
-      if (failed > 0) {
-         // Optionally, decide if this constitutes an owner-level failure.
-         // For now, we log it. You might push ownerId to failedOwnerIds here if desired.
-         // failedOwnerIds.push(ownerId); // Uncomment if owner fails if any room type fails
-         console.warn(`Owner ${ownerId} had ${failed} failed RoomType calculations.`);
-      }
    } catch (error: any) {
       console.error(`Critical error during RoomType batch processing for owner ${ownerId}:`, error);
-      // Marking the owner as failed due to a critical error in fetching room types or initiating calculations
       failedOwnerIds.push(ownerId);
-      // Don't re-throw to keep the main batch processing loop alive
    }
 }

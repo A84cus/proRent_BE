@@ -118,7 +118,6 @@ function validateAndDefaultYear (periodKey: string, year: number | undefined): n
 
    const derivedYear = deriveYearFromPeriodKey(periodKey);
    if (derivedYear !== undefined && !isNaN(derivedYear)) {
-      console.log(`Derived missing finalYear ${derivedYear} from periodKey ${periodKey}`);
       return derivedYear;
    }
 
@@ -149,10 +148,8 @@ function handleMonthForPeriodType (type: string, periodKey: string, month: numbe
 
    const derivedMonth = deriveMonthFromPeriodKey(periodKey);
    if (derivedMonth !== null) {
-      console.log(`Derived missing/invalid finalMonth ${derivedMonth} for ${type} type from periodKey.`);
       return derivedMonth;
    }
-
    const currentMonth = deriveMonthFromDate(new Date());
    console.warn(`Could not derive valid finalMonth for ${type} type. Defaulting to current month: ${currentMonth}`);
    return currentMonth;
@@ -198,6 +195,4 @@ export function validateFinalPeriodParams (params: FinalizedPeriodParams): void 
    if (year === undefined || isNaN(year)) {
       throw new Error(`Invalid or missing final year after defaulting: ${year}. Must be a number.`);
    }
-
-   console.log(`Validated final period parameters: ${periodType} ${periodKey} (Year: ${year})`);
 }

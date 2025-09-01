@@ -1,5 +1,4 @@
 "use strict";
-// src/services/report/excel/exportDashboardExcel.ts
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -14,109 +13,40 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.generateDashboardExcel = generateDashboardExcel;
+// src/templates/report/excelReport.ts
 const exceljs_1 = __importDefault(require("exceljs"));
-/**
- * Generates an Excel buffer from a dashboard report
- */
-function generateDashboardExcel(report, filters) {
+const unifiedReport_1 = require("../../service/report/unifiedReport");
+const summarySheet_1 = require("./summarySheet");
+const ownerReport_1 = require("./ownerReport");
+const propertyReport_1 = require("./propertyReport");
+const roomTypeReport_1 = require("./roomTypeReport");
+const helper_1 = require("./helper"); // Ensure autoFitColumns is imported
+// const SHEET_NAME_MAX = 31; // Excel limit - already defined in helper
+function generateDashboardExcel(context, format) {
     return __awaiter(this, void 0, void 0, function* () {
-        var _a;
-        // ✅ Fix: Use Promise<Buffer>, not Buffer<ArrayBufferLike>
+        const excelContext = Object.assign(Object.assign({}, context), { options: Object.assign(Object.assign({}, context.options), { fetchAllData: true }) });
+        const report = yield (0, unifiedReport_1.handleUnifiedReport)(excelContext);
         const workbook = new exceljs_1.default.Workbook();
-        // --- Sheet 1: Summary ---
-        const summarySheet = workbook.addWorksheet('Summary');
-        // Title
-        summarySheet.mergeCells('A1', 'D1');
-        summarySheet.getCell('A1').value = 'DASHBOARD REPORT';
-        summarySheet.getCell('A1').font = { bold: true, size: 16 };
-        summarySheet.getCell('A1').alignment = { horizontal: 'center' };
-        // Period
-        summarySheet.addRow(['Period', `${formatDate(report.period.startDate)} to ${formatDate(report.period.endDate)}`]);
-        summarySheet.addRow(['Generated On', new Date().toLocaleString()]);
-        summarySheet.addRow([]);
-        // Summary Counts
-        summarySheet.addRow(['Status', 'Total']);
-        summarySheet.addRow(['CONFIRMED', report.summary.counts.CONFIRMED]);
-        summarySheet.addRow(['PENDING_PAYMENT', report.summary.counts.PENDING_PAYMENT]);
-        summarySheet.addRow(['PENDING_CONFIRMATION', report.summary.counts.PENDING_CONFIRMATION]);
-        summarySheet.addRow(['CANCELLED', report.summary.counts.CANCELLED]);
-        summarySheet.addRow([]);
-        // Revenue
-        summarySheet.addRow(['Revenue']);
-        summarySheet.addRow(['Actual', report.summary.revenue.actual]);
-        summarySheet.addRow(['Projected', report.summary.revenue.projected]);
-        summarySheet.addRow(['Average', report.summary.revenue.average]);
-        // Format currency
-        summarySheet.getColumn(2).numFmt = '"Rp"#,##0';
-        // --- Sheet 2: Properties & Room Types ---
-        const propertySheet = workbook.addWorksheet('Properties');
-        propertySheet.addRow(['Property Name', 'Address', 'City', 'Type', 'Revenue (Rp)', 'Reservations']);
-        propertySheet.getRow(1).font = { bold: true };
-        report.properties.forEach(p => {
-            var _a;
-            propertySheet.addRow([
-                p.property.name,
-                p.property.address || '-',
-                p.property.city || '-',
-                'Property Summary',
-                p.summary.revenue.actual,
-                p.summary.counts.CONFIRMED
-            ]);
-            (_a = p.roomTypes) === null || _a === void 0 ? void 0 : _a.forEach(rt => {
-                propertySheet.addRow(['', '', '', `Room: ${rt.roomType.name}`, rt.revenue.actual, rt.counts.CONFIRMED]);
-            });
-            propertySheet.addRow([]); // spacer
-        });
-        propertySheet.getColumn(5).numFmt = '"Rp"#,##0';
-        // --- Sheet 3: Reservations ---
-        if (((_a = report.properties[0]) === null || _a === void 0 ? void 0 : _a.data) && report.properties[0].data.length > 0) {
-            const resSheet = workbook.addWorksheet('Reservations');
-            resSheet.addRow(['Reservation ID', 'Guest', 'Email', 'Check-in', 'Check-out', 'Status', 'Amount (Rp)']);
-            resSheet.getRow(1).font = { bold: true };
-            report.properties[0].data.forEach(item => {
-                resSheet.addRow([
-                    item.id,
-                    `${item.user.firstName} ${item.user.lastName}`.trim(),
-                    item.user.email,
-                    formatDate(item.startDate),
-                    formatDate(item.endDate),
-                    item.orderStatus,
-                    item.paymentAmount
-                ]);
-            });
-            resSheet.getColumn(7).numFmt = '"Rp"#,##0';
+        // Add summary sheet (always)
+        (0, summarySheet_1.addSummarySheet)(workbook, report, context, format);
+        // Add data sheets based on format
+        switch (format) {
+            case 'FULL':
+                (0, ownerReport_1.addFullOwnerSheets)(workbook, report);
+                break;
+            case 'PROPERTY':
+                (0, propertyReport_1.addPropertySheets)(workbook, report, context.filters.propertyId);
+                break;
+            case 'ROOM_TYPE':
+                (0, roomTypeReport_1.addRoomTypeSheets)(workbook, report, context.filters.roomTypeId);
+                break;
         }
-        // --- Sheet 4: Filters Used ---
-        const filterSheet = workbook.addWorksheet('Filters');
-        filterSheet.addRow(['Filters Applied']);
-        filterSheet.getRow(1).font = { bold: true };
-        filterSheet.addRow(['Property ID', filters.propertyId || 'All']);
-        filterSheet.addRow(['Room Type ID', filters.roomTypeId || 'All']);
-        filterSheet.addRow(['Start Date', formatDate(filters.startDate)]);
-        filterSheet.addRow(['End Date', formatDate(filters.endDate)]);
-        filterSheet.addRow(['Status', (filters.status || []).join(', ') || 'All']);
-        filterSheet.addRow(['Search', filters.search || 'None']);
-        // Auto-fit column width
-        workbook.eachSheet(sheet => {
-            sheet.columns.forEach(column => {
-                var _a;
-                let maxLength = 10;
-                (_a = column.eachCell) === null || _a === void 0 ? void 0 : _a.call(column, { includeEmpty: true }, cell => {
-                    const val = cell.value ? cell.value.toString() : '';
-                    maxLength = Math.max(maxLength, val.length);
-                });
-                column.width = Math.min(maxLength + 2, 50);
-            });
-        });
-        // ✅ Generate and return Buffer
+        // Add filters sheet
+        (0, helper_1.addFiltersSheet)(workbook, context.filters);
+        // --- Auto-fit columns AFTER all sheets and data are added ---
+        (0, helper_1.autoFitColumns)(workbook);
+        // --- End of Auto-fit ---
         const buffer = yield workbook.xlsx.writeBuffer();
-        return Buffer.from(buffer); // ✅ Ensure it's a Node.js Buffer
+        return Buffer.from(buffer);
     });
-}
-function formatDate(date) {
-    if (!date) {
-        return '-';
-    }
-    const d = new Date(date);
-    return isNaN(d.getTime()) ? '-' : d.toISOString().split('T')[0];
 }
