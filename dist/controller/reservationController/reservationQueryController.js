@@ -169,7 +169,7 @@ function getPropertyReservationsHandler(req, res) {
                 res.status(400).json({ message: reservation_1.RESERVATION_ERROR_MESSAGES.PROPERTY_ID_REQUIRED });
                 return;
             }
-            const { page = '1', limit = '10', sortBy = 'createdAt', sortOrder = 'desc', status, startDate, endDate, search, minAmount, maxAmount } = req.query;
+            const { page = '1', limit = '10', sortBy = 'createdAt', sortOrder = 'desc', status, startDate, endDate, search, minAmount, maxAmount, roomTypeId } = req.query;
             const filters = {};
             if (status) {
                 filters.status = status;
@@ -189,6 +189,7 @@ function getPropertyReservationsHandler(req, res) {
             if (maxAmount !== undefined) {
                 filters.maxAmount = Number(maxAmount);
             }
+            const parsedRoomTypeId = roomTypeId ? String(roomTypeId) : undefined;
             const options = {
                 page: parseInt(page, 10),
                 limit: parseInt(limit, 10),
@@ -196,7 +197,7 @@ function getPropertyReservationsHandler(req, res) {
                 sortOrder: sortOrder,
                 filters
             };
-            const result = yield (0, reservationQueryService_1.getPropertyReservations)(propertyOwnerId, propertyId, options);
+            const result = yield (0, reservationQueryService_1.getPropertyReservations)(propertyOwnerId, propertyId, Object.assign(Object.assign({}, options), { roomTypeId: parsedRoomTypeId }));
             res.json(result);
             return;
         }

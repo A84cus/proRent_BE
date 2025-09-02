@@ -210,7 +210,8 @@ export async function getPropertyReservationsHandler (req: Request, res: Respons
          endDate,
          search,
          minAmount,
-         maxAmount
+         maxAmount,
+         roomTypeId
       } = req.query;
 
       const filters: any = {};
@@ -233,15 +234,21 @@ export async function getPropertyReservationsHandler (req: Request, res: Respons
          filters.maxAmount = Number(maxAmount);
       }
 
+      const parsedRoomTypeId = roomTypeId ? String(roomTypeId) : undefined;
+
       const options = {
          page: parseInt(page as string, 10),
          limit: parseInt(limit as string, 10),
          sortBy: sortBy as any,
          sortOrder: sortOrder as any,
+
          filters
       };
 
-      const result = await getPropertyReservations(propertyOwnerId, propertyId, options);
+      const result = await getPropertyReservations(propertyOwnerId, propertyId, {
+         ...options,
+         roomTypeId: parsedRoomTypeId
+      });
       res.json(result);
       return;
    } catch (error) {
