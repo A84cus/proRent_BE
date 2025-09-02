@@ -24,12 +24,13 @@ const reservationQueryHelper_1 = require("./reservationQueryHelper");
 function queryReservations(options) {
     return __awaiter(this, void 0, void 0, function* () {
         const validatedOptions = (0, reservationQueryHelper_1.validateQueryOptions)(options);
-        const { userId, propertyOwnerId, propertyId, page = validatedOptions.page, limit = validatedOptions.limit, sortBy = 'createdAt', sortOrder = 'desc', filters = {} } = options;
+        const { userId, propertyOwnerId, propertyId, roomTypeId, page = validatedOptions.page, limit = validatedOptions.limit, sortBy = 'createdAt', sortOrder = 'desc', filters = {} } = options;
         const skip = (page - 1) * limit;
         const whereConditions = (0, queryEngine_1.buildWhereConditions)({
             userId,
             propertyOwnerId,
             propertyId,
+            roomTypeId,
             filters
         });
         const orderBy = (0, queryEngine_1.buildOrderByClause)(sortBy, sortOrder);

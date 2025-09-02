@@ -5,7 +5,7 @@ exports.buildOrderByClause = buildOrderByClause;
 exports.buildIncludeFields = buildIncludeFields;
 const buildInclude_1 = require("./buildInclude");
 function buildWhereConditions(options) {
-    const { userId, propertyOwnerId, propertyId, filters = {} } = options;
+    const { userId, propertyOwnerId, propertyId, roomTypeId, filters = {} } = options;
     const whereConditions = {};
     if (userId) {
         whereConditions.userId = userId;
@@ -15,6 +15,9 @@ function buildWhereConditions(options) {
     }
     if (propertyId) {
         whereConditions.propertyId = propertyId;
+    }
+    if (roomTypeId) {
+        whereConditions.roomTypeId = roomTypeId;
     }
     Object.assign(whereConditions, buildStatusFilter(filters.status));
     Object.assign(whereConditions, buildDateRangeFilter(filters.startDate, filters.endDate));
@@ -56,6 +59,7 @@ function buildSearchFilter(search) {
     return {
         OR: [
             { id: { contains: search, mode: 'insensitive' } },
+            { roomTypeId: { contains: search, mode: 'insensitive' } },
             { RoomType: { name: { contains: search, mode: 'insensitive' } } },
             { RoomType: { property: { name: { contains: search, mode: 'insensitive' } } } },
             { payment: { invoiceNumber: { contains: search, mode: 'insensitive' } } },

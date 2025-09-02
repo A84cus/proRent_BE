@@ -12,6 +12,7 @@ interface QueryOptions {
    userId?: string;
    propertyOwnerId?: string;
    propertyId?: string;
+   roomTypeId?: string;
    filters?: {
       status?: Status;
       startDate?: Date;
@@ -23,7 +24,7 @@ interface QueryOptions {
 }
 
 export function buildWhereConditions (options: QueryOptions): any {
-   const { userId, propertyOwnerId, propertyId, filters = {} } = options;
+   const { userId, propertyOwnerId, propertyId, roomTypeId, filters = {} } = options;
    const whereConditions: any = {};
    if (userId) {
       whereConditions.userId = userId;
@@ -33,6 +34,9 @@ export function buildWhereConditions (options: QueryOptions): any {
    }
    if (propertyId) {
       whereConditions.propertyId = propertyId;
+   }
+   if (roomTypeId) {
+      whereConditions.roomTypeId = roomTypeId;
    }
    Object.assign(whereConditions, buildStatusFilter(filters.status));
    Object.assign(whereConditions, buildDateRangeFilter(filters.startDate, filters.endDate));
@@ -84,6 +88,7 @@ function buildSearchFilter (search?: string) {
    return {
       OR: [
          { id: { contains: search, mode: 'insensitive' } },
+         { roomTypeId: { contains: search, mode: 'insensitive' } },
          { RoomType: { name: { contains: search, mode: 'insensitive' } } },
          { RoomType: { property: { name: { contains: search, mode: 'insensitive' } } } },
          { payment: { invoiceNumber: { contains: search, mode: 'insensitive' } } },
