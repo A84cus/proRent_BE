@@ -14,27 +14,29 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const prisma_1 = __importDefault(require("../../prisma"));
 const logger_1 = __importDefault(require("../../utils/system/logger"));
-class PropertyGalleryService {
-    // Verify property ownership
-    verifyPropertyOwnership(propertyId, ownerId) {
+class RoomGalleryService {
+    // Verify room ownership through property ownership
+    verifyRoomOwnership(roomId, ownerId) {
         return __awaiter(this, void 0, void 0, function* () {
             try {
-                const property = yield prisma_1.default.property.findFirst({
+                const room = yield prisma_1.default.room.findFirst({
                     where: {
-                        id: propertyId,
-                        OwnerId: ownerId,
+                        id: roomId,
+                        property: {
+                            OwnerId: ownerId,
+                        },
                     },
                 });
-                return !!property;
+                return !!room;
             }
             catch (error) {
-                logger_1.default.error("Error verifying property ownership:", error);
+                logger_1.default.error("Error verifying room ownership:", error);
                 throw error;
             }
         });
     }
-    // Add picture to property gallery
-    addToGallery(propertyId, pictureId) {
+    // Add picture to room gallery
+    addToGallery(roomId, pictureId) {
         return __awaiter(this, void 0, void 0, function* () {
             try {
                 // Check if picture exists
@@ -45,10 +47,10 @@ class PropertyGalleryService {
                     throw new Error("Picture not found");
                 }
                 // Check if already in gallery
-                const existing = yield prisma_1.default.propertyPicture.findUnique({
+                const existing = yield prisma_1.default.roomPicture.findUnique({
                     where: {
-                        propertyId_pictureId: {
-                            propertyId,
+                        roomId_pictureId: {
+                            roomId,
                             pictureId,
                         },
                     },
@@ -57,37 +59,37 @@ class PropertyGalleryService {
                     throw new Error("Picture already in gallery");
                 }
                 // Add to gallery
-                const result = yield prisma_1.default.propertyPicture.create({
+                const result = yield prisma_1.default.roomPicture.create({
                     data: {
-                        propertyId,
+                        roomId,
                         pictureId,
                     },
                     include: {
                         picture: true,
                     },
                 });
-                logger_1.default.info(`Picture ${pictureId} added to property ${propertyId} gallery`);
+                logger_1.default.info(`Picture ${pictureId} added to room ${roomId} gallery`);
                 return result;
             }
             catch (error) {
-                logger_1.default.error("Error adding picture to gallery:", error);
+                logger_1.default.error("Error adding picture to room gallery:", error);
                 throw error;
             }
         });
     }
-    // Remove picture from property gallery
-    removeFromGallery(propertyId, pictureId) {
+    // Remove picture from room gallery
+    removeFromGallery(roomId, pictureId) {
         return __awaiter(this, void 0, void 0, function* () {
             try {
-                const deleted = yield prisma_1.default.propertyPicture.delete({
+                const deleted = yield prisma_1.default.roomPicture.delete({
                     where: {
-                        propertyId_pictureId: {
-                            propertyId,
+                        roomId_pictureId: {
+                            roomId,
                             pictureId,
                         },
                     },
                 });
-                logger_1.default.info(`Picture ${pictureId} removed from property ${propertyId} gallery`);
+                logger_1.default.info(`Picture ${pictureId} removed from room ${roomId} gallery`);
             }
             catch (error) {
                 if (error &&
@@ -96,69 +98,33 @@ class PropertyGalleryService {
                     error.code === "P2025") {
                     throw new Error("Picture not found in gallery");
                 }
-                logger_1.default.error("Error removing picture from gallery:", error);
+                logger_1.default.error("Error removing picture from room gallery:", error);
                 throw error;
             }
         });
     }
-    // Get property gallery
-    getGallery(propertyId) {
+    // Get room gallery
+    getRoomGallery(roomId) {
         return __awaiter(this, void 0, void 0, function* () {
             try {
-                const gallery = yield prisma_1.default.propertyPicture.findMany({
-                    where: { propertyId },
+                const gallery = yield prisma_1.default.roomPicture.findMany({
+                    where: { roomId },
                     include: {
                         picture: true,
                     },
                     orderBy: {
                         picture: {
-                            uploadedAt: "desc",
+                            createdAt: "asc",
                         },
                     },
                 });
-                return gallery.map((item) => item.picture);
+                return gallery;
             }
             catch (error) {
-                logger_1.default.error("Error fetching property gallery:", error);
-                throw error;
-            }
-        });
-    }
-    // Set main picture for property
-    setMainPicture(propertyId, pictureId) {
-        return __awaiter(this, void 0, void 0, function* () {
-            try {
-                // Check if picture exists and is in property gallery
-                const galleryItem = yield prisma_1.default.propertyPicture.findUnique({
-                    where: {
-                        propertyId_pictureId: {
-                            propertyId,
-                            pictureId,
-                        },
-                    },
-                    include: {
-                        picture: true,
-                    },
-                });
-                if (!galleryItem) {
-                    throw new Error("Picture not found in property gallery");
-                }
-                // Update property main picture
-                const updatedProperty = yield prisma_1.default.property.update({
-                    where: { id: propertyId },
-                    data: { mainPictureId: pictureId },
-                    include: {
-                        mainPicture: true,
-                    },
-                });
-                logger_1.default.info(`Main picture set for property ${propertyId}: ${pictureId}`);
-                return updatedProperty;
-            }
-            catch (error) {
-                logger_1.default.error("Error setting main picture:", error);
+                logger_1.default.error("Error getting room gallery:", error);
                 throw error;
             }
         });
     }
 }
-exports.default = new PropertyGalleryService();
+exports.default = new RoomGalleryService();

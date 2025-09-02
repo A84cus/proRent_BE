@@ -121,6 +121,43 @@ class PropertyGalleryService {
       throw error;
     }
   }
+
+  // Set main picture for property
+  async setMainPicture(propertyId: string, pictureId: string) {
+    try {
+      // Check if picture exists and is in property gallery
+      const galleryItem = await prisma.propertyPicture.findUnique({
+        where: {
+          propertyId_pictureId: {
+            propertyId,
+            pictureId,
+          },
+        },
+        include: {
+          picture: true,
+        },
+      });
+
+      if (!galleryItem) {
+        throw new Error("Picture not found in property gallery");
+      }
+
+      // Update property main picture
+      const updatedProperty = await prisma.property.update({
+        where: { id: propertyId },
+        data: { mainPictureId: pictureId },
+        include: {
+          mainPicture: true,
+        },
+      });
+
+      logger.info(`Main picture set for property ${propertyId}: ${pictureId}`);
+      return updatedProperty;
+    } catch (error) {
+      logger.error("Error setting main picture:", error);
+      throw error;
+    }
+  }
 }
 
 export default new PropertyGalleryService();
