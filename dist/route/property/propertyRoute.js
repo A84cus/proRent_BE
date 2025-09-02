@@ -22,4 +22,6 @@ router.delete("/:id", authMwr_1.authOwner, propertyController_1.default.deletePr
 router.post("/:propertyId/gallery", authMwr_1.authOwner, propertyGalleryController_1.default.addToGallery.bind(propertyGalleryController_1.default));
 // DELETE /api/owner/properties/:propertyId/gallery/:pictureId - Remove image from gallery
 router.delete("/:propertyId/gallery/:pictureId", authMwr_1.authOwner, propertyGalleryController_1.default.removeFromGallery.bind(propertyGalleryController_1.default));
+// PATCH /api/owner/properties/:propertyId/gallery/:pictureId/set-main - Set image as main picture
+router.patch("/:propertyId/gallery/:pictureId/set-main", authMwr_1.authOwner, propertyGalleryController_1.default.setMainPicture.bind(propertyGalleryController_1.default));
 exports.default = router;

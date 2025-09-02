@@ -1,5 +1,6 @@
 import { Router } from "express";
 import roomController from "../../controller/property/roomController";
+import roomGalleryController from "../../controller/property/roomGalleryController";
 import { authOwner } from "../../middleware/auth/authMwr";
 
 const router = Router();
@@ -22,6 +23,20 @@ router.delete(
   "/:id",
   authOwner,
   roomController.deleteRoom.bind(roomController)
+);
+
+// POST /api/owner/rooms/:roomId/gallery - Add image to room gallery
+router.post(
+  "/:roomId/gallery",
+  authOwner,
+  roomGalleryController.addToGallery.bind(roomGalleryController)
+);
+
+// DELETE /api/owner/rooms/:roomId/gallery/:pictureId - Remove image from room gallery
+router.delete(
+  "/:roomId/gallery/:pictureId",
+  authOwner,
+  roomGalleryController.removeFromGallery.bind(roomGalleryController)
 );
 
 export default router;

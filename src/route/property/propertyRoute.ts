@@ -54,4 +54,11 @@ router.delete(
   propertyGalleryController.removeFromGallery.bind(propertyGalleryController)
 );
 
+// PATCH /api/owner/properties/:propertyId/gallery/:pictureId/set-main - Set image as main picture
+router.patch(
+  "/:propertyId/gallery/:pictureId/set-main",
+  authOwner,
+  propertyGalleryController.setMainPicture.bind(propertyGalleryController)
+);
+
 export default router;

@@ -126,6 +126,11 @@ class PropertyRepository {
         rooms: {
           include: {
             roomType: true,
+            gallery: {
+              include: {
+                picture: true,
+              },
+            },
           },
         },
         roomTypes: true,
