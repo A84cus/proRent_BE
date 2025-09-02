@@ -33,7 +33,7 @@ router.post('/cancel-expired', cancelExpiredReservationsController);
 router.get('/user', authUser, getUserReservationsHandler);
 router.get('/owner', authOwner, getOwnerReservationsHandler);
 router.get('/:id', authAny, getReservationWithPaymentHandler);
-router.get('/property/:propertyId', getPropertyReservationsHandler);
+router.get('/property/:propertyId', authOwner, getPropertyReservationsHandler);
 // POST /reservation - Create a new reservation
 router.post('/', authUser, createReservationController);
 router.post('/:reservationId/cancel', authAny, cancelReservationController);
