@@ -70,9 +70,9 @@ function getOwnerReservations(propertyOwnerId_1) {
         return queryReservations(Object.assign({ propertyOwnerId }, options));
     });
 }
-function getPropertyReservations(propertyId_1) {
-    return __awaiter(this, arguments, void 0, function* (propertyId, options = {}) {
-        return queryReservations(Object.assign({ propertyId }, options));
+function getPropertyReservations(propertyOwnerId_1, propertyId_1) {
+    return __awaiter(this, arguments, void 0, function* (propertyOwnerId, propertyId, options = {}) {
+        return queryReservations(Object.assign({ propertyOwnerId, propertyId }, options));
     });
 }
 function getReservationWithPayment(reservationId) {

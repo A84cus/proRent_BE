@@ -21,7 +21,7 @@ const system_1 = require("../../constants/controllers/system");
 function getReservations(req, res) {
     return __awaiter(this, void 0, void 0, function* () {
         try {
-            const { userId, propertyOwnerId, propertyId, page = "1", limit = "10", sortBy = "createdAt", sortOrder = "desc", status, startDate, endDate, search, minAmount, maxAmount, } = req.query;
+            const { userId, propertyOwnerId, propertyId, page = '1', limit = '10', sortBy = 'createdAt', sortOrder = 'desc', status, startDate, endDate, search, minAmount, maxAmount } = req.query;
             const filters = {};
             if (status) {
                 filters.status = status;
@@ -49,17 +49,15 @@ function getReservations(req, res) {
                 limit: parseInt(limit, 10),
                 sortBy: sortBy,
                 sortOrder: sortOrder,
-                filters,
+                filters
             };
             const result = yield (0, reservationQueryService_1.queryReservations)(options);
             res.json(result);
             return;
         }
         catch (error) {
-            console.error("Error fetching reservations:", error);
-            res
-                .status(500)
-                .json({ message: system_1.SYSTEM_ERROR_MESSAGES.INTERNAL_SERVER_ERROR });
+            console.error('Error fetching reservations:', error);
+            res.status(500).json({ message: system_1.SYSTEM_ERROR_MESSAGES.INTERNAL_SERVER_ERROR });
         }
     });
 }
@@ -71,12 +69,10 @@ function getUserReservationsHandler(req, res) {
             const userId = (_a = req.user) === null || _a === void 0 ? void 0 : _a.userId;
             // Remove the parameter check since we always expect userId from token
             if (!userId) {
-                res
-                    .status(400)
-                    .json({ message: reservation_1.RESERVATION_ERROR_MESSAGES.USER_ID_REQUIRED });
+                res.status(400).json({ message: reservation_1.RESERVATION_ERROR_MESSAGES.USER_ID_REQUIRED });
                 return;
             }
-            const { page = "1", limit = "10", sortBy = "createdAt", sortOrder = "desc", status, startDate, endDate, search, minAmount, maxAmount, } = req.query;
+            const { page = '1', limit = '10', sortBy = 'createdAt', sortOrder = 'desc', status, startDate, endDate, search, minAmount, maxAmount } = req.query;
             const filters = {};
             if (status) {
                 filters.status = status;
@@ -101,17 +97,15 @@ function getUserReservationsHandler(req, res) {
                 limit: parseInt(limit, 10),
                 sortBy: sortBy,
                 sortOrder: sortOrder,
-                filters,
+                filters
             };
             const result = yield (0, reservationQueryService_1.getUserReservations)(userId, options);
             res.json(result);
             return;
         }
         catch (error) {
-            console.error("Error in controller:", error);
-            res
-                .status(500)
-                .json({ message: system_1.SYSTEM_ERROR_MESSAGES.INTERNAL_SERVER_ERROR });
+            console.error('Error in controller:', error);
+            res.status(500).json({ message: system_1.SYSTEM_ERROR_MESSAGES.INTERNAL_SERVER_ERROR });
         }
     });
 }
@@ -122,14 +116,12 @@ function getOwnerReservationsHandler(req, res) {
         try {
             const propertyOwnerId = (_a = req.user) === null || _a === void 0 ? void 0 : _a.userId;
             if (!propertyOwnerId) {
-                res
-                    .status(400)
-                    .json({
-                    message: reservation_1.RESERVATION_ERROR_MESSAGES.PROPERTY_OWNER_ID_REQUIRED,
+                res.status(400).json({
+                    message: reservation_1.RESERVATION_ERROR_MESSAGES.PROPERTY_OWNER_ID_REQUIRED
                 });
                 return;
             }
-            const { page = "1", limit = "10", sortBy = "createdAt", sortOrder = "desc", status, startDate, endDate, search, minAmount, maxAmount, } = req.query;
+            const { page = '1', limit = '10', sortBy = 'createdAt', sortOrder = 'desc', status, startDate, endDate, search, minAmount, maxAmount } = req.query;
             const filters = {};
             if (status) {
                 filters.status = status;
@@ -154,32 +146,30 @@ function getOwnerReservationsHandler(req, res) {
                 limit: parseInt(limit, 10),
                 sortBy: sortBy,
                 sortOrder: sortOrder,
-                filters,
+                filters
             };
             const result = yield (0, reservationQueryService_1.getOwnerReservations)(propertyOwnerId, options);
             res.json(result);
             return;
         }
         catch (error) {
-            console.error("Error fetching tenant reservations:", error);
-            res
-                .status(500)
-                .json({ message: system_1.SYSTEM_ERROR_MESSAGES.INTERNAL_SERVER_ERROR });
+            console.error('Error fetching tenant reservations:', error);
+            res.status(500).json({ message: system_1.SYSTEM_ERROR_MESSAGES.INTERNAL_SERVER_ERROR });
         }
     });
 }
 // Get reservations for a specific property
 function getPropertyReservationsHandler(req, res) {
     return __awaiter(this, void 0, void 0, function* () {
+        var _a;
         try {
+            const propertyOwnerId = (_a = req.user) === null || _a === void 0 ? void 0 : _a.userId;
             const propertyId = req.params.propertyId;
             if (!propertyId) {
-                res
-                    .status(400)
-                    .json({ message: reservation_1.RESERVATION_ERROR_MESSAGES.PROPERTY_ID_REQUIRED });
+                res.status(400).json({ message: reservation_1.RESERVATION_ERROR_MESSAGES.PROPERTY_ID_REQUIRED });
                 return;
             }
-            const { page = "1", limit = "10", sortBy = "createdAt", sortOrder = "desc", status, startDate, endDate, search, minAmount, maxAmount, } = req.query;
+            const { page = '1', limit = '10', sortBy = 'createdAt', sortOrder = 'desc', status, startDate, endDate, search, minAmount, maxAmount } = req.query;
             const filters = {};
             if (status) {
                 filters.status = status;
@@ -204,17 +194,15 @@ function getPropertyReservationsHandler(req, res) {
                 limit: parseInt(limit, 10),
                 sortBy: sortBy,
                 sortOrder: sortOrder,
-                filters,
+                filters
             };
-            const result = yield (0, reservationQueryService_1.getPropertyReservations)(propertyId, options);
+            const result = yield (0, reservationQueryService_1.getPropertyReservations)(propertyOwnerId, propertyId, options);
             res.json(result);
             return;
         }
         catch (error) {
-            console.error("Error fetching property reservations:", error);
-            res
-                .status(500)
-                .json({ message: system_1.SYSTEM_ERROR_MESSAGES.INTERNAL_SERVER_ERROR });
+            console.error('Error fetching property reservations:', error);
+            res.status(500).json({ message: system_1.SYSTEM_ERROR_MESSAGES.INTERNAL_SERVER_ERROR });
         }
     });
 }
@@ -223,26 +211,20 @@ function getReservationWithPaymentHandler(req, res) {
         try {
             const reservationId = req.params.id;
             if (!reservationId) {
-                res
-                    .status(400)
-                    .json({ message: reservation_1.RESERVATION_ERROR_MESSAGES.RESERVATION_ID_REQUIRED });
+                res.status(400).json({ message: reservation_1.RESERVATION_ERROR_MESSAGES.RESERVATION_ID_REQUIRED });
                 return;
             }
             const reservationWithPayment = yield (0, reservationQueryService_1.getReservationWithPayment)(reservationId);
             if (!reservationWithPayment) {
-                res
-                    .status(404)
-                    .json({ message: reservation_1.RESERVATION_ERROR_MESSAGES.RESERVATION_NOT_FOUND });
+                res.status(404).json({ message: reservation_1.RESERVATION_ERROR_MESSAGES.RESERVATION_NOT_FOUND });
                 return;
             }
             res.json(reservationWithPayment);
             return;
         }
         catch (error) {
-            console.error("Error fetching reservation with payment:", error);
-            res
-                .status(500)
-                .json({ message: system_1.SYSTEM_ERROR_MESSAGES.INTERNAL_SERVER_ERROR });
+            console.error('Error fetching reservation with payment:', error);
+            res.status(500).json({ message: system_1.SYSTEM_ERROR_MESSAGES.INTERNAL_SERVER_ERROR });
             // Atau jika ingin lebih spesifik (hati-hati dengan informasi sensitif):
             // return res.status(500).json({ message: 'Failed to fetch reservation details', error: error.message });
         }

@@ -104,10 +104,11 @@ export async function getOwnerReservations (
 }
 
 export async function getPropertyReservations (
+   propertyOwnerId: string,
    propertyId: string,
    options: Omit<ReservationQueryOptions, 'propertyId'> = {}
 ) {
-   return queryReservations({ propertyId, ...options });
+   return queryReservations({ propertyOwnerId, propertyId, ...options });
 }
 
 export async function getReservationWithPayment (reservationId: string) {
