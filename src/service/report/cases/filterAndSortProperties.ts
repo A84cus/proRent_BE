@@ -1,29 +1,48 @@
+// service/report/cases/filterAndSortProperties.ts
 import * as ReportInterface from '../../../interfaces/report/reportCustomInterface';
 import { aggregateSummaries } from '../utils/aggregateSummaries';
 
-export function filterAndSortProperties (
-   propertyMap: Map<string, ReportInterface.PropertySummary>,
-   roomTypeMap: Map<string, ReportInterface.RoomTypeWithAvailability>,
+// Define a helper type for the conditional return type
+// If T is true, it returns PropertySummary[].
+// If T is false, it returns PropertySummaryBase[] where reservationListItems are omitted from roomTypes.
+type ConditionalPropertyList<T extends boolean> = T extends true
+   ? ReportInterface.PropertySummary[] // Full data including reservationListItems
+   : Array<
+        Omit<
+           ReportInterface.PropertySummary,
+           'roomTypes' // Omit the full roomTypes array
+        > & {
+           // Replace it with a roomTypes array that omits reservation details
+           roomTypes: Array<
+              Omit<
+                 ReportInterface.RoomTypeWithAvailability,
+                 'reservationListItems' | 'pagination' // Omit the specific fields
+              >
+           >;
+        }
+     >; // Base data excluding detailed reservation items
+
+export function filterAndSortProperties<T extends boolean> (
+   propertyMap: Map<string, ReportInterface.PropertySummary>, // Input always has full data
+   roomTypeMap: Map<string, ReportInterface.RoomTypeWithAvailability>, // Input always has full data
    reservations: any[],
-   filters: ReportInterface.ReportFilters, // Make sure propertyId is part of ReportFilters interface
-   options: ReportInterface.ReportOptions
+   filters: ReportInterface.ReportFilters,
+   options: ReportInterface.ReportOptions & { fetchAllData?: T } // Ensure fetchAllData is part of options for typing
 ): {
-   paginatedProperties: ReportInterface.PropertySummary[];
+   paginatedProperties: ConditionalPropertyList<T>; // Use the conditional type here
    total: number;
    totalPages: number;
 } {
    // 1. Start with all properties from the map (which includes all owner's properties)
    let properties = Array.from(propertyMap.values());
 
-   // 2. --- ADD THIS BLOCK: Apply propertyId filter ---
+   // 2. --- Apply propertyId filter ---
    if (filters.propertyId) {
-      // Filter properties to only include the one specified by propertyId
       properties = properties.filter(p => p.property.id === filters.propertyId);
-      // Note: If the propertyId is invalid, this will result in an empty list.
    }
-   // --- END OF NEW BLOCK ---
+   // --- END OF propertyId filter ---
 
-   // 3. Apply other property-level filters (existing code)
+   // 3. Apply other property-level filters
    if (filters.search && !filters.propertySearch) {
       const searchLower = filters.search.toLowerCase();
       properties = properties.filter(
@@ -51,7 +70,7 @@ export function filterAndSortProperties (
       properties = properties.filter(p => p.property.province === filters.province);
    }
 
-   // 4. Apply room-type-specific filters (existing code - remains unchanged)
+   // 4. Apply room-type-specific filters
    if (filters.roomTypeId || filters.roomTypeSearch) {
       properties = properties.map(propSummary => {
          let filteredRoomTypes = propSummary.roomTypes;
@@ -70,16 +89,41 @@ export function filterAndSortProperties (
       properties = properties.filter(prop => prop.roomTypes.length > 0);
    }
 
-   // 5. Sort the properties list (existing code)
+   // 5. Sort the properties list
    properties.sort(getSortComparator(options.sortBy, options.sortDir));
 
-   // 6. Paginate the properties list (existing code)
+   // 6. Paginate the properties list
    const { page = 1, pageSize = 10 } = options;
    const total = properties.length;
    const totalPages = Math.ceil(total / pageSize);
-   const paginatedProperties = properties.slice((page - 1) * pageSize, page * pageSize);
+   const paginatedPropertiesFull = properties.slice((page - 1) * pageSize, page * pageSize);
 
-   return { paginatedProperties, total, totalPages };
+   // --- Check for fetchAllData flag and conditionally process the paginated properties ---
+   const fetchAllData = typeof options.fetchAllData === 'boolean' ? options.fetchAllData : false;
+
+   let finalPaginatedProperties: any; // We'll use the conditional type for the actual return
+
+   if (fetchAllData) {
+      // If fetchAllData is true, return the full property objects with reservationListItems
+      finalPaginatedProperties = paginatedPropertiesFull;
+   } else {
+      // If fetchAllData is false, omit reservationListItems (and related fields) from roomTypes
+      finalPaginatedProperties = paginatedPropertiesFull.map(prop => ({
+         ...prop, // Copy all top-level properties (property, period, summary)
+         roomTypes: prop.roomTypes.map(rt => {
+            // For each room type, omit reservationListItems, pagination, and totalAmount
+            const { reservationListItems, pagination, ...rest } = rt;
+            return rest; // Return the room type object without the omitted fields
+         })
+      }));
+   }
+   // --- End of conditional processing ---
+
+   return {
+      paginatedProperties: finalPaginatedProperties as ConditionalPropertyList<T>, // Type assertion
+      total,
+      totalPages
+   };
 }
 
 function getSortComparator (sortBy: string = 'name', sortDir: 'asc' | 'desc' = 'asc') {
@@ -96,11 +140,9 @@ function getSortComparator (sortBy: string = 'name', sortDir: 'asc' | 'desc' = '
             bVal = b.summary.counts.CONFIRMED;
             break;
          case 'pending':
-            // Calculate pending as the sum of PENDING_PAYMENT and PENDING_CONFIRMATION
             aVal = (a.summary.counts.PENDING_PAYMENT || 0) + (a.summary.counts.PENDING_CONFIRMATION || 0);
             bVal = (b.summary.counts.PENDING_PAYMENT || 0) + (b.summary.counts.PENDING_CONFIRMATION || 0);
             break;
-         // Add cases for other potential sorts like city, province, address if needed
          case 'city':
             return sortDir === 'asc'
                ? (a.property.city || '').localeCompare(b.property.city || '')
@@ -113,14 +155,11 @@ function getSortComparator (sortBy: string = 'name', sortDir: 'asc' | 'desc' = '
             return sortDir === 'asc'
                ? (a.property.address || '').localeCompare(b.property.address || '')
                : (b.property.address || '').localeCompare(a.property.address || '');
-         // Add default case for name or other string sorts
          default:
-            // Default to sorting by property name
             return sortDir === 'asc'
                ? a.property.name.localeCompare(b.property.name)
                : b.property.name.localeCompare(a.property.name);
       }
-      // For numeric sorts (revenue, confirmed, pending)
       return sortDir === 'asc' ? aVal - bVal : bVal - aVal;
    };
 }

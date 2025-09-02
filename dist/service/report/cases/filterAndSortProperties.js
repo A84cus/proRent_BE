@@ -1,18 +1,29 @@
 "use strict";
+var __rest = (this && this.__rest) || function (s, e) {
+    var t = {};
+    for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p) && e.indexOf(p) < 0)
+        t[p] = s[p];
+    if (s != null && typeof Object.getOwnPropertySymbols === "function")
+        for (var i = 0, p = Object.getOwnPropertySymbols(s); i < p.length; i++) {
+            if (e.indexOf(p[i]) < 0 && Object.prototype.propertyIsEnumerable.call(s, p[i]))
+                t[p[i]] = s[p[i]];
+        }
+    return t;
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.filterAndSortProperties = filterAndSortProperties;
-function filterAndSortProperties(propertyMap, roomTypeMap, reservations, filters, // Make sure propertyId is part of ReportFilters interface
-options) {
+function filterAndSortProperties(propertyMap, // Input always has full data
+roomTypeMap, // Input always has full data
+reservations, filters, options // Ensure fetchAllData is part of options for typing
+) {
     // 1. Start with all properties from the map (which includes all owner's properties)
     let properties = Array.from(propertyMap.values());
-    // 2. --- ADD THIS BLOCK: Apply propertyId filter ---
+    // 2. --- Apply propertyId filter ---
     if (filters.propertyId) {
-        // Filter properties to only include the one specified by propertyId
         properties = properties.filter(p => p.property.id === filters.propertyId);
-        // Note: If the propertyId is invalid, this will result in an empty list.
     }
-    // --- END OF NEW BLOCK ---
-    // 3. Apply other property-level filters (existing code)
+    // --- END OF propertyId filter ---
+    // 3. Apply other property-level filters
     if (filters.search && !filters.propertySearch) {
         const searchLower = filters.search.toLowerCase();
         properties = properties.filter(p => p.property.name.toLowerCase().includes(searchLower) ||
@@ -33,7 +44,7 @@ options) {
     if (filters.province) {
         properties = properties.filter(p => p.property.province === filters.province);
     }
-    // 4. Apply room-type-specific filters (existing code - remains unchanged)
+    // 4. Apply room-type-specific filters
     if (filters.roomTypeId || filters.roomTypeSearch) {
         properties = properties.map(propSummary => {
             let filteredRoomTypes = propSummary.roomTypes;
@@ -48,14 +59,34 @@ options) {
         });
         properties = properties.filter(prop => prop.roomTypes.length > 0);
     }
-    // 5. Sort the properties list (existing code)
+    // 5. Sort the properties list
     properties.sort(getSortComparator(options.sortBy, options.sortDir));
-    // 6. Paginate the properties list (existing code)
+    // 6. Paginate the properties list
     const { page = 1, pageSize = 10 } = options;
     const total = properties.length;
     const totalPages = Math.ceil(total / pageSize);
-    const paginatedProperties = properties.slice((page - 1) * pageSize, page * pageSize);
-    return { paginatedProperties, total, totalPages };
+    const paginatedPropertiesFull = properties.slice((page - 1) * pageSize, page * pageSize);
+    // --- Check for fetchAllData flag and conditionally process the paginated properties ---
+    const fetchAllData = typeof options.fetchAllData === 'boolean' ? options.fetchAllData : false;
+    let finalPaginatedProperties; // We'll use the conditional type for the actual return
+    if (fetchAllData) {
+        // If fetchAllData is true, return the full property objects with reservationListItems
+        finalPaginatedProperties = paginatedPropertiesFull;
+    }
+    else {
+        // If fetchAllData is false, omit reservationListItems (and related fields) from roomTypes
+        finalPaginatedProperties = paginatedPropertiesFull.map(prop => (Object.assign(Object.assign({}, prop), { roomTypes: prop.roomTypes.map(rt => {
+                // For each room type, omit reservationListItems, pagination, and totalAmount
+                const { reservationListItems, pagination } = rt, rest = __rest(rt, ["reservationListItems", "pagination"]);
+                return rest; // Return the room type object without the omitted fields
+            }) })));
+    }
+    // --- End of conditional processing ---
+    return {
+        paginatedProperties: finalPaginatedProperties, // Type assertion
+        total,
+        totalPages
+    };
 }
 function getSortComparator(sortBy = 'name', sortDir = 'asc') {
     return (a, b) => {
@@ -71,11 +102,9 @@ function getSortComparator(sortBy = 'name', sortDir = 'asc') {
                 bVal = b.summary.counts.CONFIRMED;
                 break;
             case 'pending':
-                // Calculate pending as the sum of PENDING_PAYMENT and PENDING_CONFIRMATION
                 aVal = (a.summary.counts.PENDING_PAYMENT || 0) + (a.summary.counts.PENDING_CONFIRMATION || 0);
                 bVal = (b.summary.counts.PENDING_PAYMENT || 0) + (b.summary.counts.PENDING_CONFIRMATION || 0);
                 break;
-            // Add cases for other potential sorts like city, province, address if needed
             case 'city':
                 return sortDir === 'asc'
                     ? (a.property.city || '').localeCompare(b.property.city || '')
@@ -88,14 +117,11 @@ function getSortComparator(sortBy = 'name', sortDir = 'asc') {
                 return sortDir === 'asc'
                     ? (a.property.address || '').localeCompare(b.property.address || '')
                     : (b.property.address || '').localeCompare(a.property.address || '');
-            // Add default case for name or other string sorts
             default:
-                // Default to sorting by property name
                 return sortDir === 'asc'
                     ? a.property.name.localeCompare(b.property.name)
                     : b.property.name.localeCompare(a.property.name);
         }
-        // For numeric sorts (revenue, confirmed, pending)
         return sortDir === 'asc' ? aVal - bVal : bVal - aVal;
     };
 }

@@ -15,8 +15,9 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.loadReservations = loadReservations;
 // service/report/cases/loadReservations.ts
 const prisma_1 = __importDefault(require("../../../prisma"));
-function loadReservations(ownerId, filters, reportStart, reportEnd) {
+function loadReservations(ownerId, filters, reportStart, reportEnd, options) {
     return __awaiter(this, void 0, void 0, function* () {
+        var _a;
         const where = Object.assign(Object.assign(Object.assign(Object.assign(Object.assign(Object.assign({ Property: { OwnerId: ownerId } }, (filters.propertyId && { propertyId: filters.propertyId })), (filters.roomTypeId && { roomTypeId: filters.roomTypeId })), (reportStart && { startDate: { lte: reportEnd } })), (reportEnd && { endDate: { gte: reportStart } })), (filters.reservationStatus && { orderStatus: filters.reservationStatus })), (filters.invoiceNumber && { payment: { invoiceNumber: filters.invoiceNumber } }));
         const orConditions = [];
         if (filters.customerName) {
@@ -39,10 +40,10 @@ function loadReservations(ownerId, filters, reportStart, reportEnd) {
         if (orConditions.length > 0) {
             where.OR = orConditions;
         }
-        return prisma_1.default.reservation.findMany({
-            where,
-            select: {
-                // Use 'select' - adjust fields based on actual usage in later steps
+        const fetchAllData = (_a = options === null || options === void 0 ? void 0 : options.fetchAllData) !== null && _a !== void 0 ? _a : false;
+        let selectClause;
+        if (fetchAllData) {
+            selectClause = {
                 id: true,
                 userId: true,
                 propertyId: true,
@@ -63,7 +64,6 @@ function loadReservations(ownerId, filters, reportStart, reportEnd) {
                 },
                 Property: {
                     select: {
-                        // Select only needed property fields
                         id: true, // Needed?
                         name: true, // Needed for display/filtering?
                         mainPicture: {
@@ -102,8 +102,45 @@ function loadReservations(ownerId, filters, reportStart, reportEnd) {
                         amount: true
                     }
                 }
-            },
-            orderBy: { startDate: 'asc' }
-        });
+            };
+            return prisma_1.default.reservation.findMany({
+                where,
+                select: selectClause,
+                orderBy: { startDate: 'asc' }
+            });
+        }
+        else {
+            const selectClause = {
+                id: true,
+                userId: true,
+                propertyId: true,
+                roomTypeId: true,
+                startDate: true,
+                endDate: true,
+                orderStatus: true,
+                User: {
+                    select: {
+                        email: true,
+                        profile: {
+                            select: {
+                                firstName: true,
+                                lastName: true
+                            }
+                        }
+                    }
+                },
+                payment: {
+                    select: {
+                        invoiceNumber: true,
+                        amount: true
+                    }
+                }
+            };
+            return prisma_1.default.reservation.findMany({
+                where,
+                select: selectClause,
+                orderBy: { startDate: 'asc' }
+            });
+        }
     });
 }

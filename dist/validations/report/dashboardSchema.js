@@ -64,7 +64,25 @@ exports.DashboardOptionsSchema = zod_1.z.object({
         }
         const num = Number(val);
         return isNaN(num) || !Number.isInteger(num) || num < 1 ? undefined : Math.min(num, 100);
-    }, zod_1.z.number().int().min(1).max(100).default(10))
+    }, zod_1.z.number().int().min(1).max(100).default(10)),
+    fetchAllData: zod_1.z.preprocess(val => {
+        // Handle string "true"/"false" from query params robustly
+        if (typeof val === 'string') {
+            const lowerVal = val.toLowerCase();
+            if (lowerVal === 'true') {
+                return true;
+            }
+            if (lowerVal === 'false' || lowerVal === '') {
+                return false;
+            }
+        }
+        // Handle boolean values directly
+        if (typeof val === 'boolean') {
+            return val;
+        }
+        // Default or invalid value
+        return undefined;
+    }, zod_1.z.boolean().optional().default(false))
 });
 exports.DashboardInputSchema = zod_1.z.object({
     ownerId: zod_1.z.string().length(12),
@@ -82,6 +100,7 @@ exports.DashboardInputSchema = zod_1.z.object({
         reservationPage: 1,
         reservationPageSize: 10,
         sortBy: 'startDate',
-        sortDir: 'desc'
+        sortDir: 'desc',
+        fetchAllData: false
     })
 });

@@ -12,50 +12,95 @@ import { updatePerformanceCache } from './cases/updatePerformanceCache';
 import { aggregateSummaries } from './utils/aggregateSummaries';
 import prisma from '../../prisma';
 
+// --- Helper type for the conditional processing ---
+// This type represents the structure returned by filterAndSortProperties when fetchAllData is false
+type PropertySummaryBase = Omit<ReportInterface.PropertySummary, 'roomTypes'> & {
+   roomTypes: Array<
+      Omit<
+         ReportInterface.RoomTypeWithAvailability,
+         'reservationListItems' | 'pagination' // Fields to omit for dashboard
+      >
+   >;
+};
+
 export async function handleUnifiedReport (
    context: ReportInterface.DashboardContext
 ): Promise<ReportInterface.DashboardReportResponse> {
    const { ownerId, filters, options, period, periodConfig } = context;
    const reportStart = filters.startDate || undefined;
    const reportEnd = filters.endDate || undefined;
-
-   // Step 1: Global Summary
-   const globalSummary = await loadGlobalSummary(ownerId, reportStart, reportEnd);
-
-   // Step2: Load Reservations
-   const reservations = await loadReservations(ownerId, filters, reportStart, reportEnd);
-
-   // Step3: Group by Property & RoomType
-   const { propertyMap, roomTypeMap } = await groupByPropertyAndRoomType(reservations, ownerId);
-
-   // Step4: Load Availability
-   await loadAvailability(roomTypeMap, reportStart, reportEnd);
-
-   // Step5: Unique Customers
-   computeUniqueCustomers(roomTypeMap, reservations);
-
    const filtersWithOwnerId = { ...filters, ownerId };
    const optionsForReservationList = options;
 
-   // Step6: Build Reservation List
-   buildReservationList(roomTypeMap, reservations, optionsForReservationList, filtersWithOwnerId);
+   // --- Step 1: Global Summary (Lean data) ---
+   const globalSummary = await loadGlobalSummary(ownerId, reportStart, reportEnd);
+
+   // --- Step 2: Load Reservations (conditionally load details based on options) ---
+   const reservations = await loadReservations(ownerId, filters, reportStart, reportEnd, optionsForReservationList); // Pass options
+
+   // --- Step 3: Group by Property & RoomType (Creates maps with initial structures) ---
+   const { propertyMap, roomTypeMap } = await groupByPropertyAndRoomType(reservations ?? [], ownerId);
+
+   // --- Step 4: Load Availability (Populates availability data in roomTypeMap) ---
+   await loadAvailability(roomTypeMap, reportStart, reportEnd);
+
+   // --- Step 5: Unique Customers (Calculates unique customers per room type) ---
+   computeUniqueCustomers(roomTypeMap, reservations ?? []);
+
+   // --- Step 6: Build Reservation List (USES THE fetchAllData FLAG for pagination within room types) ---
+   buildReservationList(roomTypeMap, reservations ?? [], optionsForReservationList, filtersWithOwnerId);
+
+   // --- Step 7: Filter and Sort Properties (Handles property-level pagination) ---
    const { paginatedProperties, total, totalPages } = filterAndSortProperties(
       propertyMap,
       roomTypeMap,
-      reservations,
+      reservations ?? [],
       filtersWithOwnerId,
       options
    );
 
-   // Step8: Aggregate Summary
+   // --- Step 8: Aggregate Summary (Combines summaries from paginated properties) ---
    const aggregatedSummary = aggregateSummaries(paginatedProperties.map(p => p.summary));
 
-   // Step9: Update Cache (background)
-   updatePerformanceCache(reservations, ownerId, periodConfig).catch(console.error);
+   // --- Step 9: Update Cache (Background task) ---
+   updatePerformanceCache(reservations ?? [], ownerId, periodConfig).catch(console.error);
 
-   // Final Response
+   // --- Conditional Processing Before Return ---
+   const fetchAllData = typeof options.fetchAllData === 'boolean' ? options.fetchAllData : false;
+
+   let finalPaginatedProperties: ReportInterface.PropertySummary[]; // Type expected by DashboardReportResponse
+
+   if (fetchAllData) {
+      finalPaginatedProperties = paginatedProperties as ReportInterface.PropertySummary[];
+   } else {
+      finalPaginatedProperties = (paginatedProperties as PropertySummaryBase[]).map(propBase => {
+         const propertySummary: ReportInterface.PropertySummary = {
+            property: propBase.property,
+            period: propBase.period,
+            summary: propBase.summary,
+
+            roomTypes: propBase.roomTypes.map(rtBase => {
+               const roomTypeWithAvailability: ReportInterface.RoomTypeWithAvailability = {
+                  roomType: rtBase.roomType,
+                  counts: rtBase.counts,
+                  revenue: rtBase.revenue,
+                  uniqueCustomers: rtBase.uniqueCustomers,
+                  availability: rtBase.availability,
+                  totalAmount: rtBase.totalAmount,
+                  reservationListItems: [],
+                  pagination: { page: 1, pageSize: 0, total: 0, totalPages: 1 }
+               };
+               return roomTypeWithAvailability;
+            })
+         };
+         return propertySummary;
+      });
+   }
+   // --- End of Conditional Processing ---
+
+   // --- Final Response ---
    return {
-      properties: paginatedProperties,
+      properties: finalPaginatedProperties, // This now matches the expected type
       summary: {
          Global: globalSummary,
          Aggregate: aggregatedSummary,

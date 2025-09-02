@@ -28,6 +28,7 @@ export function buildReservationList (
       }
 
       // Add the reservation to the list for its room type
+
       listByRoomType[rtid].push({
          id: r.id,
          userId: r.userId,
@@ -51,8 +52,7 @@ export function buildReservationList (
       const items = listByRoomType[rtid] || []; // Get items or default to empty array
       const total = items.length;
 
-      let paginatedItems: any[],
-       finalPagination: ReportInterface.Pagination;
+      let paginatedItems: any[], finalPagination: ReportInterface.Pagination;
 
       // --- Check for fetchAllData flag ---
       const fetchAllData = typeof options.fetchAllData === 'boolean' ? options.fetchAllData : false;

@@ -16,22 +16,19 @@ export async function groupByPropertyAndRoomType (
    const allRoomTypes = await prisma.roomType.findMany({
       where: { property: { OwnerId: ownerId } },
       select: {
-         // Use 'select'
          id: true,
          name: true,
          propertyId: true,
          property: {
             select: {
-               // Select only needed property fields
                id: true,
                name: true,
-               rentalType: true, // Needed?
+               rentalType: true,
                mainPicture: {
-                  select: { url: true } // Only URL needed
+                  select: { url: true }
                },
                location: {
                   select: {
-                     // Select only needed location fields
                      address: true,
                      city: {
                         select: {
@@ -44,7 +41,7 @@ export async function groupByPropertyAndRoomType (
                   }
                },
                roomTypes: {
-                  select: { id: true } // Only IDs needed for count
+                  select: { id: true }
                }
             }
          }
@@ -139,6 +136,17 @@ export async function groupByPropertyAndRoomType (
       if ([ 'PENDING_PAYMENT', 'PENDING_CONFIRMATION', 'CONFIRMED' ].includes(r.orderStatus) && amount > 0) {
          prop.summary.revenue.projected += amount;
          roomType.revenue.projected += amount;
+      }
+   }
+   for (const roomType of roomTypeMap.values()) {
+      if (roomType.counts.CONFIRMED > 0) {
+         roomType.revenue.average = roomType.revenue.actual / roomType.counts.CONFIRMED;
+      }
+   }
+
+   for (const property of propertyMap.values()) {
+      if (property.summary.counts.CONFIRMED > 0) {
+         property.summary.revenue.average = property.summary.revenue.actual / property.summary.counts.CONFIRMED;
       }
    }
 

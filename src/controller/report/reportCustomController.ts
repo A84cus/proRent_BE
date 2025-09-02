@@ -1,14 +1,12 @@
 // src/controllers/report/dashboardReportController.ts
-
 import { Request, Response } from 'express';
 import { getOwnerDashboardReport } from '../../service/report/reportDashboardService';
 import { getUserIdFromRequest } from '../reservationController/paymentProofController';
-import { DashboardInputSchema } from '../../validations/report/dashboardSchema';
+import { DashboardInputSchema, DashboardOptionsSchema } from '../../validations/report/dashboardSchema';
 import { z } from 'zod';
 
-// 👇 Extract types from schema
+// Extract types from schema
 type DashboardFilters = z.infer<typeof DashboardInputSchema.shape.filters>;
-type DashboardOptions = z.infer<typeof DashboardInputSchema.shape.options>;
 
 function parseDate (value: unknown): Date | undefined {
    if (typeof value !== 'string') {
@@ -31,7 +29,6 @@ function parseReservationPage (value: unknown): number | { [roomTypeId: string]:
          return num;
       }
 
-      // Try JSON parse
       try {
          const parsed = JSON.parse(value);
          if (typeof parsed === 'number' && Number.isInteger(parsed) && parsed >= 1) {
@@ -52,12 +49,9 @@ function parseReservationPage (value: unknown): number | { [roomTypeId: string]:
          return 1;
       }
    }
-
-   // Case 2: Already a number
    if (typeof value === 'number' && Number.isInteger(value) && value >= 1) {
       return value;
    }
-
    return 1;
 }
 
@@ -78,8 +72,6 @@ export const dashboardReportController = async (req: Request, res: Response): Pr
          res.status(401).json({ error: 'Unauthorized' });
          return;
       }
-      console.log('Raw query startDate:', req.query.startDate);
-      console.log('Parsed startDate:', parseDate(req.query.startDate));
       // --- 2. Parse query params safely ---
       const {
          propertyId,
@@ -115,8 +107,7 @@ export const dashboardReportController = async (req: Request, res: Response): Pr
          search: typeof search === 'string' ? search : undefined
       };
 
-      // 👇 Parse options
-      const options: DashboardOptions = {
+      const optionsBase = {
          page: typeof page === 'string' ? Math.max(1, parseInt(page, 10)) : 1,
          pageSize: typeof pageSize === 'string' ? Math.max(1, Math.min(100, parseInt(pageSize, 10))) : 20,
          sortBy: [ 'startDate', 'endDate', 'createdAt', 'paymentAmount' ].includes(sortBy as string)
@@ -125,9 +116,45 @@ export const dashboardReportController = async (req: Request, res: Response): Pr
          sortDir: sortDir === 'asc' ? 'asc' : 'desc',
          reservationPage: parseReservationPage(rawReservationPage),
          reservationPageSize: parseReservationPageSize(rawReservationPageSize)
+         // fetchAllData will be added separately
+      };
+      const typedSortDir: 'asc' | 'desc' = sortDir === 'asc' ? 'asc' : 'desc';
+      // --- Explicitly and safely extract fetchAllData ---
+      let fetchAllDataValue: string | boolean | undefined;
+
+      const rawQueryFetchAllData = req.query.fetchAllData;
+
+      if (typeof rawQueryFetchAllData === 'string') {
+         // IMPORTANT: Remove surrounding quotes if they exist.
+         // This handles cases where the value might be "\"true\"" or "\"false\""
+         let cleanValue = rawQueryFetchAllData.trim();
+         if (cleanValue.startsWith('"') && cleanValue.endsWith('"') && cleanValue.length > 1) {
+            cleanValue = cleanValue.substring(1, cleanValue.length - 1);
+         }
+         if (cleanValue.startsWith("'") && cleanValue.endsWith("'") && cleanValue.length > 1) {
+            cleanValue = cleanValue.substring(1, cleanValue.length - 1);
+         }
+         // Assign the cleaned string value. Zod's preprocess will handle conversion.
+         fetchAllDataValue = cleanValue;
+      } else if (typeof rawQueryFetchAllData === 'boolean') {
+         // If it somehow arrives as a boolean, pass it through.
+         fetchAllDataValue = rawQueryFetchAllData;
+      }
+      // Construct the final options object for Zod
+      const options: z.input<typeof DashboardOptionsSchema> = {
+         page: typeof page === 'string' ? Math.max(1, parseInt(page, 10)) : 1,
+         pageSize: typeof pageSize === 'string' ? Math.max(1, Math.min(100, parseInt(pageSize, 10))) : 20,
+         sortBy: [ 'startDate', 'endDate', 'createdAt', 'paymentAmount' ].includes(sortBy as string)
+            ? (sortBy as 'startDate' | 'endDate' | 'createdAt' | 'paymentAmount')
+            : 'startDate',
+         // Use the explicitly typed variable
+         sortDir: typedSortDir,
+         reservationPage: parseReservationPage(rawReservationPage),
+         reservationPageSize: parseReservationPageSize(rawReservationPageSize),
+         fetchAllData: fetchAllDataValue // From previous logic
       };
 
-      // 👇 Validate full input with Zod (this ensures type safety)
+      // Validate full input with Zod (this ensures type safety)
       const validatedInput = DashboardInputSchema.safeParse({
          ownerId,
          filters,

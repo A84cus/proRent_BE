@@ -6,7 +6,8 @@ export async function loadReservations (
    ownerId: string,
    filters: Omit<ReportInterface.ReportFilters, 'ownerId'>,
    reportStart?: Date,
-   reportEnd?: Date
+   reportEnd?: Date,
+   options?: Partial<ReportInterface.ReportOptions>
 ) {
    const where: any = {
       Property: { OwnerId: ownerId },
@@ -50,10 +51,12 @@ export async function loadReservations (
       where.OR = orConditions;
    }
 
-   return prisma.reservation.findMany({
-      where,
-      select: {
-         // Use 'select' - adjust fields based on actual usage in later steps
+   const fetchAllData = options?.fetchAllData ?? false;
+
+   let selectClause;
+
+   if (fetchAllData) {
+      selectClause = {
          id: true,
          userId: true,
          propertyId: true,
@@ -74,7 +77,6 @@ export async function loadReservations (
          },
          Property: {
             select: {
-               // Select only needed property fields
                id: true, // Needed?
                name: true, // Needed for display/filtering?
                mainPicture: {
@@ -113,7 +115,44 @@ export async function loadReservations (
                amount: true
             }
          }
-      },
-      orderBy: { startDate: 'asc' }
-   });
+      };
+      return prisma.reservation.findMany({
+         where,
+         select: selectClause,
+         orderBy: { startDate: 'asc' }
+      });
+   } else {
+      const selectClause = {
+         id: true,
+         userId: true,
+         propertyId: true,
+         roomTypeId: true,
+         startDate: true,
+         endDate: true,
+         orderStatus: true,
+         User: {
+            select: {
+               email: true,
+               profile: {
+                  select: {
+                     firstName: true,
+                     lastName: true
+                  }
+               }
+            }
+         },
+         payment: {
+            select: {
+               invoiceNumber: true,
+               amount: true
+            }
+         }
+      };
+
+      return prisma.reservation.findMany({
+         where,
+         select: selectClause,
+         orderBy: { startDate: 'asc' }
+      });
+   }
 }
