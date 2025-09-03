@@ -32,6 +32,7 @@ enum PaymentType {
 }
 
 enum Status {
+  DRAFT
   PENDING_PAYMENT
   PENDING_CONFIRMATION
   CONFIRMED

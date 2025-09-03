@@ -46,7 +46,11 @@ class AuthController {
 
   async verifyEmail(req: Request, res: Response) {
     try {
-      const validatedData = verifyEmailSchema.parse(req.query);
+      // Support both GET (query params) and POST (body) requests
+      const isGetRequest = req.method === 'GET';
+      const dataSource = isGetRequest ? req.query : req.body;
+      
+      const validatedData = verifyEmailSchema.parse(dataSource);
       const result = await authService.verifyEmail(validatedData.token);
 
       if (result.success) {

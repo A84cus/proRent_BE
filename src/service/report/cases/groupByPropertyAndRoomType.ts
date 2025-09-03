@@ -57,7 +57,7 @@ export async function groupByPropertyAndRoomType (
       if (!roomTypeMap.has(rtid)) {
          roomTypeMap.set(rtid, {
             roomType: { id: rt.id, name: rt.name },
-            counts: { PENDING_PAYMENT: 0, PENDING_CONFIRMATION: 0, CONFIRMED: 0, CANCELLED: 0 },
+            counts: { DRAFT: 0, PENDING_PAYMENT: 0, PENDING_CONFIRMATION: 0, CONFIRMED: 0, CANCELLED: 0 },
             revenue: { actual: 0, projected: 0, average: 0 },
             uniqueCustomers: 0,
             availability: { totalQuantity: 0, dates: [] },
@@ -84,7 +84,7 @@ export async function groupByPropertyAndRoomType (
             },
             period: { startDate: null, endDate: null },
             summary: {
-               counts: { PENDING_PAYMENT: 0, PENDING_CONFIRMATION: 0, CONFIRMED: 0, CANCELLED: 0 },
+               counts: { DRAFT: 0, PENDING_PAYMENT: 0, PENDING_CONFIRMATION: 0, CONFIRMED: 0, CANCELLED: 0 },
                revenue: { actual: 0, projected: 0, average: 0 },
                totalRoomTypes: p.roomTypes.length // Count from included roomTypes
             },

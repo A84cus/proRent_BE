@@ -27,6 +27,7 @@ export interface CustomerMin {
 
 // --- Summary Types ---
 export interface StatusCounts {
+   DRAFT: number;
    PENDING_PAYMENT: number;
    PENDING_CONFIRMATION: number;
    CONFIRMED: number;
@@ -35,7 +36,7 @@ export interface StatusCounts {
 
 export interface RevenueSummary {
    actual: number; // sum of confirmed paymentAmount
-   projected: number; // sum of pending_payment + pending_confirmation
+   projected: number; // sum of PENDING_payment + PENDING_confirmation
    average: number; // actual / confirmedCount
 }
 

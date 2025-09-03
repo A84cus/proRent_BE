@@ -74,5 +74,31 @@ class PropertyGalleryController extends BaseController_1.default {
             }
         });
     }
+    // PATCH /api/owner/properties/:propertyId/gallery/:pictureId/set-main - Set image as main picture
+    setMainPicture(req, res) {
+        return __awaiter(this, void 0, void 0, function* () {
+            try {
+                const userValidation = this.validateUser(req);
+                if (!userValidation.isValid) {
+                    responseHelper_1.default.error(res, userValidation.error || "Unauthorized", undefined, 401);
+                    return;
+                }
+                const { propertyId, pictureId } = req.params;
+                // Check if property belongs to user
+                const propertyExists = yield propertyGalleryService_1.default.verifyPropertyOwnership(propertyId, userValidation.userId);
+                if (!propertyExists) {
+                    responseHelper_1.default.error(res, "Property not found or unauthorized", undefined, 404);
+                    return;
+                }
+                // Set as main picture
+                const result = yield propertyGalleryService_1.default.setMainPicture(propertyId, pictureId);
+                responseHelper_1.default.success(res, "Main picture updated successfully", result);
+            }
+            catch (error) {
+                logger_1.default.error("Error setting main picture:", error);
+                responseHelper_1.default.error(res, "Failed to set main picture", undefined, 500);
+            }
+        });
+    }
 }
 exports.default = new PropertyGalleryController();

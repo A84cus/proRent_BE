@@ -5,6 +5,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = require("express");
 const roomController_1 = __importDefault(require("../../controller/property/roomController"));
+const roomGalleryController_1 = __importDefault(require("../../controller/property/roomGalleryController"));
 const authMwr_1 = require("../../middleware/auth/authMwr");
 const router = (0, express_1.Router)();
 // GET /api/owner/rooms?propertyId= - Get all rooms by property
@@ -15,4 +16,8 @@ router.post("/", authMwr_1.authOwner, roomController_1.default.createRoom.bind(r
 router.patch("/:id", authMwr_1.authOwner, roomController_1.default.updateRoom.bind(roomController_1.default));
 // DELETE /api/owner/rooms/:id - Delete room
 router.delete("/:id", authMwr_1.authOwner, roomController_1.default.deleteRoom.bind(roomController_1.default));
+// POST /api/owner/rooms/:roomId/gallery - Add image to room gallery
+router.post("/:roomId/gallery", authMwr_1.authOwner, roomGalleryController_1.default.addToGallery.bind(roomGalleryController_1.default));
+// DELETE /api/owner/rooms/:roomId/gallery/:pictureId - Remove image from room gallery
+router.delete("/:roomId/gallery/:pictureId", authMwr_1.authOwner, roomGalleryController_1.default.removeFromGallery.bind(roomGalleryController_1.default));
 exports.default = router;
