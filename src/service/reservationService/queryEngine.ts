@@ -26,18 +26,31 @@ interface QueryOptions {
 export function buildWhereConditions (options: QueryOptions): any {
    const { userId, propertyOwnerId, propertyId, roomTypeId, filters = {} } = options;
    const whereConditions: any = {};
+
    if (userId) {
       whereConditions.userId = userId;
    }
-   if (propertyOwnerId) {
-      whereConditions.RoomType = buildPropertyOwnerFilter(propertyOwnerId);
+
+   if (propertyId && propertyOwnerId) {
+      whereConditions.property = {
+         id: propertyId,
+         ownerId: propertyOwnerId
+      };
+   } else {
+      if (propertyId) {
+         whereConditions.propertyId = propertyId;
+      }
+
+      if (propertyOwnerId) {
+         whereConditions.RoomType = buildPropertyOwnerFilter(propertyOwnerId);
+      }
    }
-   if (propertyId) {
-      whereConditions.propertyId = propertyId;
-   }
+
    if (roomTypeId) {
       whereConditions.roomTypeId = roomTypeId;
    }
+
+   // 6. Apply additional filters
    Object.assign(whereConditions, buildStatusFilter(filters.status));
    Object.assign(whereConditions, buildDateRangeFilter(filters.startDate, filters.endDate));
    Object.assign(whereConditions, buildSearchFilter(filters.search));
