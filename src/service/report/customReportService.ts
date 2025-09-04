@@ -198,7 +198,6 @@ async function computeSummary (
 
    return {
       counts: {
-         DRAFT: draft.length,
          PENDING_PAYMENT: pendingPayment.length,
          PENDING_CONFIRMATION: pendingConfirmation.length,
          CONFIRMED: confirmed.length,

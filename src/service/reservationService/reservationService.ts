@@ -148,6 +148,9 @@ async function findAndValidateReservation (reservationId: string, userId: string
          PaymentProof: true,
          RoomType: {
             select: { id: true }
+         },
+         Property: {
+            select: { OwnerId: true }
          }
       }
    });
@@ -155,8 +158,9 @@ async function findAndValidateReservation (reservationId: string, userId: string
    if (!reservation) {
       throw new Error('Reservation not found.');
    }
-   if (reservation.userId !== userId) {
-      throw new Error('Unauthorized: You can only cancel your own reservations.');
+
+   if (reservation.userId !== userId && reservation.Property.OwnerId !== userId) {
+      throw new Error('Unauthorized: Only the guest or property owner can cancel this reservation.');
    }
 
    if (reservation.orderStatus === Status.CANCELLED) {

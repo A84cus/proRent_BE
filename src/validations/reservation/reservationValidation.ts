@@ -169,7 +169,6 @@ export function validateReservationStatus (
 ): { isValid: boolean; error?: string } {
    // Define valid status transitions based on actual Status enum
    const validTransitions: Record<Status, Status[]> = {
-      [Status.DRAFT]: [ Status.PENDING_PAYMENT, Status.CANCELLED ],
       [Status.PENDING_PAYMENT]: [ Status.PENDING_CONFIRMATION, Status.CANCELLED ],
       [Status.PENDING_CONFIRMATION]: [ Status.CONFIRMED, Status.CANCELLED ],
       [Status.CONFIRMED]: [ Status.CANCELLED ],

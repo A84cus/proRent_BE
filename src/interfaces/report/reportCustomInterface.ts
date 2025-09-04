@@ -27,7 +27,6 @@ export interface CustomerMin {
 
 // --- Summary Types ---
 export interface StatusCounts {
-   DRAFT: number;
    PENDING_PAYMENT: number;
    PENDING_CONFIRMATION: number;
    CONFIRMED: number;
