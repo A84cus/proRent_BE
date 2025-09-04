@@ -8,6 +8,7 @@ import {
 } from '../../service/reservationService/reservationQueryService';
 import { RESERVATION_ERROR_MESSAGES, RESERVATION_SUCCESS_MESSAGES } from '../../constants/controllers/reservation';
 import { SYSTEM_ERROR_MESSAGES } from '../../constants/controllers/system';
+import { getUserIdFromRequest } from './paymentProofController';
 
 // Main query endpoint
 export async function getReservations (req: Request, res: Response) {
@@ -132,7 +133,7 @@ export async function getUserReservationsHandler (req: Request, res: Response) {
 // Get reservations for a property owner (tenant)
 export async function getOwnerReservationsHandler (req: Request, res: Response) {
    try {
-      const propertyOwnerId = req.user?.userId as string;
+      const propertyOwnerId = getUserIdFromRequest(req);
       if (!propertyOwnerId) {
          res.status(400).json({
             message: RESERVATION_ERROR_MESSAGES.PROPERTY_OWNER_ID_REQUIRED

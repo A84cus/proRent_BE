@@ -17,6 +17,7 @@ exports.getReservationWithPaymentHandler = getReservationWithPaymentHandler;
 const reservationQueryService_1 = require("../../service/reservationService/reservationQueryService");
 const reservation_1 = require("../../constants/controllers/reservation");
 const system_1 = require("../../constants/controllers/system");
+const paymentProofController_1 = require("./paymentProofController");
 // Main query endpoint
 function getReservations(req, res) {
     return __awaiter(this, void 0, void 0, function* () {
@@ -112,9 +113,8 @@ function getUserReservationsHandler(req, res) {
 // Get reservations for a property owner (tenant)
 function getOwnerReservationsHandler(req, res) {
     return __awaiter(this, void 0, void 0, function* () {
-        var _a;
         try {
-            const propertyOwnerId = (_a = req.user) === null || _a === void 0 ? void 0 : _a.userId;
+            const propertyOwnerId = (0, paymentProofController_1.getUserIdFromRequest)(req);
             if (!propertyOwnerId) {
                 res.status(400).json({
                     message: reservation_1.RESERVATION_ERROR_MESSAGES.PROPERTY_OWNER_ID_REQUIRED
