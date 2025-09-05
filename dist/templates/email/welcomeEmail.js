@@ -34,7 +34,7 @@ const createWelcomeEmailTemplate = (user, dashboardUrl) => {
         
         <div class="features">
           <h3>🚀 What you can do now:</h3>
-          ${user.role === "TENANT"
+          ${user.role === 'OWNER'
         ? `
             <ul>
               <li><strong>List Properties:</strong> Add your properties and rooms for rent</li>
@@ -60,7 +60,7 @@ const createWelcomeEmailTemplate = (user, dashboardUrl) => {
           <li>Join our community forum for tips and advice</li>
         </ul>
         
-        <p>Thank you for choosing ProRent. We're here to make your ${user.role === "TENANT" ? "property rental" : "accommodation search"} experience amazing!</p>
+        <p>Thank you for choosing ProRent. We're here to make your ${user.role === 'OWNER' ? 'property rental' : 'accommodation search'} experience amazing!</p>
         
         <p>Best regards,<br>The ProRent Team</p>
       </div>

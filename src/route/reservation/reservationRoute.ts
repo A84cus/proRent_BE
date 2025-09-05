@@ -1,0 +1,40 @@
+import express from 'express';
+import { uploadPayment } from '../../controller/reservationController/paymentProofController';
+import { authUser, authOwner, authAny } from '../../middleware/auth/authMwr';
+import { memoryUploader } from '../../utils/upload/uploader';
+import {
+   createReservationController,
+   cancelReservationController,
+   cancelExpiredReservationsController,
+   rejectReservationByOwnerController,
+   confirmReservationByOwnerController
+} from '../../controller/reservationController/reservationController';
+import {
+   getPropertyReservationsHandler,
+   getReservations,
+   getReservationWithPaymentHandler,
+   getOwnerReservationsHandler,
+   getUserReservationsHandler
+} from '../../controller/reservationController/reservationQueryController';
+import { getAvailabilityScheduleHandler } from '../../controller/reservationController/reservationScheduleController';
+
+const router = express.Router();
+
+const uploadFile = memoryUploader().single('file');
+
+// Reservation routes
+router.get('/', getReservations);
+router.post('/cancel-expired', cancelExpiredReservationsController);
+router.get('/user', authUser, getUserReservationsHandler);
+router.get('/owner', authOwner, getOwnerReservationsHandler);
+router.get('/:id', authAny, getReservationWithPaymentHandler);
+router.get('/property/:propertyId', authOwner, getPropertyReservationsHandler);
+router.get(`/:roomTypeId/availability/`, authAny, getAvailabilityScheduleHandler);
+// POST /reservation - Create a new reservation
+router.post('/', authUser, createReservationController);
+router.post('/:reservationId/cancel', authAny, cancelReservationController);
+router.patch('/:reservationId/reject', authOwner, rejectReservationByOwnerController);
+router.patch('/:reservationId/confirm', authOwner, confirmReservationByOwnerController);
+router.patch('/:reservationId/upload-payment', authUser, uploadFile, uploadPayment);
+
+export default router;

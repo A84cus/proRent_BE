@@ -1,4 +1,5 @@
-export { createVerificationEmailTemplate } from "./verificationEmail";
-export { createResetPasswordEmailTemplate } from "./resetPasswordEmail";
-export { createWelcomeEmailTemplate } from "./welcomeEmail";
-export { createBookingConfirmationTemplate } from "./bookingConfirmationEmail";
+export { createVerificationEmailTemplate } from './verificationEmail';
+export { createResetPasswordEmailTemplate } from './resetPasswordEmail';
+export { createWelcomeEmailTemplate } from './welcomeEmail';
+export { createBookingConfirmationTemplate } from './bookingConfirmationEmail';
+export { createBookingReminderTemplate } from './orderReminderEmail';

@@ -16,7 +16,7 @@ datasource db {
 
 enum Role {
   USER
-  TENANT
+  OWNER
 }
 
 enum SocialLogin {
@@ -48,6 +48,13 @@ enum PropertyRentalType {
   ROOM_BY_ROOM // menyewakan kamar dalam 1 property
 }
 
+enum JobStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  FAILED
+}
+
 //Bagian User dan auth
 
 model User {
@@ -63,7 +70,7 @@ model User {
   resetExpires        DateTime?
   profile             Profile?
   reservations        Reservation[] @relation("UserReservation")
-  properties          Property[]    @relation("PropertyTenant")
+  properties          Property[]    @relation("PropertyOwner")
   createdAt           DateTime      @default(now())
   updatedAt           DateTime      @updatedAt
   Reviewer            Review[]      @relation("Reviewer")
@@ -182,49 +189,52 @@ model Category {
 }
 
 model Property {
-  id            String             @id @default(nanoid(12))
-  name          String
-  description   String
-  locationId    String
-  location      Location           @relation(fields: [locationId], references: [id])
-  categoryId    String
-  category      Category           @relation(fields: [categoryId], references: [id])
-  tenantId      String
-  tenant        User               @relation("PropertyTenant", fields: [tenantId], references: [id])
-  mainPicture   Picture?           @relation("PropertyMainPicture", fields: [mainPictureId], references: [id])
-  mainPictureId String?
-  gallery       PropertyPicture[]
-  rooms         Room[]
-  roomTypes     RoomType[]
-  rentalType    PropertyRentalType @default(ROOM_BY_ROOM)
-  createdAt     DateTime           @default(now())
-  updatedAt     DateTime           @updatedAt
+  id                         String                       @id @default(nanoid(12))
+  name                       String
+  description                String
+  locationId                 String
+  location                   Location                     @relation(fields: [locationId], references: [id])
+  categoryId                 String
+  category                   Category                     @relation(fields: [categoryId], references: [id])
+  OwnerId                    String
+  Owner                      User                         @relation("PropertyOwner", fields: [OwnerId], references: [id])
+  mainPicture                Picture?                     @relation("PropertyMainPicture", fields: [mainPictureId], references: [id])
+  mainPictureId              String?
+  gallery                    PropertyPicture[]
+  rooms                      Room[]
+  roomTypes                  RoomType[]
+  rentalType                 PropertyRentalType           @default(ROOM_BY_ROOM)
+  createdAt                  DateTime                     @default(now())
+  updatedAt                  DateTime                     @updatedAt
+  Reservation                Reservation[]
+  PropertyPerformanceSummary PropertyPerformanceSummary[]
+  RoomTypePerformanceSummary RoomTypePerformanceSummary[]
 
   @@index([locationId])
   @@index([categoryId])
-  @@index([tenantId])
+  @@index([OwnerId])
   @@index([rentalType])
 }
 
 model RoomType {
-  id             String         @id @default(nanoid(12))
-  propertyId     String
-  property       Property       @relation(fields: [propertyId], references: [id])
-  name           String // contoh: "Standard Double Room", "Entire Luxury Villa"
-  description    String?
-  basePrice      Decimal // Harga per hari berdasarkan Tipe
-  capacity       Int // okupansi kamar maksimum
-  totalQuantity  Int // total kamar tersedia (fix 1 untuk tipe whole property)
-  isWholeUnit    Boolean        @default(false) // untuk identifikasi tipe whole property
-  rooms          Room[] // link untuk mengelompokkan kamar berdasarkan tipe (untuk management kamar dan checkin)
-  availabilities Availability[] // link untuk mengelompokkan ketersediaan berdasarkan availabilities
-  peakRates      PeakRate[] // link untuk mengelompokkan harga peak berdasarkan tipe
-  reservations   Reservation[] // link untuk mengelompokkan reservasi berdasarkan tipe
-  createdAt      DateTime       @default(now())
-  updatedAt      DateTime       @updatedAt
+  id                         String                       @id @default(nanoid(12))
+  propertyId                 String
+  property                   Property                     @relation(fields: [propertyId], references: [id])
+  name                       String // contoh: "Standard Double Room", "Entire Luxury Villa"
+  description                String?
+  basePrice                  Decimal // Harga per hari berdasarkan Tipe
+  capacity                   Int // okupansi kamar maksimum
+  totalQuantity              Int // total kamar tersedia (fix 1 untuk tipe whole property)
+  isWholeUnit                Boolean                      @default(false) // untuk identifikasi tipe whole property
+  rooms                      Room[] // link untuk mengelompokkan kamar berdasarkan tipe (untuk management kamar dan checkin)
+  availabilities             Availability[] // link untuk mengelompokkan ketersediaan berdasarkan availabilities
+  peakRates                  PeakRate[] // link untuk mengelompokkan harga peak berdasarkan tipe
+  reservations               Reservation[] // link untuk mengelompokkan reservasi berdasarkan tipe
+  createdAt                  DateTime                     @default(now())
+  updatedAt                  DateTime                     @updatedAt
+  RoomTypePerformanceSummary RoomTypePerformanceSummary[]
 
-  @@unique([propertyId, name]) // memastikan tidak ada duplikasi nama kamar
-  @@unique([propertyId, isWholeUnit]) // memastikan hada satu tipe whole property
+  @@unique([propertyId, name])
   @@index([propertyId])
   @@index([isWholeUnit]) // Index untuk pencarian tipe whole property
 }
@@ -299,6 +309,7 @@ model Reservation {
   payment      Payment?
   review       Review?
   RoomType     RoomType      @relation(fields: [roomTypeId], references: [id])
+  Property     Property      @relation(fields: [propertyId], references: [id])
   Room         Room?         @relation("RoomReservation", fields: [roomId], references: [id])
   User         User          @relation("UserReservation", fields: [userId], references: [id])
   PaymentProof PaymentProof?
@@ -310,14 +321,23 @@ model Reservation {
   @@index([orderStatus, createdAt])
 }
 
+model invoiceCounter {
+  dateKey   String   @id
+  counter   Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
 model Payment {
   id                 String      @id @default(nanoid(12))
+  invoiceNumber      String
   reservation        Reservation @relation(fields: [reservationId], references: [id])
   reservationId      String      @unique
   amount             Float
   paymentStatus      Status
   method             String
   payerEmail         String
+  xenditInvoiceId    String?     @unique
   externalInvoiceUrl String?
   paidAt             DateTime?
   callbackStatus     String?
@@ -331,6 +351,7 @@ model Payment {
   @@index([paymentStatus])
   @@index([method])
   @@index([paymentStatus, createdAt])
+  @@index([xenditInvoiceId]) // Index untuk pencarian berdasarkan xenditInvoiceId
 }
 
 model PaymentProof {
@@ -357,20 +378,20 @@ model Review {
   updatedAt     DateTime    @updatedAt
   deletedAt     DateTime?
 
-  reviewer    User         @relation("Reviewer", fields: [reviewerId], references: [id])
-  reviewee    User         @relation("Reviewee", fields: [revieweeId], references: [id])
-  tenantReply TenantReply?
+  reviewer   User        @relation("Reviewer", fields: [reviewerId], references: [id])
+  reviewee   User        @relation("Reviewee", fields: [revieweeId], references: [id])
+  OwnerReply OwnerReply?
 
   @@index([reviewerId])
   @@index([revieweeId])
 }
 
-model TenantReply {
+model OwnerReply {
   id         String    @id @default(nanoid(12))
   review     Review    @relation(fields: [reviewId], references: [id])
   reviewId   String    @unique
   content    String
-  rating     Int
+  rating     Int?
   visibility Boolean   @default(true)
   createdAt  DateTime  @default(now())
   updatedAt  DateTime  @updatedAt
@@ -388,40 +409,82 @@ model TransactionLog {
   @@index([paymentId])
 }
 
-model EmailLog {
-  id        String        @id @default(nanoid(12))
-  recipient String // user.email
-  template  EmailTemplate // contoh: VERIFICATION, CONFIRMATION, REMINDER
-  status    EmailStatus   @default(PENDING)
-  subject   String
-  body      String? // atau link to template
-  sentAt    DateTime?
-  error     String? // jika gagal
-  metadata  Json? // contoh: { reservationId, userId }
-  createdAt DateTime      @default(now())
-  updatedAt DateTime      @updatedAt
+model PropertyPerformanceSummary {
+  id                       String   @id @default(nanoid(12))
+  propertyId               String
+  property                 Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  periodType               String
+  periodKey                String
+  year                     Int
+  month                    Int?
+  totalRevenue             Decimal  @default("0")
+  projectedRevenue         Decimal  @default("0")
+  totalReservations        Int      @default(0)
+  confirmedCount           Int      @default(0)
+  pendingPaymentCount      Int      @default(0)
+  pendingConfirmationCount Int      @default(0)
+  cancelledCount           Int      @default(0)
+  uniqueUsers              Int      @default(0)
+  lastUpdated              DateTime @updatedAt
 
-  @@index([recipient])
-  @@index([template])
-  @@index([status])
+  OwnerId String @db.VarChar(255)
+
+  @@unique([propertyId, periodType, periodKey])
+  @@index([propertyId])
+  @@index([year, month])
+  @@index([periodType, periodKey])
+  @@index([OwnerId, periodType, periodKey])
+  @@index([OwnerId, periodType, periodKey, propertyId])
+}
+
+model RoomTypePerformanceSummary {
+  id                       String   @id @default(nanoid(12))
+  roomTypeId               String
+  roomType                 RoomType @relation(fields: [roomTypeId], references: [id], onDelete: Cascade)
+  propertyId               String
+  property                 Property @relation(fields: [propertyId], references: [id])
+  periodType               String
+  periodKey                String
+  year                     Int
+  month                    Int?
+  totalRevenue             Decimal  @default("0")
+  projectedRevenue         Decimal  @default("0")
+  totalReservations        Int      @default(0)
+  confirmedCount           Int      @default(0)
+  pendingPaymentCount      Int      @default(0)
+  pendingConfirmationCount Int      @default(0)
+  cancelledCount           Int      @default(0)
+  totalNightsBooked        Int      @default(0)
+  uniqueUsers              Int      @default(0)
+  lastUpdated              DateTime @updatedAt
+
+  OwnerId String @db.VarChar(255)
+
+  @@unique([roomTypeId, periodType, periodKey])
+  @@index([roomTypeId])
+  @@index([propertyId])
+  @@index([year, month])
+  @@index([periodType, periodKey])
+  @@index([OwnerId, periodType, periodKey])
+  @@index([OwnerId, periodType, periodKey, propertyId])
+}
+
+model BatchJob {
+  id               String    @id @default(nanoid(12))
+  jobType          String
+  status           JobStatus @default(PENDING)
+  targetOwnerId    String?
+  targetPeriodType String?
+  targetPeriodKey  String?
+  startedAt        DateTime?
+  completedAt      DateTime?
+  errorMessage     String?
+  metadata         Json?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  @@index([jobType, status])
+  @@index([targetOwnerId])
   @@index([createdAt])
-}
-
-// Enum: Email Template Type
-enum EmailTemplate {
-  VERIFICATION
-  RESET_PASSWORD
-  BOOKING_CONFIRMATION
-  PAYMENT_CONFIRMED
-  CHECK_IN_REMINDER
-  REVIEW_REQUEST
-  PAYMENT_REJECTED
-}
-
-// Enum: Email Status
-enum EmailStatus {
-  PENDING // antrian belum dikirim
-  SENT // sudah dikirim
-  FAILED // gagal kirim
-  SKIPPED // telah dikirim, dilewati untuk menghindari duplikasi
+  @@index([status])
 }
