@@ -11,6 +11,7 @@ exports.RESERVATION_ERROR_MESSAGES = {
     USER_ID_REQUIRED: 'User ID is required',
     PROPERTY_ID_REQUIRED: 'Property ID is required',
     PROPERTY_OWNER_ID_REQUIRED: 'Property owner ID is required',
+    ROOMTYPE_ID_REQUIRED: 'Room type ID is required',
     // Authentication and authorization
     AUTH_REQUIRED: 'Authentication required.',
     INVALID_INPUT_DATA: 'Invalid input data.',

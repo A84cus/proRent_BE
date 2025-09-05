@@ -1,10 +1,11 @@
 // controllers/reservationController.ts
 import { Request, Response } from 'express';
-import { cancelReservation, createReservation } from '../../service/reservationService/reservationService';
+import { createReservation } from '../../service/reservationService/reservationService';
 import { cancelExpiredReservations } from '../../service/reservationService/reservationExpiryService'; // Import the new service
 import { ZodError } from 'zod';
 import { NODE_ENV } from '../../config/index'; // Import your env config
 import {
+   cancelReservation,
    confirmReservationByOwner,
    rejectReservationByOwner
 } from '../../service/reservationService/reservationManagementService';
@@ -31,6 +32,7 @@ export const createReservationController = async (req: Request, res: Response) =
 export const cancelReservationController = async (req: Request, res: Response) => {
    try {
       const userId = getUserIdFromRequest(req);
+      const role = getRoleFromRequest(req);
       const { reservationId } = req.params;
 
       if (!reservationId) {
@@ -39,7 +41,7 @@ export const cancelReservationController = async (req: Request, res: Response) =
          });
       }
 
-      const updatedReservation = await cancelReservation(reservationId, userId);
+      const updatedReservation = await cancelReservation(reservationId, userId, role);
 
       return res.status(200).json({
          message: RESERVATION_SUCCESS_MESSAGES.RESERVATION_CANCELLED,
@@ -150,6 +152,8 @@ export const sendBookingReminderController = async (req: Request, res: Response)
 
 // Add this import if you created the manual trigger function
 import { sendBookingReminderByReservationId } from '../../service/reservationService/reservationReminderService';
+import { getRoleFromRequest, getUserIdFromRequest, handleError, prepareInputData } from './reservationHelperController';
+import { get } from 'http';
 
 // --- Controller for Sending Booking Reminder for Specific Reservation ---
 export const sendBookingReminderByReservationIdController = async (req: Request, res: Response) => {
@@ -189,46 +193,3 @@ export const sendBookingReminderByReservationIdController = async (req: Request,
       });
    }
 };
-
-// --- Refactored helper functions (each < 15 lines) ---
-
-function getUserIdFromRequest (req: Request): string {
-   const userId = req.user?.userId;
-   if (!userId) {
-      throw new Error('AUTH_REQUIRED');
-   }
-   return userId;
-}
-
-function prepareInputData (req: Request, userId: string): any {
-   return {
-      ...req.body,
-      userId
-   };
-}
-
-function handleError (res: Response, error: any): Response {
-   console.error('Error in createReservationController:', error);
-
-   if (error instanceof ZodError) {
-      return res.status(400).json({
-         error: RESERVATION_ERROR_MESSAGES.INVALID_INPUT_DATA,
-         details: NODE_ENV === 'development' ? error : undefined
-      });
-   }
-
-   if (error.message === 'AUTH_REQUIRED') {
-      return res.status(401).json({ error: RESERVATION_ERROR_MESSAGES.AUTH_REQUIRED });
-   }
-
-   if (error.message?.includes('Xendit payment setup failed')) {
-      return res.status(500).json({ error: error.message });
-   }
-
-   if (error.message) {
-      return res.status(400).json({ error: error.message });
-   }
-   return res.status(500).json({
-      error: RESERVATION_ERROR_MESSAGES.CREATE_RESERVATION_ERROR
-   });
-}

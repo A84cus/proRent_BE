@@ -1,14 +1,27 @@
 import prisma from '../../prisma';
-import { Status } from '@prisma/client';
+import { Role, Status } from '@prisma/client';
 import { cancelExpiredReservations } from './reservationExpiryService';
 import EmailService from '../email/emailService';
 import { Profile } from '../../interfaces';
+import {
+   cancelQuery,
+   confirmBookingQuery,
+   createBookingDetails,
+   createUserWithProfile,
+   findAndValidateReservationQuery,
+   rejectionBookingQuery
+} from './buildQueryHelper';
+import {
+   findAndValidateReservation,
+   restoreAvailability,
+   updateReservationAndPaymentStatus
+} from './reservationService';
 
 async function runPostRejectionExpiryCheck (reservationId: string): Promise<void> {
    await cancelExpiredReservations();
 }
 
-function calculateNewExpiryTime (): Date {
+export function calculateNewExpiryTime (): Date {
    return new Date(Date.now() + 1 * 60 * 60 * 1000);
 }
 
@@ -33,35 +46,7 @@ async function findAndValidateReservationForOwner (reservationId: string, ownerI
 
    const reservation = await prisma.reservation.findUnique({
       where: { id: reservationId },
-      include: {
-         Property: {
-            select: {
-               OwnerId: true,
-               name: true,
-               location: true,
-               roomTypes: {
-                  select: {
-                     name: true
-                  }
-               }
-            }
-         },
-         User: {
-            select: {
-               email: true,
-
-               profile: {
-                  select: {
-                     firstName: true,
-                     lastName: true
-                  }
-               }
-            }
-         },
-         payment: {
-            select: { id: true, amount: true, method: true, paymentStatus: true }
-         }
-      }
+      include: findAndValidateReservationQuery()
    });
 
    if (!reservation) {
@@ -97,22 +82,28 @@ export async function rejectReservationByOwner (reservationId: string, ownerId: 
             expiresAt: calculateNewExpiryTime(),
             payment: { update: { paymentStatus: Status.PENDING_PAYMENT } }
          },
-         include: {
-            Property: {
-               select: { id: true, name: true }
-            },
-            RoomType: {
-               select: { id: true, name: true }
-            },
-            User: {
-               select: { id: true, email: true }
-            },
-            payment: { select: { id: true, amount: true, method: true } },
-            PaymentProof: { include: { picture: true } }
-         }
+         include: rejectionBookingQuery()
       });
 
       await runPostRejectionExpiryCheck(reservationId);
+
+      try {
+         if (!updatedReservation.User || !updatedReservation.User.email) {
+            throw new Error('User email not found for reservation.');
+         }
+         const userWithProfile = createUserWithProfile(updatedReservation);
+         const bookingDetails = createBookingDetails(updatedReservation);
+         await EmailService.sendBookingRejection(userWithProfile, bookingDetails);
+      } catch (emailError: any) {
+         console.error(
+            `Failed to send booking confirmation email for reservation ${reservationId} to ${
+               reservation.User?.email || 'N/A'
+            }:`,
+            emailError
+         );
+         throw emailError;
+      }
+
       return updatedReservation;
    } catch (error: any) {
       if (error.code === 'P2025') {
@@ -137,60 +128,15 @@ export async function confirmReservationByOwner (reservationId: string, ownerId:
             orderStatus: Status.CONFIRMED,
             payment: { update: { paymentStatus: Status.CONFIRMED } }
          },
-         include: {
-            Property: {
-               select: { id: true, name: true }
-            },
-            RoomType: {
-               select: { id: true, name: true }
-            },
-            User: {
-               select: {
-                  id: true,
-                  email: true,
-                  profile: {
-                     select: {
-                        id: true,
-                        firstName: true,
-                        lastName: true,
-                        phone: true,
-                        address: true
-                     }
-                  }
-               }
-            },
-            payment: {
-               select: { id: true, amount: true, method: true, paymentStatus: true }
-            },
-            PaymentProof: { include: { picture: true } }
-         }
+         include: confirmBookingQuery()
       });
 
       try {
          if (!updatedReservation.User || !updatedReservation.User.email) {
             throw new Error('User email not found for reservation.');
          }
-         const userWithProfile = {
-            id: updatedReservation.User.id,
-            email: updatedReservation.User.email,
-            profile: {
-               id: updatedReservation.User.profile?.id ?? '',
-               firstName: updatedReservation.User.profile?.firstName ?? '',
-               lastName: updatedReservation.User.profile?.lastName ?? '',
-               phone: updatedReservation.User.profile?.phone ?? '',
-               address: updatedReservation.User.profile?.address ?? ''
-            }
-         };
-
-         const bookingDetails = {
-            id: updatedReservation.id,
-            propertyName: updatedReservation.Property?.name || 'N/A',
-            roomTypeName: updatedReservation.RoomType?.name || 'N/A',
-            checkIn: updatedReservation.startDate.toISOString().split('T')[0],
-            checkOut: updatedReservation.endDate.toISOString().split('T')[0],
-            totalAmount: updatedReservation.payment?.amount || 0,
-            paymentStatus: updatedReservation.payment?.paymentStatus || 'N/A'
-         };
+         const userWithProfile = createUserWithProfile(updatedReservation);
+         const bookingDetails = createBookingDetails(updatedReservation);
          await EmailService.sendBookingConfirmation(userWithProfile, bookingDetails);
       } catch (emailError: any) {
          console.error(
@@ -209,6 +155,57 @@ export async function confirmReservationByOwner (reservationId: string, ownerId:
          throw new Error('Reservation could not be confirmed. It might have expired and been automatically cancelled.');
       }
       console.error(`Error confirming reservation ${reservationId}:`, error);
+      throw error;
+   }
+}
+
+export async function cancelReservation (reservationId: string, userId: string, role: Role) {
+   try {
+      const reservation = await findAndValidateReservation(reservationId, userId);
+
+      const updatedReservation = await prisma.$transaction(
+         async tx => {
+            await updateReservationAndPaymentStatus(tx, reservationId);
+
+            await restoreAvailability(tx, reservation);
+
+            return await tx.reservation.findUnique({
+               where: { id: reservationId },
+               include: cancelQuery()
+            });
+         },
+         { timeout: 30000 }
+      );
+
+      try {
+         if (!updatedReservation?.User || !updatedReservation?.User.email) {
+            throw new Error('User email not found for reservation.');
+         }
+         const userWithProfile = createUserWithProfile(updatedReservation);
+         const bookingDetails = createBookingDetails(updatedReservation);
+         console.log(role);
+         if (role === Role.OWNER) {
+            await EmailService.sendBookingCancelationByOwner(userWithProfile, bookingDetails);
+         } else {
+            await EmailService.sendBookingCancelationByUser(userWithProfile, bookingDetails);
+         }
+      } catch (emailError: any) {
+         const userWithProfile = createUserWithProfile(updatedReservation);
+         console.error(
+            `Failed to send booking confirmation email for reservation ${reservationId} to ${
+               userWithProfile?.email || 'N/A'
+            }:`,
+            emailError
+         );
+         throw emailError;
+      }
+      return updatedReservation;
+   } catch (error: any) {
+      if (error.code === 'P2025') {
+         console.error(`Failed to cancel reservation ${reservationId}: Record not found or status mismatch.`);
+         throw new Error('Reservation could not be cancelled. It might have expired and been automatically confirmed.');
+      }
+      console.error(`Error cancelling reservation ${reservationId}:`, error);
       throw error;
    }
 }

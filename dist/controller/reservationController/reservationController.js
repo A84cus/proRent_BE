@@ -12,8 +12,6 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.sendBookingReminderByReservationIdController = exports.sendBookingReminderController = exports.confirmReservationByOwnerController = exports.rejectReservationByOwnerController = exports.cancelExpiredReservationsController = exports.cancelReservationController = exports.createReservationController = void 0;
 const reservationService_1 = require("../../service/reservationService/reservationService");
 const reservationExpiryService_1 = require("../../service/reservationService/reservationExpiryService"); // Import the new service
-const zod_1 = require("zod");
-const index_1 = require("../../config/index"); // Import your env config
 const reservationManagementService_1 = require("../../service/reservationService/reservationManagementService");
 const reservation_1 = require("../../constants/controllers/reservation");
 const reservationReminderService_1 = require("../../service/reservationService/reservationReminderService");
@@ -22,27 +20,28 @@ function getSuccessStatusCode(isXendit) {
 }
 const createReservationController = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const userId = getUserIdFromRequest(req);
-        const inputData = prepareInputData(req, userId);
+        const userId = (0, reservationHelperController_1.getUserIdFromRequest)(req);
+        const inputData = (0, reservationHelperController_1.prepareInputData)(req, userId);
         const result = yield (0, reservationService_1.createReservation)(inputData);
         const isXendit = inputData.paymentType === 'XENDIT';
         return res.status(getSuccessStatusCode(isXendit)).json(result);
     }
     catch (error) {
-        handleError(res, error);
+        (0, reservationHelperController_1.handleError)(res, error);
     }
 });
 exports.createReservationController = createReservationController;
 const cancelReservationController = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const userId = getUserIdFromRequest(req);
+        const userId = (0, reservationHelperController_1.getUserIdFromRequest)(req);
+        const role = (0, reservationHelperController_1.getRoleFromRequest)(req);
         const { reservationId } = req.params;
         if (!reservationId) {
             return res.status(400).json({
                 error: reservation_1.RESERVATION_ERROR_MESSAGES.RESERVATION_ID_REQUIRED_URL
             });
         }
-        const updatedReservation = yield (0, reservationService_1.cancelReservation)(reservationId, userId);
+        const updatedReservation = yield (0, reservationManagementService_1.cancelReservation)(reservationId, userId, role);
         return res.status(200).json({
             message: reservation_1.RESERVATION_SUCCESS_MESSAGES.RESERVATION_CANCELLED,
             reservation: updatedReservation
@@ -50,7 +49,7 @@ const cancelReservationController = (req, res) => __awaiter(void 0, void 0, void
     }
     catch (error) {
         console.error('Error in cancelReservationController:', error);
-        handleError(res, error);
+        (0, reservationHelperController_1.handleError)(res, error);
     }
 });
 exports.cancelReservationController = cancelReservationController;
@@ -81,7 +80,7 @@ exports.cancelExpiredReservationsController = cancelExpiredReservationsControlle
 // --- Controller for Owner to Reject a Reservation ---
 const rejectReservationByOwnerController = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const ownerId = getUserIdFromRequest(req);
+        const ownerId = (0, reservationHelperController_1.getUserIdFromRequest)(req);
         const { reservationId } = req.params;
         if (!reservationId) {
             return res.status(400).json({
@@ -96,13 +95,13 @@ const rejectReservationByOwnerController = (req, res) => __awaiter(void 0, void 
     }
     catch (error) {
         console.error('Error in rejectReservationByOwnerController:', error);
-        handleError(res, error);
+        (0, reservationHelperController_1.handleError)(res, error);
     }
 });
 exports.rejectReservationByOwnerController = rejectReservationByOwnerController;
 const confirmReservationByOwnerController = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const ownerId = getUserIdFromRequest(req);
+        const ownerId = (0, reservationHelperController_1.getUserIdFromRequest)(req);
         const { reservationId } = req.params;
         if (!reservationId) {
             return res.status(400).json({
@@ -117,7 +116,7 @@ const confirmReservationByOwnerController = (req, res) => __awaiter(void 0, void
     }
     catch (error) {
         console.error('Error in confirmReservationByOwnerController:', error);
-        handleError(res, error);
+        (0, reservationHelperController_1.handleError)(res, error);
     }
 });
 exports.confirmReservationByOwnerController = confirmReservationByOwnerController;
@@ -146,6 +145,7 @@ const sendBookingReminderController = (req, res) => __awaiter(void 0, void 0, vo
 exports.sendBookingReminderController = sendBookingReminderController;
 // Add this import if you created the manual trigger function
 const reservationReminderService_2 = require("../../service/reservationService/reservationReminderService");
+const reservationHelperController_1 = require("./reservationHelperController");
 // --- Controller for Sending Booking Reminder for Specific Reservation ---
 const sendBookingReminderByReservationIdController = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
@@ -180,37 +180,3 @@ const sendBookingReminderByReservationIdController = (req, res) => __awaiter(voi
     }
 });
 exports.sendBookingReminderByReservationIdController = sendBookingReminderByReservationIdController;
-// --- Refactored helper functions (each < 15 lines) ---
-function getUserIdFromRequest(req) {
-    var _a;
-    const userId = (_a = req.user) === null || _a === void 0 ? void 0 : _a.userId;
-    if (!userId) {
-        throw new Error('AUTH_REQUIRED');
-    }
-    return userId;
-}
-function prepareInputData(req, userId) {
-    return Object.assign(Object.assign({}, req.body), { userId });
-}
-function handleError(res, error) {
-    var _a;
-    console.error('Error in createReservationController:', error);
-    if (error instanceof zod_1.ZodError) {
-        return res.status(400).json({
-            error: reservation_1.RESERVATION_ERROR_MESSAGES.INVALID_INPUT_DATA,
-            details: index_1.NODE_ENV === 'development' ? error : undefined
-        });
-    }
-    if (error.message === 'AUTH_REQUIRED') {
-        return res.status(401).json({ error: reservation_1.RESERVATION_ERROR_MESSAGES.AUTH_REQUIRED });
-    }
-    if ((_a = error.message) === null || _a === void 0 ? void 0 : _a.includes('Xendit payment setup failed')) {
-        return res.status(500).json({ error: error.message });
-    }
-    if (error.message) {
-        return res.status(400).json({ error: error.message });
-    }
-    return res.status(500).json({
-        error: reservation_1.RESERVATION_ERROR_MESSAGES.CREATE_RESERVATION_ERROR
-    });
-}

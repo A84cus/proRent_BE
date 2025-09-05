@@ -12,8 +12,9 @@ import {
 import { Status, PaymentType } from '@prisma/client';
 import { createXenditInvoice } from './xenditService';
 import { generateInvoiceNumber } from './invoiceNumberService';
+import { cancelQuery } from './buildQueryHelper';
 
-async function validateBooking (data: any) {
+export async function validateBooking (data: any) {
    // Validate input using schema
    const validationResult = reservationCreateSchema.safeParse({
       ...data,
@@ -96,7 +97,7 @@ async function executeReservationTransaction (data: any, validationData: any) {
    );
 }
 
-async function handleXenditPostProcessing (paymentRecordId: string, reservationId: string) {
+export async function handleXenditPostProcessing (paymentRecordId: string, reservationId: string) {
    try {
       const xenditInvoiceDetails = await createXenditInvoice(paymentRecordId);
       return {
@@ -105,7 +106,6 @@ async function handleXenditPostProcessing (paymentRecordId: string, reservationI
          message: 'Reservation created, redirecting to payment.'
       };
    } catch (xenditError: any) {
-      console.error('Error creating Xendit invoice after reservation:', xenditError);
       throw new Error(`Reservation created, but Xendit payment setup failed: ${xenditError.message}`);
    }
 }
@@ -134,7 +134,7 @@ function validateInput (input: unknown) {
    return createReservationSchema.parse(input);
 }
 
-async function findAndValidateReservation (reservationId: string, userId: string) {
+export async function findAndValidateReservation (reservationId: string, userId: string) {
    const reservation = await prisma.reservation.findUnique({
       where: { id: reservationId },
       include: {
@@ -174,7 +174,7 @@ async function findAndValidateReservation (reservationId: string, userId: string
    return reservation;
 }
 
-async function updateReservationAndPaymentStatus (tx: any, reservationId: string) {
+export async function updateReservationAndPaymentStatus (tx: any, reservationId: string) {
    await tx.reservation.update({
       where: { id: reservationId },
       data: { orderStatus: Status.CANCELLED }
@@ -186,7 +186,7 @@ async function updateReservationAndPaymentStatus (tx: any, reservationId: string
    });
 }
 
-async function restoreAvailability (tx: any, reservation: any) {
+export async function restoreAvailability (tx: any, reservation: any) {
    if (reservation.RoomType?.id && reservation.startDate && reservation.endDate) {
       await incrementAvailability(
          tx,
@@ -197,41 +197,4 @@ async function restoreAvailability (tx: any, reservation: any) {
    } else {
       console.warn(`Could not restore availability for reservation ${reservation.id}: Missing RoomTypeId or dates.`);
    }
-}
-
-export async function cancelReservation (reservationId: string, userId: string) {
-   const reservation = await findAndValidateReservation(reservationId, userId);
-
-   const updatedReservation = await prisma.$transaction(
-      async tx => {
-         await updateReservationAndPaymentStatus(tx, reservationId);
-
-         await restoreAvailability(tx, reservation);
-
-         return await tx.reservation.findUnique({
-            where: { id: reservationId },
-            include: {
-               payment: {
-                  select: {
-                     id: true,
-                     amount: true,
-                     method: true,
-                     paymentStatus: true,
-                     createdAt: true,
-                     updatedAt: true
-                  }
-               },
-               RoomType: {
-                  select: { id: true, name: true }
-               },
-               Property: {
-                  select: { id: true, name: true }
-               }
-            }
-         });
-      },
-      { timeout: 30000 }
-   );
-
-   return updatedReservation;
 }

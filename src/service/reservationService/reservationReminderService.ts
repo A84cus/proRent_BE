@@ -52,7 +52,7 @@ export async function sendBookingReminderForTomorrow () {
       for (const reservation of reservations) {
          try {
             if (!reservation.User || !reservation.User.email) {
-               console.warn(`User email not found for reservation ${reservation.id}`);
+               console.error(`User email not found for reservation ${reservation.id}`);
                continue;
             }
 

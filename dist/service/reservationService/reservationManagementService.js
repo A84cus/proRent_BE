@@ -12,12 +12,16 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.calculateNewExpiryTime = calculateNewExpiryTime;
 exports.rejectReservationByOwner = rejectReservationByOwner;
 exports.confirmReservationByOwner = confirmReservationByOwner;
+exports.cancelReservation = cancelReservation;
 const prisma_1 = __importDefault(require("../../prisma"));
 const client_1 = require("@prisma/client");
 const reservationExpiryService_1 = require("./reservationExpiryService");
 const emailService_1 = __importDefault(require("../email/emailService"));
+const buildQueryHelper_1 = require("./buildQueryHelper");
+const reservationService_1 = require("./reservationService");
 function runPostRejectionExpiryCheck(reservationId) {
     return __awaiter(this, void 0, void 0, function* () {
         yield (0, reservationExpiryService_1.cancelExpiredReservations)();
@@ -47,34 +51,7 @@ function findAndValidateReservationForOwner(reservationId, ownerId) {
         yield (0, reservationExpiryService_1.cancelExpiredReservations)();
         const reservation = yield prisma_1.default.reservation.findUnique({
             where: { id: reservationId },
-            include: {
-                Property: {
-                    select: {
-                        OwnerId: true,
-                        name: true,
-                        location: true,
-                        roomTypes: {
-                            select: {
-                                name: true
-                            }
-                        }
-                    }
-                },
-                User: {
-                    select: {
-                        email: true,
-                        profile: {
-                            select: {
-                                firstName: true,
-                                lastName: true
-                            }
-                        }
-                    }
-                },
-                payment: {
-                    select: { id: true, amount: true, method: true, paymentStatus: true }
-                }
-            }
+            include: (0, buildQueryHelper_1.findAndValidateReservationQuery)()
         });
         if (!reservation) {
             throw new Error('Reservation not found.');
@@ -101,6 +78,7 @@ function findAndValidateReservationForOwner(reservationId, ownerId) {
 }
 function rejectReservationByOwner(reservationId, ownerId) {
     return __awaiter(this, void 0, void 0, function* () {
+        var _a;
         const reservation = yield findAndValidateReservationForOwner(reservationId, ownerId);
         try {
             const updatedReservation = yield prisma_1.default.reservation.update({
@@ -113,21 +91,21 @@ function rejectReservationByOwner(reservationId, ownerId) {
                     expiresAt: calculateNewExpiryTime(),
                     payment: { update: { paymentStatus: client_1.Status.PENDING_PAYMENT } }
                 },
-                include: {
-                    Property: {
-                        select: { id: true, name: true }
-                    },
-                    RoomType: {
-                        select: { id: true, name: true }
-                    },
-                    User: {
-                        select: { id: true, email: true }
-                    },
-                    payment: { select: { id: true, amount: true, method: true } },
-                    PaymentProof: { include: { picture: true } }
-                }
+                include: (0, buildQueryHelper_1.rejectionBookingQuery)()
             });
             yield runPostRejectionExpiryCheck(reservationId);
+            try {
+                if (!updatedReservation.User || !updatedReservation.User.email) {
+                    throw new Error('User email not found for reservation.');
+                }
+                const userWithProfile = (0, buildQueryHelper_1.createUserWithProfile)(updatedReservation);
+                const bookingDetails = (0, buildQueryHelper_1.createBookingDetails)(updatedReservation);
+                yield emailService_1.default.sendBookingRejection(userWithProfile, bookingDetails);
+            }
+            catch (emailError) {
+                console.error(`Failed to send booking confirmation email for reservation ${reservationId} to ${((_a = reservation.User) === null || _a === void 0 ? void 0 : _a.email) || 'N/A'}:`, emailError);
+                throw emailError;
+            }
             return updatedReservation;
         }
         catch (error) {
@@ -142,7 +120,7 @@ function rejectReservationByOwner(reservationId, ownerId) {
 }
 function confirmReservationByOwner(reservationId, ownerId) {
     return __awaiter(this, void 0, void 0, function* () {
-        var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l, _m, _o, _p, _q;
+        var _a;
         const reservation = yield findAndValidateReservationForOwner(reservationId, ownerId);
         try {
             const updatedReservation = yield prisma_1.default.reservation.update({
@@ -154,62 +132,18 @@ function confirmReservationByOwner(reservationId, ownerId) {
                     orderStatus: client_1.Status.CONFIRMED,
                     payment: { update: { paymentStatus: client_1.Status.CONFIRMED } }
                 },
-                include: {
-                    Property: {
-                        select: { id: true, name: true }
-                    },
-                    RoomType: {
-                        select: { id: true, name: true }
-                    },
-                    User: {
-                        select: {
-                            id: true,
-                            email: true,
-                            profile: {
-                                select: {
-                                    id: true,
-                                    firstName: true,
-                                    lastName: true,
-                                    phone: true,
-                                    address: true
-                                }
-                            }
-                        }
-                    },
-                    payment: {
-                        select: { id: true, amount: true, method: true, paymentStatus: true }
-                    },
-                    PaymentProof: { include: { picture: true } }
-                }
+                include: (0, buildQueryHelper_1.confirmBookingQuery)()
             });
             try {
                 if (!updatedReservation.User || !updatedReservation.User.email) {
                     throw new Error('User email not found for reservation.');
                 }
-                const userWithProfile = {
-                    id: updatedReservation.User.id,
-                    email: updatedReservation.User.email,
-                    profile: {
-                        id: (_b = (_a = updatedReservation.User.profile) === null || _a === void 0 ? void 0 : _a.id) !== null && _b !== void 0 ? _b : '',
-                        firstName: (_d = (_c = updatedReservation.User.profile) === null || _c === void 0 ? void 0 : _c.firstName) !== null && _d !== void 0 ? _d : '',
-                        lastName: (_f = (_e = updatedReservation.User.profile) === null || _e === void 0 ? void 0 : _e.lastName) !== null && _f !== void 0 ? _f : '',
-                        phone: (_h = (_g = updatedReservation.User.profile) === null || _g === void 0 ? void 0 : _g.phone) !== null && _h !== void 0 ? _h : '',
-                        address: (_k = (_j = updatedReservation.User.profile) === null || _j === void 0 ? void 0 : _j.address) !== null && _k !== void 0 ? _k : ''
-                    }
-                };
-                const bookingDetails = {
-                    id: updatedReservation.id,
-                    propertyName: ((_l = updatedReservation.Property) === null || _l === void 0 ? void 0 : _l.name) || 'N/A',
-                    roomTypeName: ((_m = updatedReservation.RoomType) === null || _m === void 0 ? void 0 : _m.name) || 'N/A',
-                    checkIn: updatedReservation.startDate.toISOString().split('T')[0],
-                    checkOut: updatedReservation.endDate.toISOString().split('T')[0],
-                    totalAmount: ((_o = updatedReservation.payment) === null || _o === void 0 ? void 0 : _o.amount) || 0,
-                    paymentStatus: ((_p = updatedReservation.payment) === null || _p === void 0 ? void 0 : _p.paymentStatus) || 'N/A'
-                };
+                const userWithProfile = (0, buildQueryHelper_1.createUserWithProfile)(updatedReservation);
+                const bookingDetails = (0, buildQueryHelper_1.createBookingDetails)(updatedReservation);
                 yield emailService_1.default.sendBookingConfirmation(userWithProfile, bookingDetails);
             }
             catch (emailError) {
-                console.error(`Failed to send booking confirmation email for reservation ${reservationId} to ${((_q = reservation.User) === null || _q === void 0 ? void 0 : _q.email) || 'N/A'}:`, emailError);
+                console.error(`Failed to send booking confirmation email for reservation ${reservationId} to ${((_a = reservation.User) === null || _a === void 0 ? void 0 : _a.email) || 'N/A'}:`, emailError);
                 throw emailError;
             }
             return updatedReservation;
@@ -220,6 +154,49 @@ function confirmReservationByOwner(reservationId, ownerId) {
                 throw new Error('Reservation could not be confirmed. It might have expired and been automatically cancelled.');
             }
             console.error(`Error confirming reservation ${reservationId}:`, error);
+            throw error;
+        }
+    });
+}
+function cancelReservation(reservationId, userId, role) {
+    return __awaiter(this, void 0, void 0, function* () {
+        try {
+            const reservation = yield (0, reservationService_1.findAndValidateReservation)(reservationId, userId);
+            const updatedReservation = yield prisma_1.default.$transaction((tx) => __awaiter(this, void 0, void 0, function* () {
+                yield (0, reservationService_1.updateReservationAndPaymentStatus)(tx, reservationId);
+                yield (0, reservationService_1.restoreAvailability)(tx, reservation);
+                return yield tx.reservation.findUnique({
+                    where: { id: reservationId },
+                    include: (0, buildQueryHelper_1.cancelQuery)()
+                });
+            }), { timeout: 30000 });
+            try {
+                if (!(updatedReservation === null || updatedReservation === void 0 ? void 0 : updatedReservation.User) || !(updatedReservation === null || updatedReservation === void 0 ? void 0 : updatedReservation.User.email)) {
+                    throw new Error('User email not found for reservation.');
+                }
+                const userWithProfile = (0, buildQueryHelper_1.createUserWithProfile)(updatedReservation);
+                const bookingDetails = (0, buildQueryHelper_1.createBookingDetails)(updatedReservation);
+                console.log(role);
+                if (role === client_1.Role.OWNER) {
+                    yield emailService_1.default.sendBookingCancelationByOwner(userWithProfile, bookingDetails);
+                }
+                else {
+                    yield emailService_1.default.sendBookingCancelationByUser(userWithProfile, bookingDetails);
+                }
+            }
+            catch (emailError) {
+                const userWithProfile = (0, buildQueryHelper_1.createUserWithProfile)(updatedReservation);
+                console.error(`Failed to send booking confirmation email for reservation ${reservationId} to ${(userWithProfile === null || userWithProfile === void 0 ? void 0 : userWithProfile.email) || 'N/A'}:`, emailError);
+                throw emailError;
+            }
+            return updatedReservation;
+        }
+        catch (error) {
+            if (error.code === 'P2025') {
+                console.error(`Failed to cancel reservation ${reservationId}: Record not found or status mismatch.`);
+                throw new Error('Reservation could not be cancelled. It might have expired and been automatically confirmed.');
+            }
+            console.error(`Error cancelling reservation ${reservationId}:`, error);
             throw error;
         }
     });

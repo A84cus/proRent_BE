@@ -12,8 +12,12 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.validateBooking = validateBooking;
+exports.handleXenditPostProcessing = handleXenditPostProcessing;
 exports.createReservation = createReservation;
-exports.cancelReservation = cancelReservation;
+exports.findAndValidateReservation = findAndValidateReservation;
+exports.updateReservationAndPaymentStatus = updateReservationAndPaymentStatus;
+exports.restoreAvailability = restoreAvailability;
 // services/createReservation.ts
 const prisma_1 = __importDefault(require("../../prisma"));
 const pricingService_1 = require("./pricingService");
@@ -102,7 +106,6 @@ function handleXenditPostProcessing(paymentRecordId, reservationId) {
             };
         }
         catch (xenditError) {
-            console.error('Error creating Xendit invoice after reservation:', xenditError);
             throw new Error(`Reservation created, but Xendit payment setup failed: ${xenditError.message}`);
         }
     });
@@ -186,36 +189,5 @@ function restoreAvailability(tx, reservation) {
         else {
             console.warn(`Could not restore availability for reservation ${reservation.id}: Missing RoomTypeId or dates.`);
         }
-    });
-}
-function cancelReservation(reservationId, userId) {
-    return __awaiter(this, void 0, void 0, function* () {
-        const reservation = yield findAndValidateReservation(reservationId, userId);
-        const updatedReservation = yield prisma_1.default.$transaction((tx) => __awaiter(this, void 0, void 0, function* () {
-            yield updateReservationAndPaymentStatus(tx, reservationId);
-            yield restoreAvailability(tx, reservation);
-            return yield tx.reservation.findUnique({
-                where: { id: reservationId },
-                include: {
-                    payment: {
-                        select: {
-                            id: true,
-                            amount: true,
-                            method: true,
-                            paymentStatus: true,
-                            createdAt: true,
-                            updatedAt: true
-                        }
-                    },
-                    RoomType: {
-                        select: { id: true, name: true }
-                    },
-                    Property: {
-                        select: { id: true, name: true }
-                    }
-                }
-            });
-        }), { timeout: 30000 });
-        return updatedReservation;
     });
 }
