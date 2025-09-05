@@ -161,9 +161,8 @@ function getOwnerReservationsHandler(req, res) {
 // Get reservations for a specific property
 function getPropertyReservationsHandler(req, res) {
     return __awaiter(this, void 0, void 0, function* () {
-        var _a;
         try {
-            const propertyOwnerId = (_a = req.user) === null || _a === void 0 ? void 0 : _a.userId;
+            const propertyOwnerId = (0, paymentProofController_1.getUserIdFromRequest)(req);
             const propertyId = req.params.propertyId;
             if (!propertyId) {
                 res.status(400).json({ message: reservation_1.RESERVATION_ERROR_MESSAGES.PROPERTY_ID_REQUIRED });

@@ -32,13 +32,13 @@ export function buildWhereConditions (options: QueryOptions): any {
    }
 
    if (propertyId && propertyOwnerId) {
-      whereConditions.property = {
+      whereConditions.Property = {
          id: propertyId,
-         ownerId: propertyOwnerId
+         OwnerId: propertyOwnerId
       };
    } else {
       if (propertyId) {
-         whereConditions.propertyId = propertyId;
+         whereConditions.PropertyId = propertyId;
       }
 
       if (propertyOwnerId) {

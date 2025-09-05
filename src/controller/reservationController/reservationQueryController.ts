@@ -194,7 +194,7 @@ export async function getOwnerReservationsHandler (req: Request, res: Response) 
 // Get reservations for a specific property
 export async function getPropertyReservationsHandler (req: Request, res: Response) {
    try {
-      const propertyOwnerId = req.user?.userId as string;
+      const propertyOwnerId = getUserIdFromRequest(req);
       const propertyId = req.params.propertyId;
       if (!propertyId) {
          res.status(400).json({ message: RESERVATION_ERROR_MESSAGES.PROPERTY_ID_REQUIRED });
