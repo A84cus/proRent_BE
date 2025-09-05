@@ -29,7 +29,7 @@ router.get('/user', authUser, getUserReservationsHandler);
 router.get('/owner', authOwner, getOwnerReservationsHandler);
 router.get('/:id', authAny, getReservationWithPaymentHandler);
 router.get('/property/:propertyId', authOwner, getPropertyReservationsHandler);
-router.get(`/:roomTypeId/availability/`, authAny, getAvailabilityScheduleHandler);
+router.get(`/availability/:roomTypeId`, authAny, getAvailabilityScheduleHandler);
 // POST /reservation - Create a new reservation
 router.post('/', authUser, createReservationController);
 router.post('/:reservationId/cancel', authAny, cancelReservationController);
