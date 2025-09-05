@@ -8,6 +8,7 @@ interface ReservationQueryOptions {
    userId?: string;
    propertyOwnerId?: string;
    propertyId?: string;
+   roomTypeId?: string;
    page?: number;
    limit?: number;
    sortBy?:
@@ -36,6 +37,7 @@ export async function queryReservations (options: ReservationQueryOptions) {
       userId,
       propertyOwnerId,
       propertyId,
+      roomTypeId,
       page = validatedOptions.page,
       limit = validatedOptions.limit,
       sortBy = 'createdAt',
@@ -49,6 +51,7 @@ export async function queryReservations (options: ReservationQueryOptions) {
       userId,
       propertyOwnerId,
       propertyId,
+      roomTypeId,
       filters
    });
 
@@ -101,10 +104,11 @@ export async function getOwnerReservations (
 }
 
 export async function getPropertyReservations (
+   propertyOwnerId: string,
    propertyId: string,
    options: Omit<ReservationQueryOptions, 'propertyId'> = {}
 ) {
-   return queryReservations({ propertyId, ...options });
+   return queryReservations({ propertyOwnerId, propertyId, ...options });
 }
 
 export async function getReservationWithPayment (reservationId: string) {

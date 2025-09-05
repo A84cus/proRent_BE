@@ -12,11 +12,10 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-const client_1 = require("@prisma/client");
 const emailService_1 = __importDefault(require("./emailService"));
 const tokenService_1 = __importDefault(require("../auth/tokenService"));
 const logger_1 = __importDefault(require("../../utils/system/logger"));
-const prisma = new client_1.PrismaClient();
+const prisma_1 = __importDefault(require("../../prisma"));
 class EmailVerificationService {
     // Validate email format
     validateEmailFormat(email) {
@@ -26,8 +25,8 @@ class EmailVerificationService {
     // Check if email is already taken
     checkEmailAvailability(email, currentUserId) {
         return __awaiter(this, void 0, void 0, function* () {
-            const existingUser = yield prisma.user.findUnique({
-                where: { email },
+            const existingUser = yield prisma_1.default.user.findUnique({
+                where: { email }
             });
             return !existingUser || existingUser.id === currentUserId;
         });
@@ -35,9 +34,9 @@ class EmailVerificationService {
     // Get user for email verification
     getUserForVerification(userId) {
         return __awaiter(this, void 0, void 0, function* () {
-            return yield prisma.user.findUnique({
+            return yield prisma_1.default.user.findUnique({
                 where: { id: userId },
-                include: { profile: true },
+                include: { profile: true }
             });
         });
     }
@@ -48,14 +47,14 @@ class EmailVerificationService {
             const verificationTokenResult = tokenService_1.default.generateVerificationToken();
             const verificationExpires = verificationTokenResult.expires;
             // Update user with new email and verification token
-            yield prisma.user.update({
+            yield prisma_1.default.user.update({
                 where: { id: userId },
                 data: {
                     email: newEmail,
                     isVerified: false,
                     verificationToken: verificationTokenResult.hashedToken,
-                    verificationExpires,
-                },
+                    verificationExpires
+                }
             });
             return verificationTokenResult.token;
         });
@@ -70,18 +69,18 @@ class EmailVerificationService {
     validateEmailChangeRequest(newEmail, currentEmail) {
         const errors = [];
         if (!newEmail) {
-            errors.push("New email is required");
+            errors.push('New email is required');
             return { isValid: false, errors };
         }
         if (!this.validateEmailFormat(newEmail)) {
-            errors.push("Invalid email format");
+            errors.push('Invalid email format');
         }
         if (currentEmail === newEmail) {
-            errors.push("New email must be different from current email");
+            errors.push('New email must be different from current email');
         }
         return {
             isValid: errors.length === 0,
-            errors,
+            errors
         };
     }
     // Process email verification
@@ -92,7 +91,7 @@ class EmailVerificationService {
             // Get user data for email
             const user = yield this.getUserForVerification(userId);
             if (!user) {
-                throw new Error("User not found");
+                throw new Error('User not found');
             }
             // Send verification email
             yield this.sendVerificationEmail(user, token);

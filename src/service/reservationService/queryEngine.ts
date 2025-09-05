@@ -12,6 +12,7 @@ interface QueryOptions {
    userId?: string;
    propertyOwnerId?: string;
    propertyId?: string;
+   roomTypeId?: string;
    filters?: {
       status?: Status;
       startDate?: Date;
@@ -23,17 +24,33 @@ interface QueryOptions {
 }
 
 export function buildWhereConditions (options: QueryOptions): any {
-   const { userId, propertyOwnerId, propertyId, filters = {} } = options;
+   const { userId, propertyOwnerId, propertyId, roomTypeId, filters = {} } = options;
    const whereConditions: any = {};
+
    if (userId) {
       whereConditions.userId = userId;
    }
-   if (propertyOwnerId) {
-      whereConditions.RoomType = buildPropertyOwnerFilter(propertyOwnerId);
+
+   if (propertyId && propertyOwnerId) {
+      whereConditions.property = {
+         id: propertyId,
+         ownerId: propertyOwnerId
+      };
+   } else {
+      if (propertyId) {
+         whereConditions.propertyId = propertyId;
+      }
+
+      if (propertyOwnerId) {
+         whereConditions.RoomType = buildPropertyOwnerFilter(propertyOwnerId);
+      }
    }
-   if (propertyId) {
-      whereConditions.propertyId = propertyId;
+
+   if (roomTypeId) {
+      whereConditions.roomTypeId = roomTypeId;
    }
+
+   // 6. Apply additional filters
    Object.assign(whereConditions, buildStatusFilter(filters.status));
    Object.assign(whereConditions, buildDateRangeFilter(filters.startDate, filters.endDate));
    Object.assign(whereConditions, buildSearchFilter(filters.search));
@@ -84,6 +101,7 @@ function buildSearchFilter (search?: string) {
    return {
       OR: [
          { id: { contains: search, mode: 'insensitive' } },
+         { roomTypeId: { contains: search, mode: 'insensitive' } },
          { RoomType: { name: { contains: search, mode: 'insensitive' } } },
          { RoomType: { property: { name: { contains: search, mode: 'insensitive' } } } },
          { payment: { invoiceNumber: { contains: search, mode: 'insensitive' } } },

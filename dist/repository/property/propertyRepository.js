@@ -8,14 +8,16 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
-const client_1 = require("@prisma/client");
-const prisma = new client_1.PrismaClient();
+const prisma_1 = __importDefault(require("../../prisma"));
 class PropertyRepository {
     // Get all properties by owner ID
     findAllByOwner(ownerId) {
         return __awaiter(this, void 0, void 0, function* () {
-            return prisma.property.findMany({
+            return prisma_1.default.property.findMany({
                 where: { OwnerId: ownerId },
                 include: {
                     category: true,
@@ -23,38 +25,38 @@ class PropertyRepository {
                         include: {
                             city: {
                                 include: {
-                                    province: true,
-                                },
-                            },
-                        },
+                                    province: true
+                                }
+                            }
+                        }
                     },
                     mainPicture: true,
                     gallery: {
                         include: {
-                            picture: true,
-                        },
+                            picture: true
+                        }
                     },
                     rooms: {
                         include: {
-                            roomType: true,
-                        },
+                            roomType: true
+                        }
                     },
                     roomTypes: true,
                     _count: {
                         select: {
                             rooms: true,
-                            Reservation: true,
-                        },
-                    },
+                            Reservation: true
+                        }
+                    }
                 },
-                orderBy: { createdAt: "desc" },
+                orderBy: { createdAt: 'desc' }
             });
         });
     }
     // Find property by ID with full details
     findById(id) {
         return __awaiter(this, void 0, void 0, function* () {
-            return prisma.property.findUnique({
+            return prisma_1.default.property.findUnique({
                 where: { id },
                 include: {
                     category: true,
@@ -62,10 +64,10 @@ class PropertyRepository {
                         include: {
                             city: {
                                 include: {
-                                    province: true,
-                                },
-                            },
-                        },
+                                    province: true
+                                }
+                            }
+                        }
                     },
                     Owner: {
                         select: {
@@ -75,45 +77,45 @@ class PropertyRepository {
                                 select: {
                                     firstName: true,
                                     lastName: true,
-                                    phone: true,
-                                },
-                            },
-                        },
+                                    phone: true
+                                }
+                            }
+                        }
                     },
                     mainPicture: true,
                     gallery: {
                         include: {
-                            picture: true,
-                        },
+                            picture: true
+                        }
                     },
                     rooms: {
                         include: {
                             roomType: true,
                             gallery: {
                                 include: {
-                                    picture: true,
-                                },
-                            },
-                        },
+                                    picture: true
+                                }
+                            }
+                        }
                     },
                     roomTypes: true,
                     _count: {
                         select: {
                             rooms: true,
-                            Reservation: true,
-                        },
-                    },
-                },
+                            Reservation: true
+                        }
+                    }
+                }
             });
         });
     }
     // Find property by ID and owner (for authorization)
     findByIdAndOwner(id, ownerId) {
         return __awaiter(this, void 0, void 0, function* () {
-            return prisma.property.findFirst({
+            return prisma_1.default.property.findFirst({
                 where: {
                     id,
-                    OwnerId: ownerId,
+                    OwnerId: ownerId
                 },
                 include: {
                     category: true,
@@ -121,36 +123,36 @@ class PropertyRepository {
                         include: {
                             city: {
                                 include: {
-                                    province: true,
-                                },
-                            },
-                        },
+                                    province: true
+                                }
+                            }
+                        }
                     },
                     mainPicture: true,
                     gallery: {
                         include: {
-                            picture: true,
-                        },
+                            picture: true
+                        }
                     },
                     rooms: {
                         include: {
                             roomType: true,
                             gallery: {
                                 include: {
-                                    picture: true,
-                                },
-                            },
-                        },
+                                    picture: true
+                                }
+                            }
+                        }
                     },
-                    roomTypes: true,
-                },
+                    roomTypes: true
+                }
             });
         });
     }
     // Create new property
     create(data) {
         return __awaiter(this, void 0, void 0, function* () {
-            return prisma.property.create({
+            return prisma_1.default.property.create({
                 data,
                 include: {
                     category: true,
@@ -158,20 +160,20 @@ class PropertyRepository {
                         include: {
                             city: {
                                 include: {
-                                    province: true,
-                                },
-                            },
-                        },
+                                    province: true
+                                }
+                            }
+                        }
                     },
-                    mainPicture: true,
-                },
+                    mainPicture: true
+                }
             });
         });
     }
     // Update property
     update(id, data) {
         return __awaiter(this, void 0, void 0, function* () {
-            return prisma.property.update({
+            return prisma_1.default.property.update({
                 where: { id },
                 data,
                 include: {
@@ -180,40 +182,40 @@ class PropertyRepository {
                         include: {
                             city: {
                                 include: {
-                                    province: true,
-                                },
-                            },
-                        },
+                                    province: true
+                                }
+                            }
+                        }
                     },
                     mainPicture: true,
                     gallery: {
                         include: {
-                            picture: true,
-                        },
-                    },
-                },
+                            picture: true
+                        }
+                    }
+                }
             });
         });
     }
     // Delete property
     delete(id) {
         return __awaiter(this, void 0, void 0, function* () {
-            return prisma.property.delete({
-                where: { id },
+            return prisma_1.default.property.delete({
+                where: { id }
             });
         });
     }
     // Check if property has active bookings
     hasActiveBookings(propertyId) {
         return __awaiter(this, void 0, void 0, function* () {
-            const activeBookingCount = yield prisma.reservation.count({
+            const activeBookingCount = yield prisma_1.default.reservation.count({
                 where: {
                     propertyId,
                     orderStatus: {
-                        in: ["PENDING_PAYMENT", "PENDING_CONFIRMATION", "CONFIRMED"],
+                        in: ['PENDING_PAYMENT', 'PENDING_CONFIRMATION', 'CONFIRMED']
                     },
-                    deletedAt: null,
-                },
+                    deletedAt: null
+                }
             });
             return activeBookingCount > 0;
         });
@@ -222,48 +224,38 @@ class PropertyRepository {
     getOrCreateLocation(address, cityId, latitude, longitude) {
         return __awaiter(this, void 0, void 0, function* () {
             // First try to find existing location
-            const existingLocation = yield prisma.location.findFirst({
+            const existingLocation = yield prisma_1.default.location.findFirst({
                 where: {
                     address,
-                    cityId,
-                },
+                    cityId
+                }
             });
             if (existingLocation) {
                 // Update existing location with new lat/lng if provided
                 if (latitude !== undefined || longitude !== undefined) {
-                    yield prisma.location.update({
+                    yield prisma_1.default.location.update({
                         where: { id: existingLocation.id },
                         data: {
-                            latitude: latitude !== undefined &&
-                                latitude !== null &&
-                                latitude.trim() !== ""
+                            latitude: latitude !== undefined && latitude !== null && latitude.trim() !== ''
                                 ? latitude
                                 : existingLocation.latitude,
-                            longitude: longitude !== undefined &&
-                                longitude !== null &&
-                                longitude.trim() !== ""
+                            longitude: longitude !== undefined && longitude !== null && longitude.trim() !== ''
                                 ? longitude
-                                : existingLocation.longitude,
-                        },
+                                : existingLocation.longitude
+                        }
                     });
                 }
                 return existingLocation.id;
             }
             // Create new location
-            const newLocation = yield prisma.location.create({
+            const newLocation = yield prisma_1.default.location.create({
                 data: {
                     name: address, // Use address as name for now
                     address,
                     cityId,
-                    latitude: latitude !== undefined && latitude !== null && latitude.trim() !== ""
-                        ? latitude
-                        : null,
-                    longitude: longitude !== undefined &&
-                        longitude !== null &&
-                        longitude.trim() !== ""
-                        ? longitude
-                        : null,
-                },
+                    latitude: latitude !== undefined && latitude !== null && latitude.trim() !== '' ? latitude : null,
+                    longitude: longitude !== undefined && longitude !== null && longitude.trim() !== '' ? longitude : null
+                }
             });
             return newLocation.id;
         });
@@ -271,45 +263,45 @@ class PropertyRepository {
     // Find city by name and province
     findCityByNameAndProvince(cityName, provinceName) {
         return __awaiter(this, void 0, void 0, function* () {
-            return prisma.city.findFirst({
+            return prisma_1.default.city.findFirst({
                 where: {
                     name: {
                         equals: cityName,
-                        mode: "insensitive",
+                        mode: 'insensitive'
                     },
                     province: {
                         name: {
                             equals: provinceName,
-                            mode: "insensitive",
-                        },
-                    },
+                            mode: 'insensitive'
+                        }
+                    }
                 },
                 include: {
-                    province: true,
-                },
+                    province: true
+                }
             });
         });
     }
     // Create city if not exists
     createCityIfNotExists(cityName, provinceId) {
         return __awaiter(this, void 0, void 0, function* () {
-            const existingCity = yield prisma.city.findFirst({
+            const existingCity = yield prisma_1.default.city.findFirst({
                 where: {
                     name: {
                         equals: cityName,
-                        mode: "insensitive",
+                        mode: 'insensitive'
                     },
-                    provinceId,
-                },
+                    provinceId
+                }
             });
             if (existingCity) {
                 return existingCity.id;
             }
-            const newCity = yield prisma.city.create({
+            const newCity = yield prisma_1.default.city.create({
                 data: {
                     name: cityName,
-                    provinceId,
-                },
+                    provinceId
+                }
             });
             return newCity.id;
         });
@@ -317,21 +309,21 @@ class PropertyRepository {
     // Find or create province
     findOrCreateProvince(provinceName) {
         return __awaiter(this, void 0, void 0, function* () {
-            const existingProvince = yield prisma.province.findFirst({
+            const existingProvince = yield prisma_1.default.province.findFirst({
                 where: {
                     name: {
                         equals: provinceName,
-                        mode: "insensitive",
-                    },
-                },
+                        mode: 'insensitive'
+                    }
+                }
             });
             if (existingProvince) {
                 return existingProvince.id;
             }
-            const newProvince = yield prisma.province.create({
+            const newProvince = yield prisma_1.default.province.create({
                 data: {
-                    name: provinceName,
-                },
+                    name: provinceName
+                }
             });
             return newProvince.id;
         });

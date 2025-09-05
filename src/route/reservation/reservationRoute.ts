@@ -1,4 +1,7 @@
 import express from 'express';
+import { uploadPayment } from '../../controller/reservationController/paymentProofController';
+import { authUser, authOwner, authAny } from '../../middleware/auth/authMwr';
+import { memoryUploader } from '../../utils/upload/uploader';
 import {
    createReservationController,
    cancelReservationController,
@@ -6,15 +9,6 @@ import {
    rejectReservationByOwnerController,
    confirmReservationByOwnerController
 } from '../../controller/reservationController/reservationController';
-
-import { uploadPayment } from '../../controller/reservationController/paymentProofController';
-import { authUser, authOwner, authAny } from '../../middleware/auth/authMwr';
-import {
-   multipleFileDiffField,
-   multipleFileSameField,
-   memoryUploader,
-   validateImageFile
-} from '../../utils/upload/uploader';
 import {
    getPropertyReservationsHandler,
    getReservations,
@@ -22,6 +16,7 @@ import {
    getOwnerReservationsHandler,
    getUserReservationsHandler
 } from '../../controller/reservationController/reservationQueryController';
+import { getAvailabilityScheduleHandler } from '../../controller/reservationController/reservationScheduleController';
 
 const router = express.Router();
 
@@ -33,7 +28,8 @@ router.post('/cancel-expired', cancelExpiredReservationsController);
 router.get('/user', authUser, getUserReservationsHandler);
 router.get('/owner', authOwner, getOwnerReservationsHandler);
 router.get('/:id', authAny, getReservationWithPaymentHandler);
-router.get('/property/:propertyId', getPropertyReservationsHandler);
+router.get('/property/:propertyId', authOwner, getPropertyReservationsHandler);
+router.get(`/:roomTypeId/availability/`, authAny, getAvailabilityScheduleHandler);
 // POST /reservation - Create a new reservation
 router.post('/', authUser, createReservationController);
 router.post('/:reservationId/cancel', authAny, cancelReservationController);

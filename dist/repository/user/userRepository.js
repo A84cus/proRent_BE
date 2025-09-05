@@ -8,68 +8,70 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
-const client_1 = require("@prisma/client");
-const prisma = new client_1.PrismaClient();
+const prisma_1 = __importDefault(require("../../prisma"));
 class UserRepository {
     // Find user by email with optional include
     findByEmail(email, include) {
         return __awaiter(this, void 0, void 0, function* () {
-            return prisma.user.findUnique({
+            return prisma_1.default.user.findUnique({
                 where: { email },
-                include,
+                include
             });
         });
     }
     // Find user by ID with optional include
     findById(id, include) {
         return __awaiter(this, void 0, void 0, function* () {
-            return prisma.user.findUnique({
+            return prisma_1.default.user.findUnique({
                 where: { id },
-                include,
+                include
             });
         });
     }
     // Create new user
     create(data) {
         return __awaiter(this, void 0, void 0, function* () {
-            return prisma.user.create({
-                data,
+            return prisma_1.default.user.create({
+                data
             });
         });
     }
     // Update user
     update(id, data) {
         return __awaiter(this, void 0, void 0, function* () {
-            return prisma.user.update({
+            return prisma_1.default.user.update({
                 where: { id },
-                data,
+                data
             });
         });
     }
     // Find user by verification token
     findByVerificationToken(hashedToken) {
         return __awaiter(this, void 0, void 0, function* () {
-            return prisma.user.findFirst({
+            return prisma_1.default.user.findFirst({
                 where: {
                     verificationToken: hashedToken,
                     verificationExpires: {
-                        gt: new Date(),
-                    },
-                },
+                        gt: new Date()
+                    }
+                }
             });
         });
     }
     // Find user by reset token
     findByResetToken(hashedToken) {
         return __awaiter(this, void 0, void 0, function* () {
-            return prisma.user.findFirst({
+            return prisma_1.default.user.findFirst({
                 where: {
                     resetToken: hashedToken,
                     resetExpires: {
-                        gt: new Date(),
-                    },
-                },
+                        gt: new Date()
+                    }
+                }
             });
         });
     }
@@ -79,7 +81,7 @@ class UserRepository {
             return this.update(id, {
                 isVerified: true,
                 verificationToken: null,
-                verificationExpires: null,
+                verificationExpires: null
             });
         });
     }
@@ -88,7 +90,7 @@ class UserRepository {
         return __awaiter(this, void 0, void 0, function* () {
             return this.update(id, {
                 resetToken: null,
-                resetExpires: null,
+                resetExpires: null
             });
         });
     }
@@ -97,7 +99,7 @@ class UserRepository {
         return __awaiter(this, void 0, void 0, function* () {
             return this.update(id, {
                 verificationToken: hashedToken,
-                verificationExpires: expires,
+                verificationExpires: expires
             });
         });
     }
@@ -106,7 +108,7 @@ class UserRepository {
         return __awaiter(this, void 0, void 0, function* () {
             return this.update(id, {
                 resetToken: hashedToken,
-                resetExpires: expires,
+                resetExpires: expires
             });
         });
     }
@@ -114,7 +116,7 @@ class UserRepository {
     updatePassword(id, hashedPassword) {
         return __awaiter(this, void 0, void 0, function* () {
             return this.update(id, {
-                password: hashedPassword,
+                password: hashedPassword
             });
         });
     }

@@ -12,17 +12,16 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-const client_1 = require("@prisma/client");
 const passwordService_1 = __importDefault(require("./passwordService"));
 const logger_1 = __importDefault(require("../../utils/system/logger"));
-const prisma = new client_1.PrismaClient();
+const prisma_1 = __importDefault(require("../../prisma"));
 class UserAuthService {
     // Get user with password for authentication
     getUserWithPassword(userId) {
         return __awaiter(this, void 0, void 0, function* () {
-            return yield prisma.user.findUnique({
+            return yield prisma_1.default.user.findUnique({
                 where: { id: userId },
-                select: { id: true, email: true, password: true },
+                select: { id: true, email: true, password: true }
             });
         });
     }
@@ -30,11 +29,11 @@ class UserAuthService {
     validatePasswordChangeRequest(currentPassword, newPassword) {
         const errors = [];
         if (!currentPassword || !newPassword) {
-            errors.push("Current password and new password are required");
+            errors.push('Current password and new password are required');
         }
         return {
             isValid: errors.length === 0,
-            errors,
+            errors
         };
     }
     // Verify current password
@@ -56,9 +55,9 @@ class UserAuthService {
     // Update user password
     updateUserPassword(userId, hashedPassword) {
         return __awaiter(this, void 0, void 0, function* () {
-            yield prisma.user.update({
+            yield prisma_1.default.user.update({
                 where: { id: userId },
-                data: { password: hashedPassword },
+                data: { password: hashedPassword }
             });
             logger_1.default.info(`Password changed for user ID: ${userId}`);
         });

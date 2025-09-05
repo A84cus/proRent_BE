@@ -1,309 +1,287 @@
-import { Request, Response } from "express";
+import { Request, Response } from 'express';
 import {
-  queryReservations,
-  getUserReservations,
-  getOwnerReservations,
-  getPropertyReservations,
-  getReservationWithPayment,
-} from "../../service/reservationService/reservationQueryService";
-import {
-  RESERVATION_ERROR_MESSAGES,
-  RESERVATION_SUCCESS_MESSAGES,
-} from "../../constants/controllers/reservation";
-import { SYSTEM_ERROR_MESSAGES } from "../../constants/controllers/system";
+   queryReservations,
+   getUserReservations,
+   getOwnerReservations,
+   getPropertyReservations,
+   getReservationWithPayment
+} from '../../service/reservationService/reservationQueryService';
+import { RESERVATION_ERROR_MESSAGES, RESERVATION_SUCCESS_MESSAGES } from '../../constants/controllers/reservation';
+import { SYSTEM_ERROR_MESSAGES } from '../../constants/controllers/system';
+import { getUserIdFromRequest } from './paymentProofController';
 
 // Main query endpoint
-export async function getReservations(req: Request, res: Response) {
-  try {
-    const {
-      userId,
-      propertyOwnerId,
-      propertyId,
-      page = "1",
-      limit = "10",
-      sortBy = "createdAt",
-      sortOrder = "desc",
-      status,
-      startDate,
-      endDate,
-      search,
-      minAmount,
-      maxAmount,
-    } = req.query;
+export async function getReservations (req: Request, res: Response) {
+   try {
+      const {
+         userId,
+         propertyOwnerId,
+         propertyId,
+         page = '1',
+         limit = '10',
+         sortBy = 'createdAt',
+         sortOrder = 'desc',
+         status,
+         startDate,
+         endDate,
+         search,
+         minAmount,
+         maxAmount
+      } = req.query;
 
-    const filters: any = {};
-    if (status) {
-      filters.status = status as string;
-    }
-    if (startDate) {
-      filters.startDate = new Date(startDate as string);
-    }
-    if (endDate) {
-      filters.endDate = new Date(endDate as string);
-    }
-    if (search) {
-      filters.search = search as string;
-    }
-    if (minAmount !== undefined) {
-      filters.minAmount = Number(minAmount);
-    }
-    if (maxAmount !== undefined) {
-      filters.maxAmount = Number(maxAmount);
-    }
+      const filters: any = {};
+      if (status) {
+         filters.status = status as string;
+      }
+      if (startDate) {
+         filters.startDate = new Date(startDate as string);
+      }
+      if (endDate) {
+         filters.endDate = new Date(endDate as string);
+      }
+      if (search) {
+         filters.search = search as string;
+      }
+      if (minAmount !== undefined) {
+         filters.minAmount = Number(minAmount);
+      }
+      if (maxAmount !== undefined) {
+         filters.maxAmount = Number(maxAmount);
+      }
 
-    const options = {
-      userId: userId as string | undefined,
-      propertyOwnerId: propertyOwnerId as string | undefined,
-      propertyId: propertyId as string | undefined,
-      page: parseInt(page as string, 10),
-      limit: parseInt(limit as string, 10),
-      sortBy: sortBy as any,
-      sortOrder: sortOrder as any,
-      filters,
-    };
+      const options = {
+         userId: userId as string | undefined,
+         propertyOwnerId: propertyOwnerId as string | undefined,
+         propertyId: propertyId as string | undefined,
+         page: parseInt(page as string, 10),
+         limit: parseInt(limit as string, 10),
+         sortBy: sortBy as any,
+         sortOrder: sortOrder as any,
+         filters
+      };
 
-    const result = await queryReservations(options);
-    res.json(result);
-    return;
-  } catch (error) {
-    console.error("Error fetching reservations:", error);
-    res
-      .status(500)
-      .json({ message: SYSTEM_ERROR_MESSAGES.INTERNAL_SERVER_ERROR });
-  }
+      const result = await queryReservations(options);
+      res.json(result);
+      return;
+   } catch (error) {
+      console.error('Error fetching reservations:', error);
+      res.status(500).json({ message: SYSTEM_ERROR_MESSAGES.INTERNAL_SERVER_ERROR });
+   }
 }
 
 // Get reservations by user ID
-export async function getUserReservationsHandler(req: Request, res: Response) {
-  try {
-    const userId = req.user?.userId as string;
+export async function getUserReservationsHandler (req: Request, res: Response) {
+   try {
+      const userId = req.user?.userId as string;
 
-    // Remove the parameter check since we always expect userId from token
-    if (!userId) {
-      res
-        .status(400)
-        .json({ message: RESERVATION_ERROR_MESSAGES.USER_ID_REQUIRED });
+      // Remove the parameter check since we always expect userId from token
+      if (!userId) {
+         res.status(400).json({ message: RESERVATION_ERROR_MESSAGES.USER_ID_REQUIRED });
+         return;
+      }
+
+      const {
+         page = '1',
+         limit = '10',
+         sortBy = 'createdAt',
+         sortOrder = 'desc',
+         status,
+         startDate,
+         endDate,
+         search,
+         minAmount,
+         maxAmount
+      } = req.query;
+
+      const filters: any = {};
+      if (status) {
+         filters.status = status as string;
+      }
+      if (startDate) {
+         filters.startDate = new Date(startDate as string);
+      }
+      if (endDate) {
+         filters.endDate = new Date(endDate as string);
+      }
+      if (search) {
+         filters.search = search as string;
+      }
+      if (minAmount !== undefined) {
+         filters.minAmount = Number(minAmount);
+      }
+      if (maxAmount !== undefined) {
+         filters.maxAmount = Number(maxAmount);
+      }
+
+      const options = {
+         page: parseInt(page as string, 10),
+         limit: parseInt(limit as string, 10),
+         sortBy: sortBy as any,
+         sortOrder: sortOrder as any,
+         filters
+      };
+
+      const result = await getUserReservations(userId, options);
+      res.json(result);
       return;
-    }
-
-    const {
-      page = "1",
-      limit = "10",
-      sortBy = "createdAt",
-      sortOrder = "desc",
-      status,
-      startDate,
-      endDate,
-      search,
-      minAmount,
-      maxAmount,
-    } = req.query;
-
-    const filters: any = {};
-    if (status) {
-      filters.status = status as string;
-    }
-    if (startDate) {
-      filters.startDate = new Date(startDate as string);
-    }
-    if (endDate) {
-      filters.endDate = new Date(endDate as string);
-    }
-    if (search) {
-      filters.search = search as string;
-    }
-    if (minAmount !== undefined) {
-      filters.minAmount = Number(minAmount);
-    }
-    if (maxAmount !== undefined) {
-      filters.maxAmount = Number(maxAmount);
-    }
-
-    const options = {
-      page: parseInt(page as string, 10),
-      limit: parseInt(limit as string, 10),
-      sortBy: sortBy as any,
-      sortOrder: sortOrder as any,
-      filters,
-    };
-
-    const result = await getUserReservations(userId, options);
-    res.json(result);
-    return;
-  } catch (error: any) {
-    console.error("Error in controller:", error);
-    res
-      .status(500)
-      .json({ message: SYSTEM_ERROR_MESSAGES.INTERNAL_SERVER_ERROR });
-  }
+   } catch (error: any) {
+      console.error('Error in controller:', error);
+      res.status(500).json({ message: SYSTEM_ERROR_MESSAGES.INTERNAL_SERVER_ERROR });
+   }
 }
 
 // Get reservations for a property owner (tenant)
-export async function getOwnerReservationsHandler(req: Request, res: Response) {
-  try {
-    const propertyOwnerId = req.user?.userId as string;
-    if (!propertyOwnerId) {
-      res
-        .status(400)
-        .json({
-          message: RESERVATION_ERROR_MESSAGES.PROPERTY_OWNER_ID_REQUIRED,
-        });
+export async function getOwnerReservationsHandler (req: Request, res: Response) {
+   try {
+      const propertyOwnerId = getUserIdFromRequest(req);
+      if (!propertyOwnerId) {
+         res.status(400).json({
+            message: RESERVATION_ERROR_MESSAGES.PROPERTY_OWNER_ID_REQUIRED
+         });
+         return;
+      }
+
+      const {
+         page = '1',
+         limit = '10',
+         sortBy = 'createdAt',
+         sortOrder = 'desc',
+         status,
+         startDate,
+         endDate,
+         search,
+         minAmount,
+         maxAmount
+      } = req.query;
+
+      const filters: any = {};
+      if (status) {
+         filters.status = status as string;
+      }
+      if (startDate) {
+         filters.startDate = new Date(startDate as string);
+      }
+      if (endDate) {
+         filters.endDate = new Date(endDate as string);
+      }
+      if (search) {
+         filters.search = search as string;
+      }
+      if (minAmount !== undefined) {
+         filters.minAmount = Number(minAmount);
+      }
+      if (maxAmount !== undefined) {
+         filters.maxAmount = Number(maxAmount);
+      }
+
+      const options = {
+         page: parseInt(page as string, 10),
+         limit: parseInt(limit as string, 10),
+         sortBy: sortBy as any,
+         sortOrder: sortOrder as any,
+         filters
+      };
+
+      const result = await getOwnerReservations(propertyOwnerId, options);
+      res.json(result);
       return;
-    }
-
-    const {
-      page = "1",
-      limit = "10",
-      sortBy = "createdAt",
-      sortOrder = "desc",
-      status,
-      startDate,
-      endDate,
-      search,
-      minAmount,
-      maxAmount,
-    } = req.query;
-
-    const filters: any = {};
-    if (status) {
-      filters.status = status as string;
-    }
-    if (startDate) {
-      filters.startDate = new Date(startDate as string);
-    }
-    if (endDate) {
-      filters.endDate = new Date(endDate as string);
-    }
-    if (search) {
-      filters.search = search as string;
-    }
-    if (minAmount !== undefined) {
-      filters.minAmount = Number(minAmount);
-    }
-    if (maxAmount !== undefined) {
-      filters.maxAmount = Number(maxAmount);
-    }
-
-    const options = {
-      page: parseInt(page as string, 10),
-      limit: parseInt(limit as string, 10),
-      sortBy: sortBy as any,
-      sortOrder: sortOrder as any,
-      filters,
-    };
-
-    const result = await getOwnerReservations(propertyOwnerId, options);
-    res.json(result);
-    return;
-  } catch (error) {
-    console.error("Error fetching tenant reservations:", error);
-    res
-      .status(500)
-      .json({ message: SYSTEM_ERROR_MESSAGES.INTERNAL_SERVER_ERROR });
-  }
+   } catch (error) {
+      console.error('Error fetching tenant reservations:', error);
+      res.status(500).json({ message: SYSTEM_ERROR_MESSAGES.INTERNAL_SERVER_ERROR });
+   }
 }
 
 // Get reservations for a specific property
-export async function getPropertyReservationsHandler(
-  req: Request,
-  res: Response
-) {
-  try {
-    const propertyId = req.params.propertyId;
-    if (!propertyId) {
-      res
-        .status(400)
-        .json({ message: RESERVATION_ERROR_MESSAGES.PROPERTY_ID_REQUIRED });
+export async function getPropertyReservationsHandler (req: Request, res: Response) {
+   try {
+      const propertyOwnerId = req.user?.userId as string;
+      const propertyId = req.params.propertyId;
+      if (!propertyId) {
+         res.status(400).json({ message: RESERVATION_ERROR_MESSAGES.PROPERTY_ID_REQUIRED });
+         return;
+      }
+
+      const {
+         page = '1',
+         limit = '10',
+         sortBy = 'createdAt',
+         sortOrder = 'desc',
+         status,
+         startDate,
+         endDate,
+         search,
+         minAmount,
+         maxAmount,
+         roomTypeId
+      } = req.query;
+
+      const filters: any = {};
+      if (status) {
+         filters.status = status as string;
+      }
+      if (startDate) {
+         filters.startDate = new Date(startDate as string);
+      }
+      if (endDate) {
+         filters.endDate = new Date(endDate as string);
+      }
+      if (search) {
+         filters.search = search as string;
+      }
+      if (minAmount !== undefined) {
+         filters.minAmount = Number(minAmount);
+      }
+      if (maxAmount !== undefined) {
+         filters.maxAmount = Number(maxAmount);
+      }
+
+      const parsedRoomTypeId = roomTypeId ? String(roomTypeId) : undefined;
+
+      const options = {
+         page: parseInt(page as string, 10),
+         limit: parseInt(limit as string, 10),
+         sortBy: sortBy as any,
+         sortOrder: sortOrder as any,
+
+         filters
+      };
+
+      const result = await getPropertyReservations(propertyOwnerId, propertyId, {
+         ...options,
+         roomTypeId: parsedRoomTypeId
+      });
+      res.json(result);
       return;
-    }
-
-    const {
-      page = "1",
-      limit = "10",
-      sortBy = "createdAt",
-      sortOrder = "desc",
-      status,
-      startDate,
-      endDate,
-      search,
-      minAmount,
-      maxAmount,
-    } = req.query;
-
-    const filters: any = {};
-    if (status) {
-      filters.status = status as string;
-    }
-    if (startDate) {
-      filters.startDate = new Date(startDate as string);
-    }
-    if (endDate) {
-      filters.endDate = new Date(endDate as string);
-    }
-    if (search) {
-      filters.search = search as string;
-    }
-    if (minAmount !== undefined) {
-      filters.minAmount = Number(minAmount);
-    }
-    if (maxAmount !== undefined) {
-      filters.maxAmount = Number(maxAmount);
-    }
-
-    const options = {
-      page: parseInt(page as string, 10),
-      limit: parseInt(limit as string, 10),
-      sortBy: sortBy as any,
-      sortOrder: sortOrder as any,
-      filters,
-    };
-
-    const result = await getPropertyReservations(propertyId, options);
-    res.json(result);
-    return;
-  } catch (error) {
-    console.error("Error fetching property reservations:", error);
-    res
-      .status(500)
-      .json({ message: SYSTEM_ERROR_MESSAGES.INTERNAL_SERVER_ERROR });
-  }
+   } catch (error) {
+      console.error('Error fetching property reservations:', error);
+      res.status(500).json({ message: SYSTEM_ERROR_MESSAGES.INTERNAL_SERVER_ERROR });
+   }
 }
 
-export async function getReservationWithPaymentHandler(
-  req: Request,
-  res: Response
-) {
-  try {
-    const reservationId = req.params.id;
+export async function getReservationWithPaymentHandler (req: Request, res: Response) {
+   try {
+      const reservationId = req.params.id;
 
-    if (!reservationId) {
-      res
-        .status(400)
-        .json({ message: RESERVATION_ERROR_MESSAGES.RESERVATION_ID_REQUIRED });
+      if (!reservationId) {
+         res.status(400).json({ message: RESERVATION_ERROR_MESSAGES.RESERVATION_ID_REQUIRED });
+         return;
+      }
+
+      const reservationWithPayment = await getReservationWithPayment(reservationId);
+
+      if (!reservationWithPayment) {
+         res.status(404).json({ message: RESERVATION_ERROR_MESSAGES.RESERVATION_NOT_FOUND });
+         return;
+      }
+
+      res.json(reservationWithPayment);
       return;
-    }
+   } catch (error) {
+      console.error('Error fetching reservation with payment:', error);
 
-    const reservationWithPayment = await getReservationWithPayment(
-      reservationId
-    );
+      res.status(500).json({ message: SYSTEM_ERROR_MESSAGES.INTERNAL_SERVER_ERROR });
 
-    if (!reservationWithPayment) {
-      res
-        .status(404)
-        .json({ message: RESERVATION_ERROR_MESSAGES.RESERVATION_NOT_FOUND });
-      return;
-    }
-
-    res.json(reservationWithPayment);
-    return;
-  } catch (error) {
-    console.error("Error fetching reservation with payment:", error);
-
-    res
-      .status(500)
-      .json({ message: SYSTEM_ERROR_MESSAGES.INTERNAL_SERVER_ERROR });
-
-    // Atau jika ingin lebih spesifik (hati-hati dengan informasi sensitif):
-    // return res.status(500).json({ message: 'Failed to fetch reservation details', error: error.message });
-  }
+      // Atau jika ingin lebih spesifik (hati-hati dengan informasi sensitif):
+      // return res.status(500).json({ message: 'Failed to fetch reservation details', error: error.message });
+   }
 }

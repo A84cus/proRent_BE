@@ -12,14 +12,13 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-const client_1 = require("@prisma/client");
 const logger_1 = __importDefault(require("../../utils/system/logger"));
-const prisma = new client_1.PrismaClient();
+const prisma_1 = __importDefault(require("../../prisma"));
 class UserProfileService {
     // Get user profile with all related data
     getUserProfile(userId) {
         return __awaiter(this, void 0, void 0, function* () {
-            return yield prisma.user.findUnique({
+            return yield prisma_1.default.user.findUnique({
                 where: { id: userId },
                 select: {
                     id: true,
@@ -37,8 +36,8 @@ class UserProfileService {
                                 select: {
                                     id: true,
                                     url: true,
-                                    alt: true,
-                                },
+                                    alt: true
+                                }
                             },
                             location: {
                                 select: {
@@ -49,18 +48,18 @@ class UserProfileService {
                                             name: true,
                                             province: {
                                                 select: {
-                                                    name: true,
-                                                },
-                                            },
-                                        },
-                                    },
-                                },
-                            },
-                        },
+                                                    name: true
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
                     },
                     createdAt: true,
-                    updatedAt: true,
-                },
+                    updatedAt: true
+                }
             });
         });
     }
@@ -80,7 +79,7 @@ class UserProfileService {
                     ? {
                         id: user.profile.avatar.id,
                         url: user.profile.avatar.url,
-                        alt: user.profile.avatar.alt,
+                        alt: user.profile.avatar.alt
                     }
                     : null,
                 birthDate: ((_e = user.profile) === null || _e === void 0 ? void 0 : _e.birthDate) || null,
@@ -92,14 +91,14 @@ class UserProfileService {
                         city: {
                             name: user.profile.location.city.name,
                             province: {
-                                name: user.profile.location.city.province.name,
-                            },
-                        },
+                                name: user.profile.location.city.province.name
+                            }
+                        }
                     }
-                    : null,
+                    : null
             },
             createdAt: user.createdAt,
-            updatedAt: user.updatedAt,
+            updatedAt: user.updatedAt
         };
     }
     // Update user profile
@@ -111,10 +110,10 @@ class UserProfileService {
             if (birthDate) {
                 parsedBirthDate = new Date(birthDate);
                 if (isNaN(parsedBirthDate.getTime())) {
-                    throw new Error("Invalid birth date format");
+                    throw new Error('Invalid birth date format');
                 }
             }
-            const updatedProfile = yield prisma.profile.upsert({
+            const updatedProfile = yield prisma_1.default.profile.upsert({
                 where: { userId },
                 update: Object.assign(Object.assign(Object.assign(Object.assign(Object.assign({}, (firstName !== undefined && { firstName })), (lastName !== undefined && { lastName })), (phone !== undefined && { phone })), (parsedBirthDate && { birthDate: parsedBirthDate })), (address !== undefined && { address })),
                 create: {
@@ -123,36 +122,36 @@ class UserProfileService {
                     lastName: lastName || null,
                     phone: phone || null,
                     birthDate: parsedBirthDate || null,
-                    address: address || null,
+                    address: address || null
                 },
                 include: {
                     avatar: {
                         select: {
                             id: true,
                             url: true,
-                            alt: true,
-                        },
-                    },
-                },
+                            alt: true
+                        }
+                    }
+                }
             });
             logger_1.default.info(`Profile updated for user ID: ${userId}`);
             return {
                 firstName: updatedProfile.firstName,
                 lastName: updatedProfile.lastName,
-                name: `${updatedProfile.firstName || ""} ${updatedProfile.lastName || ""}`.trim() || null,
+                name: `${updatedProfile.firstName || ''} ${updatedProfile.lastName || ''}`.trim() || null,
                 phone: updatedProfile.phone,
                 birthDate: updatedProfile.birthDate,
                 address: updatedProfile.address,
-                avatar: updatedProfile.avatar,
+                avatar: updatedProfile.avatar
             };
         });
     }
     // Check if user exists
     checkUserExists(userId) {
         return __awaiter(this, void 0, void 0, function* () {
-            return yield prisma.user.findUnique({
+            return yield prisma_1.default.user.findUnique({
                 where: { id: userId },
-                include: { profile: true },
+                include: { profile: true }
             });
         });
     }

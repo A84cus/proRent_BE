@@ -8,64 +8,66 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
-const client_1 = require("@prisma/client");
-const prisma = new client_1.PrismaClient();
+const prisma_1 = __importDefault(require("../../prisma"));
 class CategoryRepository {
     // Get all categories
     findAll() {
         return __awaiter(this, void 0, void 0, function* () {
-            return prisma.category.findMany({
-                orderBy: { createdAt: "desc" },
+            return prisma_1.default.category.findMany({
+                orderBy: { createdAt: 'desc' }
             });
         });
     }
     // Find category by ID
     findById(id) {
         return __awaiter(this, void 0, void 0, function* () {
-            return prisma.category.findUnique({
-                where: { id },
+            return prisma_1.default.category.findUnique({
+                where: { id }
             });
         });
     }
     // Find category by name
     findByName(name) {
         return __awaiter(this, void 0, void 0, function* () {
-            return prisma.category.findUnique({
-                where: { name },
+            return prisma_1.default.category.findUnique({
+                where: { name }
             });
         });
     }
     // Create new category
     create(data) {
         return __awaiter(this, void 0, void 0, function* () {
-            return prisma.category.create({
-                data,
+            return prisma_1.default.category.create({
+                data
             });
         });
     }
     // Update category
     update(id, data) {
         return __awaiter(this, void 0, void 0, function* () {
-            return prisma.category.update({
+            return prisma_1.default.category.update({
                 where: { id },
-                data,
+                data
             });
         });
     }
     // Delete category
     delete(id) {
         return __awaiter(this, void 0, void 0, function* () {
-            return prisma.category.delete({
-                where: { id },
+            return prisma_1.default.category.delete({
+                where: { id }
             });
         });
     }
     // Check if category is being used by any property
     isUsedByProperty(id) {
         return __awaiter(this, void 0, void 0, function* () {
-            const count = yield prisma.property.count({
-                where: { categoryId: id },
+            const count = yield prisma_1.default.property.count({
+                where: { categoryId: id }
             });
             return count > 0;
         });

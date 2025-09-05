@@ -35,7 +35,7 @@ export interface StatusCounts {
 
 export interface RevenueSummary {
    actual: number; // sum of confirmed paymentAmount
-   projected: number; // sum of pending_payment + pending_confirmation
+   projected: number; // sum of PENDING_payment + PENDING_confirmation
    average: number; // actual / confirmedCount
 }
 
@@ -81,6 +81,21 @@ export interface RoomTypeWithAvailability {
 }
 
 // --- Property Full View ---
+export interface PropertySummaryBase {
+   property: PropertyMin;
+   period: PeriodDetail;
+   summary: {
+      counts: StatusCounts;
+      revenue: RevenueSummary;
+      totalRoomTypes: number;
+   };
+   roomTypes: Array<Omit<RoomTypeWithAvailability, 'reservationListItems' | 'pagination'>>;
+}
+
+// The full property summary including reservation details
+export interface PropertySummaryWithReservations extends PropertySummary {}
+
+// Update the main PropertySummary to be the full version (as it was)
 export interface PropertySummary {
    property: PropertyMin;
    period: PeriodDetail;
@@ -89,7 +104,7 @@ export interface PropertySummary {
       revenue: RevenueSummary;
       totalRoomTypes: number;
    };
-   roomTypes: RoomTypeWithAvailability[];
+   roomTypes: RoomTypeWithAvailability[]; // Includes reservationListItems
 }
 
 // --- Dashboard Summary ---
@@ -145,6 +160,7 @@ export interface ReportFilters {
 
    // 🔹 Owner context
    ownerId: string;
+   search?: string;
 }
 
 // --- Options ---

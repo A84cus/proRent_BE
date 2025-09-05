@@ -25,28 +25,59 @@ function handleUnifiedReport(context) {
         const { ownerId, filters, options, period, periodConfig } = context;
         const reportStart = filters.startDate || undefined;
         const reportEnd = filters.endDate || undefined;
-        // Step 1: Global Summary
-        const globalSummary = yield (0, globalSummary_1.loadGlobalSummary)(ownerId, reportStart, reportEnd);
-        // Step2: Load Reservations
-        const reservations = yield (0, loadReservations_1.loadReservations)(ownerId, filters, reportStart, reportEnd);
-        // Step3: Group by Property & RoomType
-        const { propertyMap, roomTypeMap } = yield (0, groupByPropertyAndRoomType_1.groupByPropertyAndRoomType)(reservations, ownerId);
-        // Step4: Load Availability
-        yield (0, loadAvailability_1.loadAvailability)(roomTypeMap, reportStart, reportEnd);
-        // Step5: Unique Customers
-        (0, countUniqueCustomers_1.computeUniqueCustomers)(roomTypeMap, reservations);
         const filtersWithOwnerId = Object.assign(Object.assign({}, filters), { ownerId });
         const optionsForReservationList = options;
-        // Step6: Build Reservation List
-        (0, buildReservationList_1.buildReservationList)(roomTypeMap, reservations, optionsForReservationList, filtersWithOwnerId);
-        const { paginatedProperties, total, totalPages } = (0, filterAndSortProperties_1.filterAndSortProperties)(propertyMap, roomTypeMap, reservations, filtersWithOwnerId, options);
-        // Step8: Aggregate Summary
+        // --- Step 1: Global Summary (Lean data) ---
+        const globalSummary = yield (0, globalSummary_1.loadGlobalSummary)(ownerId, reportStart, reportEnd);
+        // --- Step 2: Load Reservations (conditionally load details based on options) ---
+        const reservations = yield (0, loadReservations_1.loadReservations)(ownerId, filters, reportStart, reportEnd, optionsForReservationList); // Pass options
+        // --- Step 3: Group by Property & RoomType (Creates maps with initial structures) ---
+        const { propertyMap, roomTypeMap } = yield (0, groupByPropertyAndRoomType_1.groupByPropertyAndRoomType)(reservations !== null && reservations !== void 0 ? reservations : [], ownerId);
+        // --- Step 4: Load Availability (Populates availability data in roomTypeMap) ---
+        yield (0, loadAvailability_1.loadAvailability)(roomTypeMap, reportStart, reportEnd);
+        // --- Step 5: Unique Customers (Calculates unique customers per room type) ---
+        (0, countUniqueCustomers_1.computeUniqueCustomers)(roomTypeMap, reservations !== null && reservations !== void 0 ? reservations : []);
+        // --- Step 6: Build Reservation List (USES THE fetchAllData FLAG for pagination within room types) ---
+        (0, buildReservationList_1.buildReservationList)(roomTypeMap, reservations !== null && reservations !== void 0 ? reservations : [], optionsForReservationList, filtersWithOwnerId);
+        // --- Step 7: Filter and Sort Properties (Handles property-level pagination) ---
+        const { paginatedProperties, total, totalPages } = (0, filterAndSortProperties_1.filterAndSortProperties)(propertyMap, roomTypeMap, reservations !== null && reservations !== void 0 ? reservations : [], filtersWithOwnerId, options);
+        // --- Step 8: Aggregate Summary (Combines summaries from paginated properties) ---
         const aggregatedSummary = (0, aggregateSummaries_1.aggregateSummaries)(paginatedProperties.map(p => p.summary));
-        // Step9: Update Cache (background)
-        (0, updatePerformanceCache_1.updatePerformanceCache)(reservations, ownerId, periodConfig).catch(console.error);
-        // Final Response
+        // --- Step 9: Update Cache (Background task) ---
+        (0, updatePerformanceCache_1.updatePerformanceCache)(reservations !== null && reservations !== void 0 ? reservations : [], ownerId, periodConfig).catch(console.error);
+        // --- Conditional Processing Before Return ---
+        const fetchAllData = typeof options.fetchAllData === 'boolean' ? options.fetchAllData : false;
+        let finalPaginatedProperties; // Type expected by DashboardReportResponse
+        if (fetchAllData) {
+            finalPaginatedProperties = paginatedProperties;
+        }
+        else {
+            finalPaginatedProperties = paginatedProperties.map(propBase => {
+                const propertySummary = {
+                    property: propBase.property,
+                    period: propBase.period,
+                    summary: propBase.summary,
+                    roomTypes: propBase.roomTypes.map(rtBase => {
+                        const roomTypeWithAvailability = {
+                            roomType: rtBase.roomType,
+                            counts: rtBase.counts,
+                            revenue: rtBase.revenue,
+                            uniqueCustomers: rtBase.uniqueCustomers,
+                            availability: rtBase.availability,
+                            totalAmount: rtBase.totalAmount,
+                            reservationListItems: [],
+                            pagination: { page: 1, pageSize: 0, total: 0, totalPages: 1 }
+                        };
+                        return roomTypeWithAvailability;
+                    })
+                };
+                return propertySummary;
+            });
+        }
+        // --- End of Conditional Processing ---
+        // --- Final Response ---
         return {
-            properties: paginatedProperties,
+            properties: finalPaginatedProperties, // This now matches the expected type
             summary: {
                 Global: globalSummary,
                 Aggregate: aggregatedSummary,

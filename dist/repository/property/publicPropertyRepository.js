@@ -8,9 +8,11 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
-const client_1 = require("@prisma/client");
-const prisma = new client_1.PrismaClient();
+const prisma_1 = __importDefault(require("../../prisma"));
 class PublicPropertyRepository {
     // Search properties with filters and pagination
     searchProperties(params) {
@@ -22,28 +24,28 @@ class PublicPropertyRepository {
             const where = {};
             if (params.search) {
                 where.OR = [
-                    { name: { contains: params.search, mode: "insensitive" } },
-                    { description: { contains: params.search, mode: "insensitive" } },
+                    { name: { contains: params.search, mode: 'insensitive' } },
+                    { description: { contains: params.search, mode: 'insensitive' } },
                     {
                         location: {
                             OR: [
-                                { name: { contains: params.search, mode: "insensitive" } },
-                                { address: { contains: params.search, mode: "insensitive" } },
+                                { name: { contains: params.search, mode: 'insensitive' } },
+                                { address: { contains: params.search, mode: 'insensitive' } },
                                 {
                                     city: {
-                                        name: { contains: params.search, mode: "insensitive" },
-                                    },
+                                        name: { contains: params.search, mode: 'insensitive' }
+                                    }
                                 },
                                 {
                                     city: {
                                         province: {
-                                            name: { contains: params.search, mode: "insensitive" },
-                                        },
-                                    },
-                                },
-                            ],
-                        },
-                    },
+                                            name: { contains: params.search, mode: 'insensitive' }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
                 ];
             }
             if (params.categoryId) {
@@ -51,25 +53,25 @@ class PublicPropertyRepository {
             }
             // Build order by
             let orderBy = {
-                createdAt: "desc",
+                createdAt: 'desc'
             };
             if (params.sort) {
                 switch (params.sort) {
-                    case "price_asc":
-                    case "price_desc":
+                    case 'price_asc':
+                    case 'price_desc':
                         // For price sorting, we'll sort by the minimum room type price after fetching
-                        orderBy = { name: "asc" }; // Use name sorting as fallback, we'll sort by price in post-processing
+                        orderBy = { name: 'asc' }; // Use name sorting as fallback, we'll sort by price in post-processing
                         break;
-                    case "name_asc":
-                        orderBy = { name: "asc" };
+                    case 'name_asc':
+                        orderBy = { name: 'asc' };
                         break;
-                    case "name_desc":
-                        orderBy = { name: "desc" };
+                    case 'name_desc':
+                        orderBy = { name: 'desc' };
                         break;
                 }
             }
             const [propertiesRaw, total] = yield Promise.all([
-                prisma.property.findMany({
+                prisma_1.default.property.findMany({
                     where,
                     include: {
                         category: true,
@@ -77,10 +79,10 @@ class PublicPropertyRepository {
                             include: {
                                 city: {
                                     include: {
-                                        province: true,
-                                    },
-                                },
-                            },
+                                        province: true
+                                    }
+                                }
+                            }
                         },
                         mainPicture: true,
                         roomTypes: {
@@ -89,35 +91,29 @@ class PublicPropertyRepository {
                                 name: true,
                                 basePrice: true,
                                 capacity: true,
-                                totalQuantity: true,
+                                totalQuantity: true
                             },
-                            orderBy: { basePrice: "asc" },
+                            orderBy: { basePrice: 'asc' }
                         },
                         _count: {
                             select: {
-                                rooms: true,
-                            },
-                        },
+                                rooms: true
+                            }
+                        }
                     },
                     orderBy,
                     skip,
-                    take: limit,
+                    take: limit
                 }),
-                prisma.property.count({ where }),
+                prisma_1.default.property.count({ where })
             ]);
             // Sort by price if needed
             let properties = propertiesRaw;
-            if (params.sort === "price_asc" || params.sort === "price_desc") {
+            if (params.sort === 'price_asc' || params.sort === 'price_desc') {
                 properties = propertiesRaw.sort((a, b) => {
-                    const aMinPrice = a.roomTypes.length > 0
-                        ? Math.min(...a.roomTypes.map((rt) => Number(rt.basePrice)))
-                        : 0;
-                    const bMinPrice = b.roomTypes.length > 0
-                        ? Math.min(...b.roomTypes.map((rt) => Number(rt.basePrice)))
-                        : 0;
-                    return params.sort === "price_asc"
-                        ? aMinPrice - bMinPrice
-                        : bMinPrice - aMinPrice;
+                    const aMinPrice = a.roomTypes.length > 0 ? Math.min(...a.roomTypes.map(rt => Number(rt.basePrice))) : 0;
+                    const bMinPrice = b.roomTypes.length > 0 ? Math.min(...b.roomTypes.map(rt => Number(rt.basePrice))) : 0;
+                    return params.sort === 'price_asc' ? aMinPrice - bMinPrice : bMinPrice - aMinPrice;
                 });
             }
             const totalPages = Math.ceil(total / limit);
@@ -126,14 +122,14 @@ class PublicPropertyRepository {
                 total,
                 page,
                 limit,
-                totalPages,
+                totalPages
             };
         });
     }
     // Get property by ID for public view
     findByIdPublic(id) {
         return __awaiter(this, void 0, void 0, function* () {
-            return prisma.property.findUnique({
+            return prisma_1.default.property.findUnique({
                 where: { id },
                 include: {
                     category: true,
@@ -141,10 +137,10 @@ class PublicPropertyRepository {
                         include: {
                             city: {
                                 include: {
-                                    province: true,
-                                },
-                            },
-                        },
+                                    province: true
+                                }
+                            }
+                        }
                     },
                     Owner: {
                         select: {
@@ -154,67 +150,67 @@ class PublicPropertyRepository {
                                 select: {
                                     firstName: true,
                                     lastName: true,
-                                    phone: true,
-                                },
-                            },
-                        },
+                                    phone: true
+                                }
+                            }
+                        }
                     },
                     mainPicture: true,
                     gallery: {
                         include: {
-                            picture: true,
-                        },
+                            picture: true
+                        }
                     },
                     rooms: {
                         include: {
                             roomType: true,
                             gallery: {
                                 include: {
-                                    picture: true,
-                                },
-                            },
-                        },
+                                    picture: true
+                                }
+                            }
+                        }
                     },
                     roomTypes: {
                         include: {
                             peakRates: {
                                 where: {
-                                    endDate: { gte: new Date() },
+                                    endDate: { gte: new Date() }
                                 },
-                                orderBy: { startDate: "asc" },
-                            },
-                        },
-                    },
-                },
+                                orderBy: { startDate: 'asc' }
+                            }
+                        }
+                    }
+                }
             });
         });
     }
     // Get room types for a property
     findRoomTypesByProperty(propertyId) {
         return __awaiter(this, void 0, void 0, function* () {
-            return prisma.roomType.findMany({
+            return prisma_1.default.roomType.findMany({
                 where: { propertyId },
                 include: {
                     rooms: {
                         select: {
                             id: true,
                             name: true,
-                            isAvailable: true,
-                        },
+                            isAvailable: true
+                        }
                     },
                     peakRates: {
                         where: {
-                            endDate: { gte: new Date() },
+                            endDate: { gte: new Date() }
                         },
-                        orderBy: { startDate: "asc" },
+                        orderBy: { startDate: 'asc' }
                     },
                     _count: {
                         select: {
-                            rooms: true,
-                        },
-                    },
+                            rooms: true
+                        }
+                    }
                 },
-                orderBy: { basePrice: "asc" },
+                orderBy: { basePrice: 'asc' }
             });
         });
     }
@@ -225,28 +221,25 @@ class PublicPropertyRepository {
             const endDate = new Date();
             endDate.setDate(startDate.getDate() + days);
             // Get all room types for the property
-            const roomTypes = yield prisma.roomType.findMany({
+            const roomTypes = yield prisma_1.default.roomType.findMany({
                 where: { propertyId },
                 include: {
                     peakRates: {
                         where: {
                             OR: [
                                 {
-                                    AND: [
-                                        { startDate: { lte: endDate } },
-                                        { endDate: { gte: startDate } },
-                                    ],
-                                },
-                            ],
-                        },
+                                    AND: [{ startDate: { lte: endDate } }, { endDate: { gte: startDate } }]
+                                }
+                            ]
+                        }
                     },
                     availabilities: {
                         where: {
                             date: {
                                 gte: startDate,
-                                lte: endDate,
-                            },
-                        },
+                                lte: endDate
+                            }
+                        }
                     },
                     rooms: {
                         include: {
@@ -254,58 +247,52 @@ class PublicPropertyRepository {
                                 where: {
                                     date: {
                                         gte: startDate,
-                                        lte: endDate,
-                                    },
-                                },
+                                        lte: endDate
+                                    }
+                                }
                             },
                             reservations: {
                                 where: {
                                     orderStatus: {
-                                        in: ["PENDING_PAYMENT", "PENDING_CONFIRMATION", "CONFIRMED"],
+                                        in: ['PENDING_PAYMENT', 'PENDING_CONFIRMATION', 'CONFIRMED']
                                     },
                                     deletedAt: null,
                                     OR: [
                                         {
-                                            AND: [
-                                                { startDate: { lte: endDate } },
-                                                { endDate: { gte: startDate } },
-                                            ],
-                                        },
-                                    ],
-                                },
-                            },
-                        },
-                    },
-                },
+                                            AND: [{ startDate: { lte: endDate } }, { endDate: { gte: startDate } }]
+                                        }
+                                    ]
+                                }
+                            }
+                        }
+                    }
+                }
             });
             // Build daily data
             const dailyData = [];
             for (let i = 0; i < days; i++) {
                 const currentDate = new Date(startDate);
                 currentDate.setDate(startDate.getDate() + i);
-                const roomTypeData = roomTypes.map((roomType) => {
+                const roomTypeData = roomTypes.map(roomType => {
                     // Calculate pricing for this date
-                    const applicablePeakRate = roomType.peakRates.find((rate) => currentDate >= new Date(rate.startDate) &&
-                        currentDate <= new Date(rate.endDate));
+                    const applicablePeakRate = roomType.peakRates.find(rate => currentDate >= new Date(rate.startDate) && currentDate <= new Date(rate.endDate));
                     let finalPrice = Number(roomType.basePrice);
                     if (applicablePeakRate) {
-                        if (applicablePeakRate.rateType === "PERCENTAGE") {
-                            finalPrice =
-                                finalPrice * (1 + Number(applicablePeakRate.value) / 100);
+                        if (applicablePeakRate.rateType === 'PERCENTAGE') {
+                            finalPrice = finalPrice * (1 + Number(applicablePeakRate.value) / 100);
                         }
                         else {
                             finalPrice = finalPrice + Number(applicablePeakRate.value);
                         }
                     }
                     // Calculate availability
-                    const roomTypeAvailability = roomType.availabilities.find((av) => av.date.toDateString() === currentDate.toDateString());
+                    const roomTypeAvailability = roomType.availabilities.find(av => av.date.toDateString() === currentDate.toDateString());
                     let totalAvailable = roomType.totalQuantity;
                     if (roomTypeAvailability) {
                         totalAvailable = roomTypeAvailability.availableCount;
                     }
                     // Subtract rooms with reservations
-                    const reservedRooms = roomType.rooms.filter((room) => room.reservations.some((res) => currentDate >= new Date(res.startDate) &&
-                        currentDate <= new Date(res.endDate))).length;
+                    const reservedRooms = roomType.rooms.filter(room => room.reservations.some(res => currentDate >= new Date(res.startDate) && currentDate <= new Date(res.endDate))).length;
                     totalAvailable = Math.max(0, totalAvailable - reservedRooms);
                     return {
                         roomTypeId: roomType.id,
@@ -317,14 +304,14 @@ class PublicPropertyRepository {
                             ? {
                                 name: applicablePeakRate.name,
                                 value: Number(applicablePeakRate.value),
-                                rateType: applicablePeakRate.rateType,
+                                rateType: applicablePeakRate.rateType
                             }
-                            : null,
+                            : null
                     };
                 });
                 dailyData.push({
-                    date: currentDate.toISOString().split("T")[0],
-                    roomTypes: roomTypeData,
+                    date: currentDate.toISOString().split('T')[0],
+                    roomTypes: roomTypeData
                 });
             }
             return dailyData;
@@ -333,18 +320,18 @@ class PublicPropertyRepository {
     // Get all categories for filtering
     findAllCategories() {
         return __awaiter(this, void 0, void 0, function* () {
-            return prisma.category.findMany({
+            return prisma_1.default.category.findMany({
                 select: {
                     id: true,
                     name: true,
                     description: true,
                     _count: {
                         select: {
-                            properties: true,
-                        },
-                    },
+                            properties: true
+                        }
+                    }
                 },
-                orderBy: { name: "asc" },
+                orderBy: { name: 'asc' }
             });
         });
     }

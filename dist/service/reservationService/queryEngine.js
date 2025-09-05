@@ -5,17 +5,29 @@ exports.buildOrderByClause = buildOrderByClause;
 exports.buildIncludeFields = buildIncludeFields;
 const buildInclude_1 = require("./buildInclude");
 function buildWhereConditions(options) {
-    const { userId, propertyOwnerId, propertyId, filters = {} } = options;
+    const { userId, propertyOwnerId, propertyId, roomTypeId, filters = {} } = options;
     const whereConditions = {};
     if (userId) {
         whereConditions.userId = userId;
     }
-    if (propertyOwnerId) {
-        whereConditions.RoomType = buildPropertyOwnerFilter(propertyOwnerId);
+    if (propertyId && propertyOwnerId) {
+        whereConditions.property = {
+            id: propertyId,
+            ownerId: propertyOwnerId
+        };
     }
-    if (propertyId) {
-        whereConditions.propertyId = propertyId;
+    else {
+        if (propertyId) {
+            whereConditions.propertyId = propertyId;
+        }
+        if (propertyOwnerId) {
+            whereConditions.RoomType = buildPropertyOwnerFilter(propertyOwnerId);
+        }
     }
+    if (roomTypeId) {
+        whereConditions.roomTypeId = roomTypeId;
+    }
+    // 6. Apply additional filters
     Object.assign(whereConditions, buildStatusFilter(filters.status));
     Object.assign(whereConditions, buildDateRangeFilter(filters.startDate, filters.endDate));
     Object.assign(whereConditions, buildSearchFilter(filters.search));
@@ -56,6 +68,7 @@ function buildSearchFilter(search) {
     return {
         OR: [
             { id: { contains: search, mode: 'insensitive' } },
+            { roomTypeId: { contains: search, mode: 'insensitive' } },
             { RoomType: { name: { contains: search, mode: 'insensitive' } } },
             { RoomType: { property: { name: { contains: search, mode: 'insensitive' } } } },
             { payment: { invoiceNumber: { contains: search, mode: 'insensitive' } } },
