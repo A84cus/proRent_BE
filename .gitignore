@@ -5,9 +5,9 @@ node_modules
 /generated/prisma
 .vercel
 .history
-dist
+# dist
 
-dist/
+# dist/
 
 src/logs/
 
