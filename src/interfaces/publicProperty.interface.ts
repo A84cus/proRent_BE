@@ -8,10 +8,25 @@ export interface PublicPropertySearchQuery {
   maxPrice?: number;
   minRooms?: number;
   maxRooms?: number;
-  sortBy: "createdAt" | "name" | "pricing";
+  capacity?: number;
+  sortBy: "createdAt" | "name" | "pricing" | "price" | "capacity";
   sortOrder: "asc" | "desc";
   page: number;
   limit: number;
+}
+
+export interface PropertySearchParams {
+  search?: string;
+  category?: string;
+  city?: string;
+  province?: string;
+  minPrice?: number;
+  maxPrice?: number;
+  capacity?: number;
+  sortBy?: "name" | "price" | "createdAt" | "capacity";
+  sortOrder?: "asc" | "desc";
+  page?: number;
+  limit?: number;
 }
 
 export interface PublicPropertySearchValidationResult {

@@ -18,11 +18,39 @@ const peakRateService_1 = __importDefault(require("../../service/property/peakRa
 const property_1 = require("../../constants/controllers/property");
 const property_2 = require("../../helpers/property");
 class PeakRateController extends BaseController_1.default {
-    /**
-     * POST /api/rooms/:id/peak-price - Add peak rate rule
-     */
-    addPeakRate(req, res) {
-        return __awaiter(this, void 0, void 0, function* () {
+    constructor() {
+        super(...arguments);
+        /**
+         * GET /api/rooms/:id/peak-rates - Get all peak rates for room type
+         */
+        this.getPeakRates = (req, res) => __awaiter(this, void 0, void 0, function* () {
+            try {
+                // Validate user authentication
+                const userValidation = this.validateUser(req);
+                if (!userValidation.isValid) {
+                    responseHelper_1.default.error(res, userValidation.error ||
+                        property_1.PROPERTY_ERROR_MESSAGES.USER_VALIDATION_FAILED, undefined, 401);
+                    return;
+                }
+                // Validate room type ID
+                const { id } = req.params;
+                const roomIdValidation = property_2.PeakRateValidationHelper.validateRoomId(id);
+                if (!roomIdValidation.isValid) {
+                    responseHelper_1.default.error(res, roomIdValidation.error, undefined, 400);
+                    return;
+                }
+                // Get peak rates
+                const peakRates = yield peakRateService_1.default.getPeakRatesByRoomType(id, userValidation.userId);
+                responseHelper_1.default.success(res, "Peak rates retrieved successfully", peakRates);
+            }
+            catch (error) {
+                this.handleError(res, error, "getPeakRates", property_2.PeakRateErrorHelper.getAddPeakRateErrorMappings());
+            }
+        });
+        /**
+         * POST /api/rooms/:id/peak-price - Add peak rate rule
+         */
+        this.addPeakRate = (req, res) => __awaiter(this, void 0, void 0, function* () {
             try {
                 // Validate user authentication
                 const userValidation = this.validateUser(req);
@@ -52,12 +80,10 @@ class PeakRateController extends BaseController_1.default {
                 this.handleError(res, error, "addPeakRate", property_2.PeakRateErrorHelper.getAddPeakRateErrorMappings());
             }
         });
-    }
-    /**
-     * PATCH /api/rooms/:id/peak-price/:date - Update peak rate for specific date
-     */
-    updatePeakRateForDate(req, res) {
-        return __awaiter(this, void 0, void 0, function* () {
+        /**
+         * PATCH /api/rooms/:id/peak-price/:date - Update peak rate for specific date
+         */
+        this.updatePeakRateForDate = (req, res) => __awaiter(this, void 0, void 0, function* () {
             try {
                 // Validate user authentication
                 const userValidation = this.validateUser(req);
@@ -93,12 +119,10 @@ class PeakRateController extends BaseController_1.default {
                 this.handleError(res, error, "updatePeakRateForDate", property_2.PeakRateErrorHelper.getUpdatePeakRateErrorMappings());
             }
         });
-    }
-    /**
-     * DELETE /api/rooms/:id/peak-price/:date - Remove peak rate for specific date
-     */
-    removePeakRateForDate(req, res) {
-        return __awaiter(this, void 0, void 0, function* () {
+        /**
+         * DELETE /api/rooms/:id/peak-price/:date - Remove peak rate for specific date
+         */
+        this.removePeakRateForDate = (req, res) => __awaiter(this, void 0, void 0, function* () {
             try {
                 // Validate user authentication
                 const userValidation = this.validateUser(req);

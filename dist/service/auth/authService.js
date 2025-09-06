@@ -50,25 +50,65 @@ class AuthService {
             }
         });
     }
-    verifyEmail(token) {
+    verifyEmail(token, password) {
+        return __awaiter(this, void 0, void 0, function* () {
+            try {
+                const hashedToken = tokenService_1.default.hashToken(token);
+                logger_1.default.info(`Looking for user with hashed token: ${hashedToken}`);
+                const user = yield userRepository_1.default.findByVerificationToken(hashedToken);
+                if (!user) {
+                    logger_1.default.warn(`No user found with verification token: ${hashedToken}`);
+                    return {
+                        success: false,
+                        message: "Invalid or expired verification token",
+                    };
+                }
+                logger_1.default.info(`Found user: ${user.email}, token expires: ${user.verificationExpires}`);
+                // Prepare update data
+                const updateData = { isVerified: true };
+                // If password is provided, hash and set it
+                if (password) {
+                    const hashedPassword = yield passwordService_1.default.hashPassword(password);
+                    updateData.password = hashedPassword;
+                    logger_1.default.info(`Setting password for user: ${user.email}`);
+                }
+                // Mark user as verified and set password if provided
+                yield userRepository_1.default.update(user.id, updateData);
+                yield userRepository_1.default.clearVerificationToken(user.id);
+                yield authNotificationService_1.default.sendWelcomeEmail(user);
+                return {
+                    success: true,
+                    message: password
+                        ? "Email verified and password created successfully"
+                        : "Email verified successfully",
+                    requiresRedirect: !!password, // If password was set, redirect to login
+                };
+            }
+            catch (error) {
+                logger_1.default.error("Email verification error:", error);
+                throw error;
+            }
+        });
+    }
+    validateVerificationToken(token) {
         return __awaiter(this, void 0, void 0, function* () {
             try {
                 const hashedToken = tokenService_1.default.hashToken(token);
                 const user = yield userRepository_1.default.findByVerificationToken(hashedToken);
                 if (!user) {
                     return {
-                        success: false,
+                        valid: false,
                         message: "Invalid or expired verification token",
                     };
                 }
-                // Mark user as verified
-                yield userRepository_1.default.update(user.id, { isVerified: true });
-                yield userRepository_1.default.clearVerificationToken(user.id);
-                yield authNotificationService_1.default.sendWelcomeEmail(user);
-                return { success: true, message: "Email verified successfully" };
+                return {
+                    valid: true,
+                    message: "Token is valid",
+                    userEmail: user.email,
+                };
             }
             catch (error) {
-                logger_1.default.error("Email verification error:", error);
+                logger_1.default.error("Token validation error:", error);
                 throw error;
             }
         });
@@ -198,6 +238,113 @@ class AuthService {
     }
     verifyToken(token) {
         return tokenService_1.default.verifyJWTToken(token);
+    }
+    loginWithProvider(data) {
+        return __awaiter(this, void 0, void 0, function* () {
+            try {
+                // Check if user already exists
+                let user = yield userRepository_1.default.findByEmail(data.email, {
+                    profile: true,
+                });
+                let isNewUser = false;
+                if (!user) {
+                    // Register new user
+                    isNewUser = true;
+                    const socialLoginType = data.providerId === "google.com" ? "GOOGLE" : "NONE";
+                    user = yield userRepository_1.default.create({
+                        email: data.email,
+                        role: data.role || "USER",
+                        socialLogin: socialLoginType,
+                        isVerified: data.emailVerified, // Trust provider verification
+                        profile: {
+                            create: {
+                                firstName: data.firstName,
+                                lastName: data.lastName,
+                            },
+                        },
+                    });
+                    logger_1.default.info(`New user registered via provider: ${data.email}`);
+                }
+                else {
+                    // Update existing user with provider info if needed
+                    const updates = {};
+                    if (data.providerId === "google.com" && user.socialLogin !== "GOOGLE") {
+                        updates.socialLogin = "GOOGLE";
+                    }
+                    if (data.emailVerified && !user.isVerified) {
+                        updates.isVerified = true;
+                    }
+                    // Check if user has profile (using type assertion since we know we included it)
+                    const userWithProfile = user;
+                    // Update profile if it doesn't exist or lacks provider info
+                    if (!userWithProfile.profile) {
+                        updates.profile = {
+                            create: {
+                                firstName: data.firstName,
+                                lastName: data.lastName,
+                            },
+                        };
+                    }
+                    else if (!userWithProfile.profile.firstName && data.firstName) {
+                        updates.profile = {
+                            update: {
+                                firstName: data.firstName,
+                                lastName: data.lastName,
+                            },
+                        };
+                    }
+                    if (Object.keys(updates).length > 0) {
+                        yield userRepository_1.default.update(user.id, updates);
+                        // Refresh user data
+                        user = yield userRepository_1.default.findByEmail(data.email, {
+                            profile: true,
+                        });
+                    }
+                    logger_1.default.info(`Existing user logged in via provider: ${data.email}`);
+                }
+                if (!user) {
+                    throw new Error("Failed to create or retrieve user");
+                }
+                // Generate JWT token
+                const token = tokenService_1.default.generateJWTToken(user.id, user.role);
+                return {
+                    user: {
+                        id: user.id,
+                        email: user.email,
+                        role: user.role,
+                        isVerified: user.isVerified,
+                        socialLogin: user.socialLogin,
+                    },
+                    token,
+                    isNewUser,
+                };
+            }
+            catch (error) {
+                logger_1.default.error("Provider login error:", error);
+                throw error;
+            }
+        });
+    }
+    checkEmailExists(email) {
+        return __awaiter(this, void 0, void 0, function* () {
+            try {
+                const user = yield userRepository_1.default.findByEmail(email);
+                if (!user) {
+                    return {
+                        exists: false,
+                    };
+                }
+                return {
+                    exists: true,
+                    isVerified: user.isVerified,
+                    socialLogin: user.socialLogin,
+                };
+            }
+            catch (error) {
+                logger_1.default.error("Check email error:", error);
+                throw error;
+            }
+        });
     }
 }
 exports.default = new AuthService();

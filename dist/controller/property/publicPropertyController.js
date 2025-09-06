@@ -30,7 +30,23 @@ class PublicPropertyController extends BaseController_1.default {
                     responseHelper_1.default.error(res, errorResponse.message, undefined, errorResponse.status);
                     return;
                 }
-                const result = yield publicPropertyService_1.default.searchProperties(validation.query);
+                // Map validated query to service parameters
+                const serviceParams = {
+                    search: validation.query.search,
+                    category: validation.query.category,
+                    city: validation.query.city,
+                    province: validation.query.province,
+                    minPrice: validation.query.minPrice,
+                    maxPrice: validation.query.maxPrice,
+                    capacity: validation.query.capacity,
+                    sortBy: validation.query.sortBy === "pricing"
+                        ? "price"
+                        : validation.query.sortBy,
+                    sortOrder: validation.query.sortOrder,
+                    page: validation.query.page,
+                    limit: validation.query.limit,
+                };
+                const result = yield publicPropertyService_1.default.searchProperties(serviceParams);
                 responseHelper_1.default.paginated(res, property_1.PUBLIC_PROPERTY_SUCCESS_MESSAGES.PROPERTIES_RETRIEVED, result.properties, {
                     currentPage: result.pagination.page,
                     totalItems: result.pagination.total,

@@ -93,7 +93,7 @@ class DisposableEmailService {
     sendResetPassword(user, token) {
         return __awaiter(this, void 0, void 0, function* () {
             try {
-                const resetUrl = `${email_1.emailConfig.frontendUrl}/auth/reset-password?token=${token}`;
+                const resetUrl = `${email_1.emailConfig.frontendUrl}/reset-password?token=${token}`;
                 const htmlContent = (0, email_2.createResetPasswordEmailTemplate)(user, resetUrl);
                 yield this.sendEmail({
                     to: user.email,

@@ -18,7 +18,7 @@ class PublicPropertyValidationHelper {
      * Validate search query parameters
      */
     static validateSearchQuery(queryParams) {
-        const { search, category, province, city, location, minPrice, maxPrice, minRooms, maxRooms, sortBy, sortOrder, page, limit, } = queryParams;
+        const { search, category, province, city, location, minPrice, maxPrice, capacity, sortBy, sortOrder, page, limit, } = queryParams;
         // Parse and set defaults
         const searchQuery = {
             search: search ? String(search).trim() : undefined,
@@ -28,8 +28,7 @@ class PublicPropertyValidationHelper {
             location: location ? String(location).trim() : undefined,
             minPrice: minPrice ? Number(minPrice) : undefined,
             maxPrice: maxPrice ? Number(maxPrice) : undefined,
-            minRooms: minRooms ? Number(minRooms) : undefined,
-            maxRooms: maxRooms ? Number(maxRooms) : undefined,
+            capacity: capacity ? Number(capacity) : undefined,
             sortBy: sortBy
                 ? String(sortBy)
                 : "createdAt",
@@ -58,29 +57,15 @@ class PublicPropertyValidationHelper {
                 error: property_1.PUBLIC_PROPERTY_ERROR_MESSAGES.MIN_PRICE_GREATER_THAN_MAX,
             };
         }
-        // Room validations
-        if (searchQuery.minRooms !== undefined && searchQuery.minRooms < 1) {
+        // Capacity validation
+        if (searchQuery.capacity !== undefined && searchQuery.capacity < 1) {
             return {
                 isValid: false,
-                error: property_1.PUBLIC_PROPERTY_ERROR_MESSAGES.MIN_ROOMS_TOO_LOW,
-            };
-        }
-        if (searchQuery.maxRooms !== undefined && searchQuery.maxRooms < 1) {
-            return {
-                isValid: false,
-                error: property_1.PUBLIC_PROPERTY_ERROR_MESSAGES.MAX_ROOMS_TOO_LOW,
-            };
-        }
-        if (searchQuery.minRooms !== undefined &&
-            searchQuery.maxRooms !== undefined &&
-            searchQuery.minRooms > searchQuery.maxRooms) {
-            return {
-                isValid: false,
-                error: property_1.PUBLIC_PROPERTY_ERROR_MESSAGES.MIN_ROOMS_GREATER_THAN_MAX,
+                error: "Capacity must be at least 1",
             };
         }
         // Sort validations
-        if (!["createdAt", "name", "pricing"].includes(searchQuery.sortBy)) {
+        if (!["createdAt", "name", "pricing", "price", "capacity"].includes(searchQuery.sortBy)) {
             return {
                 isValid: false,
                 error: property_1.PUBLIC_PROPERTY_ERROR_MESSAGES.INVALID_SORT_BY,

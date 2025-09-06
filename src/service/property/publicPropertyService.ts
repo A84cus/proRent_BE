@@ -94,7 +94,7 @@ type RoomTypeWithIncludes = Prisma.RoomTypeGetPayload<{
   };
 }>;
 
-import { PropertySearchParams } from "../../interfaces/property";
+import { PropertySearchParams } from "../../interfaces/publicProperty.interface";
 
 class PublicPropertyService {
   // Search properties with filters and pagination
@@ -132,8 +132,14 @@ class PublicPropertyService {
 
       const searchParams = {
         search: params.search?.trim(),
-        categoryId: params.category?.trim(),
-        sort: params.sort,
+        category: params.category?.trim(),
+        city: params.city?.trim(),
+        province: params.province?.trim(),
+        minPrice: params.minPrice,
+        maxPrice: params.maxPrice,
+        capacity: params.capacity,
+        sortBy: params.sortBy,
+        sortOrder: params.sortOrder,
         page,
         limit,
       };
@@ -458,6 +464,22 @@ class PublicPropertyService {
     } catch (error) {
       logger.error("Error getting categories:", error);
       throw new Error("Failed to get categories");
+    }
+  }
+
+  // Get room type by ID (public access)
+  async getRoomTypeById(roomTypeId: string): Promise<any> {
+    try {
+      const roomType = await publicPropertyRepository.findRoomTypeById(
+        roomTypeId
+      );
+      if (!roomType) {
+        throw new Error("Room type not found");
+      }
+      return roomType;
+    } catch (error) {
+      logger.error(`Error getting room type with ID ${roomTypeId}:`, error);
+      throw new Error("Failed to get room type");
     }
   }
 }

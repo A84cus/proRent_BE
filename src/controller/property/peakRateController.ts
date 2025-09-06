@@ -13,9 +13,56 @@ import {
 
 class PeakRateController extends BaseController {
   /**
+   * GET /api/rooms/:id/peak-rates - Get all peak rates for room type
+   */
+  getPeakRates = async (req: Request, res: Response): Promise<void> => {
+    try {
+      // Validate user authentication
+      const userValidation = this.validateUser(req);
+      if (!userValidation.isValid) {
+        ResponseHelper.error(
+          res,
+          userValidation.error ||
+            PROPERTY_ERROR_MESSAGES.USER_VALIDATION_FAILED,
+          undefined,
+          401
+        );
+        return;
+      }
+
+      // Validate room type ID
+      const { id } = req.params;
+      const roomIdValidation = PeakRateValidationHelper.validateRoomId(id);
+      if (!roomIdValidation.isValid) {
+        ResponseHelper.error(res, roomIdValidation.error!, undefined, 400);
+        return;
+      }
+
+      // Get peak rates
+      const peakRates = await peakRateService.getPeakRatesByRoomType(
+        id,
+        userValidation.userId!
+      );
+
+      ResponseHelper.success(
+        res,
+        "Peak rates retrieved successfully",
+        peakRates
+      );
+    } catch (error) {
+      this.handleError(
+        res,
+        error,
+        "getPeakRates",
+        PeakRateErrorHelper.getAddPeakRateErrorMappings()
+      );
+    }
+  };
+
+  /**
    * POST /api/rooms/:id/peak-price - Add peak rate rule
    */
-  async addPeakRate(req: Request, res: Response): Promise<void> {
+  addPeakRate = async (req: Request, res: Response): Promise<void> => {
     try {
       // Validate user authentication
       const userValidation = this.validateUser(req);
@@ -67,12 +114,15 @@ class PeakRateController extends BaseController {
         PeakRateErrorHelper.getAddPeakRateErrorMappings()
       );
     }
-  }
+  };
 
   /**
    * PATCH /api/rooms/:id/peak-price/:date - Update peak rate for specific date
    */
-  async updatePeakRateForDate(req: Request, res: Response): Promise<void> {
+  updatePeakRateForDate = async (
+    req: Request,
+    res: Response
+  ): Promise<void> => {
     try {
       // Validate user authentication
       const userValidation = this.validateUser(req);
@@ -131,12 +181,15 @@ class PeakRateController extends BaseController {
         PeakRateErrorHelper.getUpdatePeakRateErrorMappings()
       );
     }
-  }
+  };
 
   /**
    * DELETE /api/rooms/:id/peak-price/:date - Remove peak rate for specific date
    */
-  async removePeakRateForDate(req: Request, res: Response): Promise<void> {
+  removePeakRateForDate = async (
+    req: Request,
+    res: Response
+  ): Promise<void> => {
     try {
       // Validate user authentication
       const userValidation = this.validateUser(req);
@@ -182,7 +235,7 @@ class PeakRateController extends BaseController {
         PeakRateErrorHelper.getRemovePeakRateErrorMappings()
       );
     }
-  }
+  };
 }
 
 export default new PeakRateController();

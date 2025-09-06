@@ -9,18 +9,22 @@ import {
 class PeakRateService {
   // Add peak rate rule
   async addPeakRate(
-    roomId: string,
+    roomTypeId: string,
     data: CreatePeakRateData,
     ownerId: string
   ): Promise<PeakRate> {
     try {
-      // Verify room ownership
-      const room = await peakRateRepository.findRoomWithOwnership(roomId);
-      if (!room) {
-        throw new Error("Room not found");
+      // Verify room type ownership
+      console.log("INI MASUK");
+      const roomType = await peakRateRepository.findRoomTypeWithOwnership(
+        roomTypeId
+      );
+      console.log("INI MASUK 2", roomType);
+      if (!roomType) {
+        throw new Error("Room type not found");
       }
 
-      if (room.property.OwnerId !== ownerId) {
+      if (roomType.property.OwnerId !== ownerId) {
         throw new Error(
           "You don't have permission to manage this room's pricing"
         );
@@ -53,7 +57,7 @@ class PeakRateService {
 
       // Check for overlapping rates
       const overlappingRates = await peakRateRepository.findOverlappingRates(
-        room.roomType.id,
+        roomTypeId,
         startDate,
         endDate
       );
@@ -62,9 +66,11 @@ class PeakRateService {
         throw new Error("Peak rate overlaps with existing rate rules");
       }
 
+      console.log("INI MAIH");
+
       // Create peak rate
       return await peakRateRepository.create({
-        roomTypeId: room.roomType.id,
+        roomTypeId: roomTypeId,
         startDate,
         endDate,
         rateType: data.rateType,
@@ -82,19 +88,21 @@ class PeakRateService {
 
   // Update peak rate for specific date
   async updatePeakRateForDate(
-    roomId: string,
+    roomTypeId: string,
     dateStr: string,
     data: UpdatePeakRateData,
     ownerId: string
   ): Promise<PeakRate> {
     try {
-      // Verify room ownership
-      const room = await peakRateRepository.findRoomWithOwnership(roomId);
-      if (!room) {
-        throw new Error("Room not found");
+      // Verify room type ownership
+      const roomType = await peakRateRepository.findRoomTypeWithOwnership(
+        roomTypeId
+      );
+      if (!roomType) {
+        throw new Error("Room type not found");
       }
 
-      if (room.property.OwnerId !== ownerId) {
+      if (roomType.property.OwnerId !== ownerId) {
         throw new Error(
           "You don't have permission to manage this room's pricing"
         );
@@ -108,7 +116,7 @@ class PeakRateService {
 
       // Find existing peak rate for this date
       const existingRate = await peakRateRepository.findByRoomTypeAndDate(
-        room.roomType.id,
+        roomTypeId,
         targetDate
       );
 
@@ -174,7 +182,7 @@ class PeakRateService {
       // Check for overlaps if dates are being changed
       if (updateData.startDate || updateData.endDate) {
         const overlappingRates = await peakRateRepository.findOverlappingRates(
-          room.roomType.id,
+          roomTypeId,
           finalStartDate,
           finalEndDate,
           existingRate.id
@@ -199,18 +207,20 @@ class PeakRateService {
 
   // Remove peak rate for specific date
   async removePeakRateForDate(
-    roomId: string,
+    roomTypeId: string,
     dateStr: string,
     ownerId: string
   ): Promise<void> {
     try {
-      // Verify room ownership
-      const room = await peakRateRepository.findRoomWithOwnership(roomId);
-      if (!room) {
-        throw new Error("Room not found");
+      // Verify room type ownership
+      const roomType = await peakRateRepository.findRoomTypeWithOwnership(
+        roomTypeId
+      );
+      if (!roomType) {
+        throw new Error("Room type not found");
       }
 
-      if (room.property.OwnerId !== ownerId) {
+      if (roomType.property.OwnerId !== ownerId) {
         throw new Error(
           "You don't have permission to manage this room's pricing"
         );
@@ -224,7 +234,7 @@ class PeakRateService {
 
       // Find existing peak rate for this date
       const existingRate = await peakRateRepository.findByRoomTypeAndDate(
-        room.roomType.id,
+        roomTypeId,
         targetDate
       );
 
@@ -239,6 +249,46 @@ class PeakRateService {
         throw error;
       }
       throw new Error("Failed to remove peak rate");
+    }
+  }
+
+  // Get all peak rates for a room type
+  async getPeakRatesByRoomType(
+    roomTypeId: string,
+    ownerId: string
+  ): Promise<PeakRate[]> {
+    try {
+      // Verify room type ownership
+      const roomType = await peakRateRepository.findRoomTypeWithOwnership(
+        roomTypeId
+      );
+      if (!roomType) {
+        throw new Error("Room type not found");
+      }
+
+      if (roomType.property.OwnerId !== ownerId) {
+        throw new Error(
+          "You don't have permission to view this room's pricing"
+        );
+      }
+
+      return await peakRateRepository.findByRoomType(roomTypeId);
+    } catch (error) {
+      logger.error("Error getting peak rates:", error);
+      if (error instanceof Error) {
+        throw error;
+      }
+      throw new Error("Failed to get peak rates");
+    }
+  }
+
+  // Get all peak rates for a room type (public access - no ownership check)
+  async getPeakRatesByRoomTypePublic(roomTypeId: string): Promise<PeakRate[]> {
+    try {
+      return await peakRateRepository.findByRoomType(roomTypeId);
+    } catch (error) {
+      logger.error("Error getting peak rates (public):", error);
+      throw new Error("Failed to get peak rates");
     }
   }
 }

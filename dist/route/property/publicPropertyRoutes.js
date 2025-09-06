@@ -5,6 +5,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
 const publicPropertyController_1 = __importDefault(require("../../controller/property/publicPropertyController"));
+const availabilityController_1 = __importDefault(require("../../controller/property/availabilityController"));
 const router = express_1.default.Router();
 // GET /api/public/properties - Public property search
 router.get("/", publicPropertyController_1.default.searchProperties);
@@ -14,4 +15,6 @@ router.get("/:id", publicPropertyController_1.default.getPropertyDetails);
 router.get("/:id/calendar-pricing", publicPropertyController_1.default.getPropertyCalendarPricing);
 // GET /api/public/properties/:id/rooms - Get property rooms
 router.get("/:id/rooms", publicPropertyController_1.default.getPropertyRooms);
+// GET /api/public/properties/rooms/:roomId/availability - Public access to room availability
+router.get("/rooms/:roomId/availability", availabilityController_1.default.getMonthlyAvailability.bind(availabilityController_1.default));
 exports.default = router;

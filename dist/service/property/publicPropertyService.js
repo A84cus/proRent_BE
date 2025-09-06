@@ -18,15 +18,21 @@ class PublicPropertyService {
     // Search properties with filters and pagination
     searchProperties(params) {
         return __awaiter(this, void 0, void 0, function* () {
-            var _a, _b;
+            var _a, _b, _c, _d;
             try {
                 // Validate and sanitize parameters
                 const page = Math.max(1, params.page || 1);
                 const limit = Math.min(50, Math.max(1, params.limit || 10)); // Max 50 per page
                 const searchParams = {
                     search: (_a = params.search) === null || _a === void 0 ? void 0 : _a.trim(),
-                    categoryId: (_b = params.category) === null || _b === void 0 ? void 0 : _b.trim(),
-                    sort: params.sort,
+                    category: (_b = params.category) === null || _b === void 0 ? void 0 : _b.trim(),
+                    city: (_c = params.city) === null || _c === void 0 ? void 0 : _c.trim(),
+                    province: (_d = params.province) === null || _d === void 0 ? void 0 : _d.trim(),
+                    minPrice: params.minPrice,
+                    maxPrice: params.maxPrice,
+                    capacity: params.capacity,
+                    sortBy: params.sortBy,
+                    sortOrder: params.sortOrder,
                     page,
                     limit,
                 };
@@ -221,6 +227,22 @@ class PublicPropertyService {
             catch (error) {
                 logger_1.default.error("Error getting categories:", error);
                 throw new Error("Failed to get categories");
+            }
+        });
+    }
+    // Get room type by ID (public access)
+    getRoomTypeById(roomTypeId) {
+        return __awaiter(this, void 0, void 0, function* () {
+            try {
+                const roomType = yield publicPropertyRepository_1.default.findRoomTypeById(roomTypeId);
+                if (!roomType) {
+                    throw new Error("Room type not found");
+                }
+                return roomType;
+            }
+            catch (error) {
+                logger_1.default.error(`Error getting room type with ID ${roomTypeId}:`, error);
+                throw new Error("Failed to get room type");
             }
         });
     }
