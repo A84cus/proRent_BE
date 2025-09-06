@@ -17,6 +17,7 @@ class AuthNotificationService {
     // Send verification email
     sendVerificationEmail(user, verificationToken) {
         return __awaiter(this, void 0, void 0, function* () {
+            console.log(`DEBUG: Raw token being sent to ${user.email}: ${verificationToken}`);
             yield emailService_1.default.sendVerification(user, verificationToken);
         });
     }

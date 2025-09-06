@@ -104,7 +104,7 @@ class DisposableEmailService {
   // Send password reset email
   async sendResetPassword(user: User, token: string): Promise<void> {
     try {
-      const resetUrl = `${emailConfig.frontendUrl}/auth/reset-password?token=${token}`;
+      const resetUrl = `${emailConfig.frontendUrl}/reset-password?token=${token}`;
       const htmlContent = createResetPasswordEmailTemplate(user, resetUrl);
 
       await this.sendEmail({

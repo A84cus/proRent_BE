@@ -23,17 +23,42 @@ class PeakRateRepository {
                     property: {
                         select: {
                             id: true,
-                            OwnerId: true
-                        }
+                            OwnerId: true,
+                        },
                     },
                     roomType: {
                         select: {
                             id: true,
                             name: true,
-                            basePrice: true
-                        }
-                    }
-                }
+                            basePrice: true,
+                        },
+                    },
+                },
+            });
+        });
+    }
+    // Get room type with ownership verification
+    findRoomTypeWithOwnership(roomTypeId) {
+        return __awaiter(this, void 0, void 0, function* () {
+            return prisma_1.default.roomType.findUnique({
+                where: { id: roomTypeId },
+                include: {
+                    property: {
+                        select: {
+                            id: true,
+                            OwnerId: true,
+                        },
+                    },
+                },
+            });
+        });
+    }
+    // Get all peak rates for a room type
+    findByRoomType(roomTypeId) {
+        return __awaiter(this, void 0, void 0, function* () {
+            return prisma_1.default.peakRate.findMany({
+                where: { roomTypeId },
+                orderBy: { startDate: "asc" },
             });
         });
     }
@@ -47,17 +72,17 @@ class PeakRateRepository {
                     endDate: data.endDate,
                     rateType: data.rateType,
                     value: data.value,
-                    description: data.description
+                    description: data.description,
                 },
                 include: {
                     roomType: {
                         select: {
                             id: true,
                             name: true,
-                            basePrice: true
-                        }
-                    }
-                }
+                            basePrice: true,
+                        },
+                    },
+                },
             });
         });
     }
@@ -69,11 +94,14 @@ class PeakRateRepository {
                         {
                             OR: [
                                 {
-                                    AND: [{ startDate: { lte: endDate } }, { endDate: { gte: startDate } }]
-                                }
-                            ]
-                        }
-                    ] }, (excludeId && { id: { not: excludeId } }))
+                                    AND: [
+                                        { startDate: { lte: endDate } },
+                                        { endDate: { gte: startDate } },
+                                    ],
+                                },
+                            ],
+                        },
+                    ] }, (excludeId && { id: { not: excludeId } })),
             });
         });
     }
@@ -84,17 +112,17 @@ class PeakRateRepository {
                 where: {
                     roomTypeId,
                     startDate: { lte: date },
-                    endDate: { gte: date }
+                    endDate: { gte: date },
                 },
                 include: {
                     roomType: {
                         select: {
                             id: true,
                             name: true,
-                            basePrice: true
-                        }
-                    }
-                }
+                            basePrice: true,
+                        },
+                    },
+                },
             });
         });
     }
@@ -109,10 +137,10 @@ class PeakRateRepository {
                         select: {
                             id: true,
                             name: true,
-                            basePrice: true
-                        }
-                    }
-                }
+                            basePrice: true,
+                        },
+                    },
+                },
             });
         });
     }
@@ -120,7 +148,7 @@ class PeakRateRepository {
     delete(id) {
         return __awaiter(this, void 0, void 0, function* () {
             return prisma_1.default.peakRate.delete({
-                where: { id }
+                where: { id },
             });
         });
     }
@@ -135,12 +163,12 @@ class PeakRateRepository {
                             property: {
                                 select: {
                                     id: true,
-                                    OwnerId: true
-                                }
-                            }
-                        }
-                    }
-                }
+                                    OwnerId: true,
+                                },
+                            },
+                        },
+                    },
+                },
             });
         });
     }

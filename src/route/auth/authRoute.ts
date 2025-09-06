@@ -9,17 +9,26 @@ const router = express.Router();
 // POST /auth/register/user - Register a new User (calon penyewa) and Owner
 router.post("/register/user", authController.registerUser);
 
-// GET /auth/verify-email?token=... - Verify email and set password (1-hour expiry)
+// GET /auth/verify-email?token=... - Verify email and set password (24-hour expiry)
 router.get("/verify-email", authController.verifyEmail);
 
 // POST /auth/verify-email - Verify email with token in body (for frontend compatibility)
 router.post("/verify-email", authController.verifyEmail);
+
+// POST /auth/validate-token - Validate verification token without completing verification
+router.post("/validate-token", authController.validateToken);
 
 // POST /auth/resend-verify - Resend verification email if not verified
 router.post("/resend-verify", authController.resendVerification);
 
 // POST /auth/login - Login using email/password or social login
 router.post("/login", authController.login);
+
+// POST /auth/login-with-provider - Login/Register using OAuth provider (Google, etc.)
+router.post("/login-with-provider", authController.loginWithProvider);
+
+// POST /auth/check-email - Check if email exists in database
+router.post("/check-email", authController.checkEmail);
 
 // POST /auth/reset-password-request - Request password reset link (email sent)
 router.post("/reset-password-request", authController.resetPasswordRequest);

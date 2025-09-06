@@ -19,7 +19,8 @@ router.get('/user', authMwr_1.authUser, reservationQueryController_1.getUserRese
 router.get('/owner', authMwr_1.authOwner, reservationQueryController_1.getOwnerReservationsHandler);
 router.get('/:id', authMwr_1.authAny, reservationQueryController_1.getReservationWithPaymentHandler);
 router.get('/property/:propertyId', authMwr_1.authOwner, reservationQueryController_1.getPropertyReservationsHandler);
-router.get(`/:roomTypeId/availability/`, authMwr_1.authAny, reservationScheduleController_1.getAvailabilityScheduleHandler);
+router.get(`/availability/:roomTypeId`, authMwr_1.authAny, reservationScheduleController_1.getAvailabilityScheduleHandler);
+router.get(`/validate/:roomTypeId`, reservationQueryController_1.getAvailabilityCalendarHandler);
 // POST /reservation - Create a new reservation
 router.post('/', authMwr_1.authUser, reservationController_1.createReservationController);
 router.post('/:reservationId/cancel', authMwr_1.authAny, reservationController_1.cancelReservationController);

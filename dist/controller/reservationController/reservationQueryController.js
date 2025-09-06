@@ -14,10 +14,12 @@ exports.getUserReservationsHandler = getUserReservationsHandler;
 exports.getOwnerReservationsHandler = getOwnerReservationsHandler;
 exports.getPropertyReservationsHandler = getPropertyReservationsHandler;
 exports.getReservationWithPaymentHandler = getReservationWithPaymentHandler;
+exports.getAvailabilityCalendarHandler = getAvailabilityCalendarHandler;
 const reservationQueryService_1 = require("../../service/reservationService/reservationQueryService");
 const reservation_1 = require("../../constants/controllers/reservation");
 const system_1 = require("../../constants/controllers/system");
 const paymentProofController_1 = require("./paymentProofController");
+const availabilityService_1 = require("../../service/reservationService/availabilityService");
 // Main query endpoint
 function getReservations(req, res) {
     return __awaiter(this, void 0, void 0, function* () {
@@ -161,9 +163,8 @@ function getOwnerReservationsHandler(req, res) {
 // Get reservations for a specific property
 function getPropertyReservationsHandler(req, res) {
     return __awaiter(this, void 0, void 0, function* () {
-        var _a;
         try {
-            const propertyOwnerId = (_a = req.user) === null || _a === void 0 ? void 0 : _a.userId;
+            const propertyOwnerId = (0, paymentProofController_1.getUserIdFromRequest)(req);
             const propertyId = req.params.propertyId;
             if (!propertyId) {
                 res.status(400).json({ message: reservation_1.RESERVATION_ERROR_MESSAGES.PROPERTY_ID_REQUIRED });
@@ -228,6 +229,56 @@ function getReservationWithPaymentHandler(req, res) {
             res.status(500).json({ message: system_1.SYSTEM_ERROR_MESSAGES.INTERNAL_SERVER_ERROR });
             // Atau jika ingin lebih spesifik (hati-hati dengan informasi sensitif):
             // return res.status(500).json({ message: 'Failed to fetch reservation details', error: error.message });
+        }
+    });
+}
+function getAvailabilityCalendarHandler(req, res) {
+    return __awaiter(this, void 0, void 0, function* () {
+        var _a;
+        const { roomTypeId } = req.params;
+        const { startDate, endDate } = req.query;
+        // Validate roomTypeId
+        if (!roomTypeId) {
+            res.status(400).json({ error: 'roomTypeId is required' });
+            return;
+        }
+        // Parse or default to current year
+        const now = new Date();
+        const currentYear = now.getFullYear();
+        const start = startDate ? new Date(startDate) : new Date(currentYear, 0, 1); // Jan 1
+        const end = endDate ? new Date(endDate) : new Date(currentYear + 1, 0, 1); // Jan 1 next year
+        // Validate dates
+        if (isNaN(start.getTime()) || isNaN(end.getTime())) {
+            res.status(400).json({ error: 'Invalid date format' });
+            return;
+        }
+        if (start >= end) {
+            res.status(400).json({ error: 'endDate must be after startDate' });
+            return;
+        }
+        try {
+            const totalQuantity = yield (0, availabilityService_1.getRoomTypeTotalQuantity)(roomTypeId);
+            const records = yield (0, availabilityService_1.getActualAvailabilityRecords)(roomTypeId, start, end);
+            const availabilityMap = (0, availabilityService_1.buildAvailabilityMap)(records);
+            const dateRange = (0, availabilityService_1.generateDateRange)(start, end);
+            const unavailableDates = [];
+            for (const date of dateRange) {
+                const dateKey = date.toISOString().split('T')[0]; // 'YYYY-MM-DD'
+                const availableCount = (_a = availabilityMap.get(dateKey)) !== null && _a !== void 0 ? _a : totalQuantity;
+                if (availableCount <= 0) {
+                    unavailableDates.push({
+                        date: dateKey,
+                        isAvailable: false
+                    });
+                }
+            }
+            // Return structured, clear data
+            res.json({ unavailableDates });
+            return;
+        }
+        catch (error) {
+            console.error('Error generating availability calendar:', error);
+            res.status(500).json({ error: 'Failed to load availability' });
         }
     });
 }

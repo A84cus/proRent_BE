@@ -1,4 +1,4 @@
-import { User, Role } from "@prisma/client";
+import { User, Role, Prisma } from "@prisma/client";
 import logger from "../../utils/system/logger";
 import userRepository from "../../repository/user/userRepository";
 import tokenService from "./tokenService";
@@ -8,6 +8,8 @@ import {
   LoginData,
   RegisterUserData,
   ResetPasswordData,
+  ProviderLoginData,
+  ProviderLoginResult,
 } from "../../interfaces";
 
 class AuthService {
@@ -49,29 +51,84 @@ class AuthService {
   }
 
   async verifyEmail(
-    token: string
-  ): Promise<{ success: boolean; message: string }> {
+    token: string,
+    password?: string
+  ): Promise<{
+    success: boolean;
+    message: string;
+    requiresRedirect?: boolean;
+  }> {
     try {
       const hashedToken = tokenService.hashToken(token);
+      logger.info(`Looking for user with hashed token: ${hashedToken}`);
+
       const user = await userRepository.findByVerificationToken(hashedToken);
 
       if (!user) {
+        logger.warn(`No user found with verification token: ${hashedToken}`);
         return {
           success: false,
           message: "Invalid or expired verification token",
         };
       }
 
-      // Mark user as verified
-      await userRepository.update(user.id, { isVerified: true });
+      logger.info(
+        `Found user: ${user.email}, token expires: ${user.verificationExpires}`
+      );
+
+      // Prepare update data
+      const updateData: any = { isVerified: true };
+
+      // If password is provided, hash and set it
+      if (password) {
+        const hashedPassword = await passwordService.hashPassword(password);
+        updateData.password = hashedPassword;
+        logger.info(`Setting password for user: ${user.email}`);
+      }
+
+      // Mark user as verified and set password if provided
+      await userRepository.update(user.id, updateData);
       await userRepository.clearVerificationToken(user.id);
       await authNotificationService.sendWelcomeEmail(user);
-      return { success: true, message: "Email verified successfully" };
+
+      return {
+        success: true,
+        message: password
+          ? "Email verified and password created successfully"
+          : "Email verified successfully",
+        requiresRedirect: !!password, // If password was set, redirect to login
+      };
     } catch (error) {
       logger.error("Email verification error:", error);
       throw error;
     }
   }
+
+  async validateVerificationToken(
+    token: string
+  ): Promise<{ valid: boolean; message: string; userEmail?: string }> {
+    try {
+      const hashedToken = tokenService.hashToken(token);
+      const user = await userRepository.findByVerificationToken(hashedToken);
+
+      if (!user) {
+        return {
+          valid: false,
+          message: "Invalid or expired verification token",
+        };
+      }
+
+      return {
+        valid: true,
+        message: "Token is valid",
+        userEmail: user.email,
+      };
+    } catch (error) {
+      logger.error("Token validation error:", error);
+      throw error;
+    }
+  }
+
   async resendVerificationEmail(email: string): Promise<void> {
     try {
       const user = await userRepository.findByEmail(email);
@@ -203,6 +260,128 @@ class AuthService {
 
   verifyToken(token: string): { userId: string; role: Role } {
     return tokenService.verifyJWTToken(token);
+  }
+
+  async loginWithProvider(
+    data: ProviderLoginData
+  ): Promise<ProviderLoginResult> {
+    try {
+      // Check if user already exists
+      let user = await userRepository.findByEmail(data.email, {
+        profile: true,
+      });
+      let isNewUser = false;
+
+      if (!user) {
+        // Register new user
+        isNewUser = true;
+        const socialLoginType =
+          data.providerId === "google.com" ? "GOOGLE" : "NONE";
+
+        user = await userRepository.create({
+          email: data.email,
+          role: data.role || "USER",
+          socialLogin: socialLoginType,
+          isVerified: data.emailVerified, // Trust provider verification
+          profile: {
+            create: {
+              firstName: data.firstName,
+              lastName: data.lastName,
+            },
+          },
+        });
+
+        logger.info(`New user registered via provider: ${data.email}`);
+      } else {
+        // Update existing user with provider info if needed
+        const updates: Prisma.UserUpdateInput = {};
+
+        if (data.providerId === "google.com" && user.socialLogin !== "GOOGLE") {
+          updates.socialLogin = "GOOGLE";
+        }
+
+        if (data.emailVerified && !user.isVerified) {
+          updates.isVerified = true;
+        }
+
+        // Check if user has profile (using type assertion since we know we included it)
+        const userWithProfile = user as any;
+
+        // Update profile if it doesn't exist or lacks provider info
+        if (!userWithProfile.profile) {
+          updates.profile = {
+            create: {
+              firstName: data.firstName,
+              lastName: data.lastName,
+            },
+          };
+        } else if (!userWithProfile.profile.firstName && data.firstName) {
+          updates.profile = {
+            update: {
+              firstName: data.firstName,
+              lastName: data.lastName,
+            },
+          };
+        }
+
+        if (Object.keys(updates).length > 0) {
+          await userRepository.update(user.id, updates);
+          // Refresh user data
+          user = await userRepository.findByEmail(data.email, {
+            profile: true,
+          });
+        }
+
+        logger.info(`Existing user logged in via provider: ${data.email}`);
+      }
+
+      if (!user) {
+        throw new Error("Failed to create or retrieve user");
+      }
+
+      // Generate JWT token
+      const token = tokenService.generateJWTToken(user.id, user.role);
+
+      return {
+        user: {
+          id: user.id,
+          email: user.email,
+          role: user.role,
+          isVerified: user.isVerified,
+          socialLogin: user.socialLogin,
+        },
+        token,
+        isNewUser,
+      };
+    } catch (error) {
+      logger.error("Provider login error:", error);
+      throw error;
+    }
+  }
+
+  async checkEmailExists(email: string): Promise<{
+    exists: boolean;
+    isVerified?: boolean;
+    socialLogin?: string;
+  }> {
+    try {
+      const user = await userRepository.findByEmail(email);
+
+      if (!user) {
+        return {
+          exists: false,
+        };
+      }
+
+      return {
+        exists: true,
+        isVerified: user.isVerified,
+        socialLogin: user.socialLogin,
+      };
+    } catch (error) {
+      logger.error("Check email error:", error);
+      throw error;
+    }
   }
 }
 
