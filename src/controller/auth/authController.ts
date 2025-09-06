@@ -16,6 +16,8 @@ import {
   loginSchema,
   resetPasswordRequestSchema,
   resetPasswordConfirmSchema,
+  loginWithProviderSchema,
+  checkEmailSchema,
 } from "../../validations";
 
 class AuthController {
@@ -47,9 +49,9 @@ class AuthController {
   async verifyEmail(req: Request, res: Response) {
     try {
       // Support both GET (query params) and POST (body) requests
-      const isGetRequest = req.method === 'GET';
+      const isGetRequest = req.method === "GET";
       const dataSource = isGetRequest ? req.query : req.body;
-      
+
       const validatedData = verifyEmailSchema.parse(dataSource);
       const result = await authService.verifyEmail(validatedData.token);
 
@@ -168,6 +170,90 @@ class AuthController {
       });
     } catch (error) {
       handleError(res, error, "Get current user");
+    }
+  }
+
+  /**
+   * Login or register user using OAuth provider (Google, etc.)
+   *
+   * Expected request body:
+   * {
+   *   "email": "user@example.com",
+   *   "emailVerified": true,
+   *   "providerId": "google.com",
+   *   "federatedId": "https://accounts.google.com/115638852868856441323",
+   *   "firstName": "John",
+   *   "lastName": "Doe",
+   *   "fullName": "John Doe",
+   *   "displayName": "John Doe",
+   *   "photoUrl": "https://example.com/photo.jpg",
+   *   "idToken": "eyJhbGciOiJSUzI1NiIs...",
+   *   "role": "USER" // optional, defaults to USER
+   * }
+   *
+   * Response:
+   * - If new user: Creates account and profile, returns user data and JWT token
+   * - If existing user: Updates profile if needed, returns user data and JWT token
+   */
+  async loginWithProvider(req: Request, res: Response) {
+    try {
+      const validatedData = loginWithProviderSchema.parse(req.body);
+
+      // Check if email is verified from the provider
+      if (!validatedData.emailVerified) {
+        return res.status(400).json({
+          success: false,
+          message: "Email not verified by provider",
+        });
+      }
+
+      const result = await authService.loginWithProvider(validatedData);
+
+      logger.info(
+        `Provider login ${
+          result.isNewUser ? "registered and logged in" : "logged in"
+        } for email: ${validatedData.email}`
+      );
+
+      res.status(200).json({
+        success: true,
+        message: result.isNewUser
+          ? AUTH_SUCCESS_MESSAGES.REGISTRATION_SUCCESS
+          : AUTH_SUCCESS_MESSAGES.LOGIN_SUCCESS,
+        data: {
+          userId: result.user.id,
+          email: result.user.email,
+          role: result.user.role,
+          isVerified: result.user.isVerified,
+          socialLogin: result.user.socialLogin,
+          isNewUser: result.isNewUser,
+        },
+        token: result.token,
+      });
+    } catch (error) {
+      handleAuthError(res, error, "Provider login");
+    }
+  }
+
+  async checkEmail(req: Request, res: Response) {
+    try {
+      const validatedData = checkEmailSchema.parse(req.body);
+      const result = await authService.checkEmailExists(validatedData.email);
+
+      logger.info(`Email check performed for: ${validatedData.email}`);
+
+      res.status(200).json({
+        success: true,
+        message: "Email check completed",
+        data: {
+          email: validatedData.email,
+          exists: result.exists,
+          isVerified: result.isVerified,
+          socialLogin: result.socialLogin,
+        },
+      });
+    } catch (error) {
+      handleError(res, error, "Email check");
     }
   }
 }

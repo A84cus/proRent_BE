@@ -4,6 +4,7 @@ node_modules
 
 /generated/prisma
 .vercel
+.history
 
 src/logs/
 
