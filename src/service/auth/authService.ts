@@ -51,29 +51,84 @@ class AuthService {
   }
 
   async verifyEmail(
-    token: string
-  ): Promise<{ success: boolean; message: string }> {
+    token: string,
+    password?: string
+  ): Promise<{
+    success: boolean;
+    message: string;
+    requiresRedirect?: boolean;
+  }> {
     try {
       const hashedToken = tokenService.hashToken(token);
+      logger.info(`Looking for user with hashed token: ${hashedToken}`);
+
       const user = await userRepository.findByVerificationToken(hashedToken);
 
       if (!user) {
+        logger.warn(`No user found with verification token: ${hashedToken}`);
         return {
           success: false,
           message: "Invalid or expired verification token",
         };
       }
 
-      // Mark user as verified
-      await userRepository.update(user.id, { isVerified: true });
+      logger.info(
+        `Found user: ${user.email}, token expires: ${user.verificationExpires}`
+      );
+
+      // Prepare update data
+      const updateData: any = { isVerified: true };
+
+      // If password is provided, hash and set it
+      if (password) {
+        const hashedPassword = await passwordService.hashPassword(password);
+        updateData.password = hashedPassword;
+        logger.info(`Setting password for user: ${user.email}`);
+      }
+
+      // Mark user as verified and set password if provided
+      await userRepository.update(user.id, updateData);
       await userRepository.clearVerificationToken(user.id);
       await authNotificationService.sendWelcomeEmail(user);
-      return { success: true, message: "Email verified successfully" };
+
+      return {
+        success: true,
+        message: password
+          ? "Email verified and password created successfully"
+          : "Email verified successfully",
+        requiresRedirect: !!password, // If password was set, redirect to login
+      };
     } catch (error) {
       logger.error("Email verification error:", error);
       throw error;
     }
   }
+
+  async validateVerificationToken(
+    token: string
+  ): Promise<{ valid: boolean; message: string; userEmail?: string }> {
+    try {
+      const hashedToken = tokenService.hashToken(token);
+      const user = await userRepository.findByVerificationToken(hashedToken);
+
+      if (!user) {
+        return {
+          valid: false,
+          message: "Invalid or expired verification token",
+        };
+      }
+
+      return {
+        valid: true,
+        message: "Token is valid",
+        userEmail: user.email,
+      };
+    } catch (error) {
+      logger.error("Token validation error:", error);
+      throw error;
+    }
+  }
+
   async resendVerificationEmail(email: string): Promise<void> {
     try {
       const user = await userRepository.findByEmail(email);
