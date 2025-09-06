@@ -1,5 +1,6 @@
 import express from "express";
 import publicPropertyController from "../../controller/property/publicPropertyController";
+import availabilityController from "../../controller/property/availabilityController";
 
 const router = express.Router();
 
@@ -17,5 +18,11 @@ router.get(
 
 // GET /api/public/properties/:id/rooms - Get property rooms
 router.get("/:id/rooms", publicPropertyController.getPropertyRooms);
+
+// GET /api/public/properties/rooms/:roomId/availability - Public access to room availability
+router.get(
+  "/rooms/:roomId/availability",
+  availabilityController.getMonthlyAvailability.bind(availabilityController)
+);
 
 export default router;

@@ -45,7 +45,7 @@ class AuthController {
         return __awaiter(this, void 0, void 0, function* () {
             try {
                 // Support both GET (query params) and POST (body) requests
-                const isGetRequest = req.method === 'GET';
+                const isGetRequest = req.method === "GET";
                 const dataSource = isGetRequest ? req.query : req.body;
                 const validatedData = validations_1.verifyEmailSchema.parse(dataSource);
                 const result = yield authService_1.default.verifyEmail(validatedData.token);
@@ -166,6 +166,84 @@ class AuthController {
             }
             catch (error) {
                 (0, errorHandler_1.handleError)(res, error, "Get current user");
+            }
+        });
+    }
+    /**
+     * Login or register user using OAuth provider (Google, etc.)
+     *
+     * Expected request body:
+     * {
+     *   "email": "user@example.com",
+     *   "emailVerified": true,
+     *   "providerId": "google.com",
+     *   "federatedId": "https://accounts.google.com/115638852868856441323",
+     *   "firstName": "John",
+     *   "lastName": "Doe",
+     *   "fullName": "John Doe",
+     *   "displayName": "John Doe",
+     *   "photoUrl": "https://example.com/photo.jpg",
+     *   "idToken": "eyJhbGciOiJSUzI1NiIs...",
+     *   "role": "USER" // optional, defaults to USER
+     * }
+     *
+     * Response:
+     * - If new user: Creates account and profile, returns user data and JWT token
+     * - If existing user: Updates profile if needed, returns user data and JWT token
+     */
+    loginWithProvider(req, res) {
+        return __awaiter(this, void 0, void 0, function* () {
+            try {
+                const validatedData = validations_1.loginWithProviderSchema.parse(req.body);
+                // Check if email is verified from the provider
+                if (!validatedData.emailVerified) {
+                    return res.status(400).json({
+                        success: false,
+                        message: "Email not verified by provider",
+                    });
+                }
+                const result = yield authService_1.default.loginWithProvider(validatedData);
+                logger_1.default.info(`Provider login ${result.isNewUser ? "registered and logged in" : "logged in"} for email: ${validatedData.email}`);
+                res.status(200).json({
+                    success: true,
+                    message: result.isNewUser
+                        ? auth_1.AUTH_SUCCESS_MESSAGES.REGISTRATION_SUCCESS
+                        : auth_1.AUTH_SUCCESS_MESSAGES.LOGIN_SUCCESS,
+                    data: {
+                        userId: result.user.id,
+                        email: result.user.email,
+                        role: result.user.role,
+                        isVerified: result.user.isVerified,
+                        socialLogin: result.user.socialLogin,
+                        isNewUser: result.isNewUser,
+                    },
+                    token: result.token,
+                });
+            }
+            catch (error) {
+                (0, errorHandler_1.handleAuthError)(res, error, "Provider login");
+            }
+        });
+    }
+    checkEmail(req, res) {
+        return __awaiter(this, void 0, void 0, function* () {
+            try {
+                const validatedData = validations_1.checkEmailSchema.parse(req.body);
+                const result = yield authService_1.default.checkEmailExists(validatedData.email);
+                logger_1.default.info(`Email check performed for: ${validatedData.email}`);
+                res.status(200).json({
+                    success: true,
+                    message: "Email check completed",
+                    data: {
+                        email: validatedData.email,
+                        exists: result.exists,
+                        isVerified: result.isVerified,
+                        socialLogin: result.socialLogin,
+                    },
+                });
+            }
+            catch (error) {
+                (0, errorHandler_1.handleError)(res, error, "Email check");
             }
         });
     }

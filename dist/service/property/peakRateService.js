@@ -16,15 +16,17 @@ const peakRateRepository_1 = __importDefault(require("../../repository/property/
 const logger_1 = __importDefault(require("../../utils/system/logger"));
 class PeakRateService {
     // Add peak rate rule
-    addPeakRate(roomId, data, ownerId) {
+    addPeakRate(roomTypeId, data, ownerId) {
         return __awaiter(this, void 0, void 0, function* () {
             try {
-                // Verify room ownership
-                const room = yield peakRateRepository_1.default.findRoomWithOwnership(roomId);
-                if (!room) {
-                    throw new Error("Room not found");
+                // Verify room type ownership
+                console.log("INI MASUK");
+                const roomType = yield peakRateRepository_1.default.findRoomTypeWithOwnership(roomTypeId);
+                console.log("INI MASUK 2", roomType);
+                if (!roomType) {
+                    throw new Error("Room type not found");
                 }
-                if (room.property.OwnerId !== ownerId) {
+                if (roomType.property.OwnerId !== ownerId) {
                     throw new Error("You don't have permission to manage this room's pricing");
                 }
                 // Parse and validate dates
@@ -47,13 +49,14 @@ class PeakRateService {
                     throw new Error("Percentage rate cannot exceed 1000%");
                 }
                 // Check for overlapping rates
-                const overlappingRates = yield peakRateRepository_1.default.findOverlappingRates(room.roomType.id, startDate, endDate);
+                const overlappingRates = yield peakRateRepository_1.default.findOverlappingRates(roomTypeId, startDate, endDate);
                 if (overlappingRates.length > 0) {
                     throw new Error("Peak rate overlaps with existing rate rules");
                 }
+                console.log("INI MAIH");
                 // Create peak rate
                 return yield peakRateRepository_1.default.create({
-                    roomTypeId: room.roomType.id,
+                    roomTypeId: roomTypeId,
                     startDate,
                     endDate,
                     rateType: data.rateType,
@@ -71,15 +74,15 @@ class PeakRateService {
         });
     }
     // Update peak rate for specific date
-    updatePeakRateForDate(roomId, dateStr, data, ownerId) {
+    updatePeakRateForDate(roomTypeId, dateStr, data, ownerId) {
         return __awaiter(this, void 0, void 0, function* () {
             try {
-                // Verify room ownership
-                const room = yield peakRateRepository_1.default.findRoomWithOwnership(roomId);
-                if (!room) {
-                    throw new Error("Room not found");
+                // Verify room type ownership
+                const roomType = yield peakRateRepository_1.default.findRoomTypeWithOwnership(roomTypeId);
+                if (!roomType) {
+                    throw new Error("Room type not found");
                 }
-                if (room.property.OwnerId !== ownerId) {
+                if (roomType.property.OwnerId !== ownerId) {
                     throw new Error("You don't have permission to manage this room's pricing");
                 }
                 // Parse target date
@@ -88,7 +91,7 @@ class PeakRateService {
                     throw new Error("Invalid date format. Use YYYY-MM-DD format");
                 }
                 // Find existing peak rate for this date
-                const existingRate = yield peakRateRepository_1.default.findByRoomTypeAndDate(room.roomType.id, targetDate);
+                const existingRate = yield peakRateRepository_1.default.findByRoomTypeAndDate(roomTypeId, targetDate);
                 if (!existingRate) {
                     throw new Error("No peak rate found for the specified date");
                 }
@@ -133,7 +136,7 @@ class PeakRateService {
                 }
                 // Check for overlaps if dates are being changed
                 if (updateData.startDate || updateData.endDate) {
-                    const overlappingRates = yield peakRateRepository_1.default.findOverlappingRates(room.roomType.id, finalStartDate, finalEndDate, existingRate.id);
+                    const overlappingRates = yield peakRateRepository_1.default.findOverlappingRates(roomTypeId, finalStartDate, finalEndDate, existingRate.id);
                     if (overlappingRates.length > 0) {
                         throw new Error("Updated date range would overlap with existing rate rules");
                     }
@@ -150,15 +153,15 @@ class PeakRateService {
         });
     }
     // Remove peak rate for specific date
-    removePeakRateForDate(roomId, dateStr, ownerId) {
+    removePeakRateForDate(roomTypeId, dateStr, ownerId) {
         return __awaiter(this, void 0, void 0, function* () {
             try {
-                // Verify room ownership
-                const room = yield peakRateRepository_1.default.findRoomWithOwnership(roomId);
-                if (!room) {
-                    throw new Error("Room not found");
+                // Verify room type ownership
+                const roomType = yield peakRateRepository_1.default.findRoomTypeWithOwnership(roomTypeId);
+                if (!roomType) {
+                    throw new Error("Room type not found");
                 }
-                if (room.property.OwnerId !== ownerId) {
+                if (roomType.property.OwnerId !== ownerId) {
                     throw new Error("You don't have permission to manage this room's pricing");
                 }
                 // Parse target date
@@ -167,7 +170,7 @@ class PeakRateService {
                     throw new Error("Invalid date format. Use YYYY-MM-DD format");
                 }
                 // Find existing peak rate for this date
-                const existingRate = yield peakRateRepository_1.default.findByRoomTypeAndDate(room.roomType.id, targetDate);
+                const existingRate = yield peakRateRepository_1.default.findByRoomTypeAndDate(roomTypeId, targetDate);
                 if (!existingRate) {
                     throw new Error("No peak rate found for the specified date");
                 }
@@ -179,6 +182,41 @@ class PeakRateService {
                     throw error;
                 }
                 throw new Error("Failed to remove peak rate");
+            }
+        });
+    }
+    // Get all peak rates for a room type
+    getPeakRatesByRoomType(roomTypeId, ownerId) {
+        return __awaiter(this, void 0, void 0, function* () {
+            try {
+                // Verify room type ownership
+                const roomType = yield peakRateRepository_1.default.findRoomTypeWithOwnership(roomTypeId);
+                if (!roomType) {
+                    throw new Error("Room type not found");
+                }
+                if (roomType.property.OwnerId !== ownerId) {
+                    throw new Error("You don't have permission to view this room's pricing");
+                }
+                return yield peakRateRepository_1.default.findByRoomType(roomTypeId);
+            }
+            catch (error) {
+                logger_1.default.error("Error getting peak rates:", error);
+                if (error instanceof Error) {
+                    throw error;
+                }
+                throw new Error("Failed to get peak rates");
+            }
+        });
+    }
+    // Get all peak rates for a room type (public access - no ownership check)
+    getPeakRatesByRoomTypePublic(roomTypeId) {
+        return __awaiter(this, void 0, void 0, function* () {
+            try {
+                return yield peakRateRepository_1.default.findByRoomType(roomTypeId);
+            }
+            catch (error) {
+                logger_1.default.error("Error getting peak rates (public):", error);
+                throw new Error("Failed to get peak rates");
             }
         });
     }

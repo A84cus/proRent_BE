@@ -460,6 +460,22 @@ class PublicPropertyService {
       throw new Error("Failed to get categories");
     }
   }
+
+  // Get room type by ID (public access)
+  async getRoomTypeById(roomTypeId: string): Promise<any> {
+    try {
+      const roomType = await publicPropertyRepository.findRoomTypeById(
+        roomTypeId
+      );
+      if (!roomType) {
+        throw new Error("Room type not found");
+      }
+      return roomType;
+    } catch (error) {
+      logger.error(`Error getting room type with ID ${roomTypeId}:`, error);
+      throw new Error("Failed to get room type");
+    }
+  }
 }
 
 export default new PublicPropertyService();

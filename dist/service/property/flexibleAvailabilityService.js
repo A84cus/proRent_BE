@@ -153,12 +153,17 @@ class FlexibleAvailabilityService {
     // Helper method for date validation
     validateAndParseDates(availabilityData) {
         return availabilityData.map((item) => {
-            const date = new Date(item.date);
-            if (isNaN(date.getTime())) {
+            // Parse date string manually to avoid timezone issues
+            const dateStr = item.date;
+            const [year, month, day] = dateStr.split("-").map(Number);
+            if (!year || !month || !day) {
                 throw new Error(`Invalid date format: ${item.date}. Use YYYY-MM-DD format`);
             }
-            // Set time to start of day to avoid timezone issues
-            date.setHours(0, 0, 0, 0);
+            // Create date in local timezone (no UTC conversion)
+            const date = new Date(year, month - 1, day, 0, 0, 0, 0);
+            if (isNaN(date.getTime())) {
+                throw new Error(`Invalid date: ${item.date}. Please check the date is valid`);
+            }
             return {
                 date,
                 isAvailable: Boolean(item.isAvailable),

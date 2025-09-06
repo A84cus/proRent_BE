@@ -199,5 +199,112 @@ class AuthService {
     verifyToken(token) {
         return tokenService_1.default.verifyJWTToken(token);
     }
+    loginWithProvider(data) {
+        return __awaiter(this, void 0, void 0, function* () {
+            try {
+                // Check if user already exists
+                let user = yield userRepository_1.default.findByEmail(data.email, {
+                    profile: true,
+                });
+                let isNewUser = false;
+                if (!user) {
+                    // Register new user
+                    isNewUser = true;
+                    const socialLoginType = data.providerId === "google.com" ? "GOOGLE" : "NONE";
+                    user = yield userRepository_1.default.create({
+                        email: data.email,
+                        role: data.role || "USER",
+                        socialLogin: socialLoginType,
+                        isVerified: data.emailVerified, // Trust provider verification
+                        profile: {
+                            create: {
+                                firstName: data.firstName,
+                                lastName: data.lastName,
+                            },
+                        },
+                    });
+                    logger_1.default.info(`New user registered via provider: ${data.email}`);
+                }
+                else {
+                    // Update existing user with provider info if needed
+                    const updates = {};
+                    if (data.providerId === "google.com" && user.socialLogin !== "GOOGLE") {
+                        updates.socialLogin = "GOOGLE";
+                    }
+                    if (data.emailVerified && !user.isVerified) {
+                        updates.isVerified = true;
+                    }
+                    // Check if user has profile (using type assertion since we know we included it)
+                    const userWithProfile = user;
+                    // Update profile if it doesn't exist or lacks provider info
+                    if (!userWithProfile.profile) {
+                        updates.profile = {
+                            create: {
+                                firstName: data.firstName,
+                                lastName: data.lastName,
+                            },
+                        };
+                    }
+                    else if (!userWithProfile.profile.firstName && data.firstName) {
+                        updates.profile = {
+                            update: {
+                                firstName: data.firstName,
+                                lastName: data.lastName,
+                            },
+                        };
+                    }
+                    if (Object.keys(updates).length > 0) {
+                        yield userRepository_1.default.update(user.id, updates);
+                        // Refresh user data
+                        user = yield userRepository_1.default.findByEmail(data.email, {
+                            profile: true,
+                        });
+                    }
+                    logger_1.default.info(`Existing user logged in via provider: ${data.email}`);
+                }
+                if (!user) {
+                    throw new Error("Failed to create or retrieve user");
+                }
+                // Generate JWT token
+                const token = tokenService_1.default.generateJWTToken(user.id, user.role);
+                return {
+                    user: {
+                        id: user.id,
+                        email: user.email,
+                        role: user.role,
+                        isVerified: user.isVerified,
+                        socialLogin: user.socialLogin,
+                    },
+                    token,
+                    isNewUser,
+                };
+            }
+            catch (error) {
+                logger_1.default.error("Provider login error:", error);
+                throw error;
+            }
+        });
+    }
+    checkEmailExists(email) {
+        return __awaiter(this, void 0, void 0, function* () {
+            try {
+                const user = yield userRepository_1.default.findByEmail(email);
+                if (!user) {
+                    return {
+                        exists: false,
+                    };
+                }
+                return {
+                    exists: true,
+                    isVerified: user.isVerified,
+                    socialLogin: user.socialLogin,
+                };
+            }
+            catch (error) {
+                logger_1.default.error("Check email error:", error);
+                throw error;
+            }
+        });
+    }
 }
 exports.default = new AuthService();

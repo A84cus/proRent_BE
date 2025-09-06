@@ -18,6 +18,10 @@ router.post("/verify-email", authController_1.default.verifyEmail);
 router.post("/resend-verify", authController_1.default.resendVerification);
 // POST /auth/login - Login using email/password or social login
 router.post("/login", authController_1.default.login);
+// POST /auth/login-with-provider - Login/Register using OAuth provider (Google, etc.)
+router.post("/login-with-provider", authController_1.default.loginWithProvider);
+// POST /auth/check-email - Check if email exists in database
+router.post("/check-email", authController_1.default.checkEmail);
 // POST /auth/reset-password-request - Request password reset link (email sent)
 router.post("/reset-password-request", authController_1.default.resetPasswordRequest);
 // POST /auth/reset-password-confirm - Confirm reset with token and set new password

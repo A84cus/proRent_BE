@@ -224,5 +224,21 @@ class PublicPropertyService {
             }
         });
     }
+    // Get room type by ID (public access)
+    getRoomTypeById(roomTypeId) {
+        return __awaiter(this, void 0, void 0, function* () {
+            try {
+                const roomType = yield publicPropertyRepository_1.default.findRoomTypeById(roomTypeId);
+                if (!roomType) {
+                    throw new Error("Room type not found");
+                }
+                return roomType;
+            }
+            catch (error) {
+                logger_1.default.error(`Error getting room type with ID ${roomTypeId}:`, error);
+                throw new Error("Failed to get room type");
+            }
+        });
+    }
 }
 exports.default = new PublicPropertyService();

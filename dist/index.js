@@ -21,30 +21,30 @@ const roomOperationsRoutes_1 = __importDefault(require("./route/property/roomOpe
 const publicPropertyRoutes_1 = __importDefault(require("./route/property/publicPropertyRoutes"));
 const reportRoutes_1 = __importDefault(require("./route/report/reportRoutes"));
 const corsOption_1 = __importDefault(require("./config/app/corsOption"));
-const express = require('express');
+const express = require("express");
 const app = express();
 app.use(express_1.default.json());
 app.use((0, cors_1.default)(corsOption_1.default));
 app.use((0, helmet_1.default)());
 app.use(loggerMwr_1.default);
-app.use('/api/auth', authRoute_1.default);
-app.use('/api/public/properties', publicPropertyRoutes_1.default);
-app.use('/api/upload', uploadRoute_1.default);
-app.use('/api/utility', utilityRoute_1.default);
-app.use('/api/users', userRoute_1.default);
-app.use('/api/reservation', reservationRoute_1.default);
-app.use('/api/review', reviewRoute_1.default);
-app.use('/api/cronjob', cronjobRoute_1.default);
-app.use('/api/report', reportRoutes_1.default);
-app.use('/api/owner', ownerRoutes_1.default);
-app.use('/api/rooms', roomOperationsRoutes_1.default);
-app.get('/', (req, res) => {
-    logger_1.default.info('Homepage accessed');
-    res.send('Express on Vercel');
+app.use("/api/auth", authRoute_1.default);
+app.use("/api/public/properties", publicPropertyRoutes_1.default);
+app.use("/api/upload", uploadRoute_1.default);
+app.use("/api/utility", utilityRoute_1.default);
+app.use("/api/users", userRoute_1.default);
+app.use("/api/reservation", reservationRoute_1.default);
+app.use("/api/review", reviewRoute_1.default);
+app.use("/api/cronjob", cronjobRoute_1.default);
+app.use("/api/report", reportRoutes_1.default);
+app.use("/api/owner", ownerRoutes_1.default);
+app.use("/api/rooms", roomOperationsRoutes_1.default);
+app.get("/", (req, res) => {
+    logger_1.default.info("Homepage accessed");
+    res.send("Express on Vercel");
 });
 app.use((err, req, res, next) => {
     logger_1.default.error(err.stack);
-    res.status(500).send('Something broke!');
+    res.status(500).send("Something broke!");
 });
 app.listen(config_1.PORT, () => console.log(`App is running on PORT ${config_1.PORT}`));
 module.exports = app;

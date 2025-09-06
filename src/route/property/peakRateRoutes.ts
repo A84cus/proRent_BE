@@ -4,6 +4,9 @@ import { authOwner } from "../../middleware/auth/authMwr";
 
 const router = express.Router();
 
+// GET /api/rooms/:id/peak-rates - Get all peak rates for room type
+router.get("/:id/peak-rates", authOwner, peakRateController.getPeakRates);
+
 // POST /api/rooms/:id/peak-price - Add peak rate rule for room/room-type
 router.post("/:id/peak-price", authOwner, peakRateController.addPeakRate);
 
