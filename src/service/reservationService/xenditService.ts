@@ -42,8 +42,8 @@ export async function createXenditInvoice (paymentId: string) {
          property?.name || 'Property'
       } from ${reservation.startDate.toLocaleDateString()} to ${reservation.endDate.toLocaleDateString()}`,
       invoiceDuration: 60 * 60 * 24, // 24 hours in seconds (adjust if needed)
-      successRedirectURL: `${BASE_FE_URL}/booking/success?reservationId=${reservation.id}`,
-      failureRedirectURL: `${BASE_FE_URL}/booking/failure?reservationId=${reservation.id}`
+      successRedirectURL: `${BASE_FE_URL}/payment/success?reservationId=${reservation.id}`,
+      failureRedirectURL: `${BASE_FE_URL}/payment/failure?reservationId=${reservation.id}`
    };
 
    try {
