@@ -29,6 +29,11 @@ class AuthController {
       logger.info(
         `User registration initiated for email: ${validatedData.email}`
       );
+      logger.info(
+        `User created with verification token: ${
+          result.user.verificationToken ? "YES" : "NO"
+        }, expires: ${result.user.verificationExpires}`
+      );
 
       res.status(201).json({
         success: true,
@@ -53,12 +58,27 @@ class AuthController {
       const dataSource = isGetRequest ? req.query : req.body;
 
       const validatedData = verifyEmailSchema.parse(dataSource);
-      const result = await authService.verifyEmail(validatedData.token);
+
+      logger.info(
+        `Attempting to verify email with token: ${validatedData.token}`
+      );
+
+      const result = await authService.verifyEmail(
+        validatedData.token,
+        validatedData.password
+      );
 
       if (result.success) {
         logger.info("Email verification successful");
-        res.status(200).json({ success: true, message: result.message });
+        res.status(200).json({
+          success: true,
+          message: result.message,
+          data: {
+            requiresRedirect: result.requiresRedirect || false,
+          },
+        });
       } else {
+        logger.warn(`Email verification failed: ${result.message}`);
         res.status(400).json({ success: false, message: result.message });
       }
     } catch (error) {
@@ -232,6 +252,31 @@ class AuthController {
       });
     } catch (error) {
       handleAuthError(res, error, "Provider login");
+    }
+  }
+
+  async validateToken(req: Request, res: Response) {
+    try {
+      const validatedData = verifyEmailSchema.parse(req.body);
+      const result = await authService.validateVerificationToken(
+        validatedData.token
+      );
+
+      if (result.valid) {
+        logger.info("Token validation successful");
+        res.status(200).json({
+          success: true,
+          message: result.message,
+          data: {
+            valid: true,
+            userEmail: result.userEmail,
+          },
+        });
+      } else {
+        res.status(400).json({ success: false, message: result.message });
+      }
+    } catch (error) {
+      handleError(res, error, "Token validation");
     }
   }
 

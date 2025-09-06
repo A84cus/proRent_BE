@@ -3,8 +3,14 @@ import prisma from "../../prisma";
 
 interface PropertySearchParams {
   search?: string;
-  categoryId?: string;
-  sort?: "price_asc" | "price_desc" | "name_asc" | "name_desc";
+  category?: string;
+  city?: string;
+  province?: string;
+  minPrice?: number;
+  maxPrice?: number;
+  capacity?: number;
+  sortBy?: "name" | "price" | "createdAt" | "capacity";
+  sortOrder?: "asc" | "desc";
   page?: number;
   limit?: number;
 }
@@ -25,6 +31,7 @@ class PublicPropertyRepository {
     // Build where clause
     const where: Prisma.PropertyWhereInput = {};
 
+    // Search in property name, description, and location
     if (params.search) {
       where.OR = [
         { name: { contains: params.search, mode: "insensitive" } },
@@ -52,8 +59,33 @@ class PublicPropertyRepository {
       ];
     }
 
-    if (params.categoryId) {
-      where.categoryId = params.categoryId;
+    // Filter by category
+    if (params.category) {
+      where.category = {
+        name: { contains: params.category, mode: "insensitive" },
+      };
+    }
+
+    // Filter by city
+    if (params.city) {
+      where.location = {
+        city: {
+          name: { contains: params.city, mode: "insensitive" },
+        },
+      };
+    }
+
+    // Filter by province
+    if (params.province) {
+      where.location = {
+        ...where.location,
+        city: {
+          ...((where.location as any)?.city || {}),
+          province: {
+            name: { contains: params.province, mode: "insensitive" },
+          },
+        },
+      };
     }
 
     // Build order by
@@ -61,18 +93,18 @@ class PublicPropertyRepository {
       createdAt: "desc",
     };
 
-    if (params.sort) {
-      switch (params.sort) {
-        case "price_asc":
-        case "price_desc":
-          // For price sorting, we'll sort by the minimum room type price after fetching
-          orderBy = { name: "asc" }; // Use name sorting as fallback, we'll sort by price in post-processing
+    if (params.sortBy && params.sortOrder) {
+      switch (params.sortBy) {
+        case "name":
+          orderBy = { name: params.sortOrder };
           break;
-        case "name_asc":
+        case "createdAt":
+          orderBy = { createdAt: params.sortOrder };
+          break;
+        case "price":
+        case "capacity":
+          // For price/capacity sorting, we'll handle this after fetching data
           orderBy = { name: "asc" };
-          break;
-        case "name_desc":
-          orderBy = { name: "desc" };
           break;
       }
     }
@@ -115,23 +147,70 @@ class PublicPropertyRepository {
       prisma.property.count({ where }),
     ]);
 
-    // Sort by price if needed
     let properties = propertiesRaw;
-    if (params.sort === "price_asc" || params.sort === "price_desc") {
-      properties = propertiesRaw.sort((a, b) => {
-        const aMinPrice =
-          a.roomTypes.length > 0
-            ? Math.min(...a.roomTypes.map((rt) => Number(rt.basePrice)))
-            : 0;
-        const bMinPrice =
-          b.roomTypes.length > 0
-            ? Math.min(...b.roomTypes.map((rt) => Number(rt.basePrice)))
-            : 0;
 
-        return params.sort === "price_asc"
-          ? aMinPrice - bMinPrice
-          : bMinPrice - aMinPrice;
+    // Filter by price range
+    if (params.minPrice || params.maxPrice) {
+      properties = properties.filter((property) => {
+        if (property.roomTypes.length === 0) return false;
+
+        const minPrice = Math.min(
+          ...property.roomTypes.map((rt) => Number(rt.basePrice))
+        );
+        const maxPrice = Math.max(
+          ...property.roomTypes.map((rt) => Number(rt.basePrice))
+        );
+
+        let matchesPrice = true;
+        if (params.minPrice && minPrice < params.minPrice) matchesPrice = false;
+        if (params.maxPrice && maxPrice > params.maxPrice) matchesPrice = false;
+
+        return matchesPrice;
       });
+    }
+
+    // Filter by capacity
+    if (params.capacity) {
+      properties = properties.filter((property) => {
+        if (property.roomTypes.length === 0) return false;
+        const maxCapacity = Math.max(
+          ...property.roomTypes.map((rt) => rt.capacity)
+        );
+        return maxCapacity >= params.capacity!;
+      });
+    }
+
+    // Sort by price or capacity if specified
+    if (params.sortBy && params.sortOrder) {
+      if (params.sortBy === "price") {
+        properties = properties.sort((a, b) => {
+          const aMinPrice =
+            a.roomTypes.length > 0
+              ? Math.min(...a.roomTypes.map((rt) => Number(rt.basePrice)))
+              : 0;
+          const bMinPrice =
+            b.roomTypes.length > 0
+              ? Math.min(...b.roomTypes.map((rt) => Number(rt.basePrice)))
+              : 0;
+          return params.sortOrder === "asc"
+            ? aMinPrice - bMinPrice
+            : bMinPrice - aMinPrice;
+        });
+      } else if (params.sortBy === "capacity") {
+        properties = properties.sort((a, b) => {
+          const aMaxCapacity =
+            a.roomTypes.length > 0
+              ? Math.max(...a.roomTypes.map((rt) => rt.capacity))
+              : 0;
+          const bMaxCapacity =
+            b.roomTypes.length > 0
+              ? Math.max(...b.roomTypes.map((rt) => rt.capacity))
+              : 0;
+          return params.sortOrder === "asc"
+            ? aMaxCapacity - bMaxCapacity
+            : bMaxCapacity - aMaxCapacity;
+        });
+      }
     }
 
     const totalPages = Math.ceil(total / limit);

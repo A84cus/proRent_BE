@@ -7,6 +7,8 @@ node_modules
 .history
 dist
 
+dist/
+
 src/logs/
 
 src/utils/logs/

@@ -8,6 +8,9 @@ class AuthNotificationService {
     user: User,
     verificationToken: string
   ): Promise<void> {
+    console.log(
+      `DEBUG: Raw token being sent to ${user.email}: ${verificationToken}`
+    );
     await emailService.sendVerification(user, verificationToken);
   }
 
