@@ -9,6 +9,13 @@ import {
 import { RESERVATION_ERROR_MESSAGES, RESERVATION_SUCCESS_MESSAGES } from '../../constants/controllers/reservation';
 import { SYSTEM_ERROR_MESSAGES } from '../../constants/controllers/system';
 import { getUserIdFromRequest } from './paymentProofController';
+import {
+   buildAvailabilityMap,
+   generateDateRange,
+   getActualAvailabilityRecords,
+   getRoomTypeTotalQuantity,
+   validateAvailabilityRecords
+} from '../../service/reservationService/availabilityService';
 
 // Main query endpoint
 export async function getReservations (req: Request, res: Response) {
@@ -194,7 +201,7 @@ export async function getOwnerReservationsHandler (req: Request, res: Response) 
 // Get reservations for a specific property
 export async function getPropertyReservationsHandler (req: Request, res: Response) {
    try {
-      const propertyOwnerId = req.user?.userId as string;
+      const propertyOwnerId = getUserIdFromRequest(req);
       const propertyId = req.params.propertyId;
       if (!propertyId) {
          res.status(400).json({ message: RESERVATION_ERROR_MESSAGES.PROPERTY_ID_REQUIRED });
@@ -283,5 +290,63 @@ export async function getReservationWithPaymentHandler (req: Request, res: Respo
 
       // Atau jika ingin lebih spesifik (hati-hati dengan informasi sensitif):
       // return res.status(500).json({ message: 'Failed to fetch reservation details', error: error.message });
+   }
+}
+
+export async function getAvailabilityCalendarHandler (req: Request, res: Response) {
+   const { roomTypeId } = req.params;
+   const { startDate, endDate } = req.query;
+
+   // Validate roomTypeId
+   if (!roomTypeId) {
+      res.status(400).json({ error: 'roomTypeId is required' });
+      return;
+   }
+
+   // Parse or default to current year
+   const now = new Date();
+   const currentYear = now.getFullYear();
+
+   const start = startDate ? new Date(startDate as string) : new Date(currentYear, 0, 1); // Jan 1
+   const end = endDate ? new Date(endDate as string) : new Date(currentYear + 1, 0, 1); // Jan 1 next year
+
+   // Validate dates
+   if (isNaN(start.getTime()) || isNaN(end.getTime())) {
+      res.status(400).json({ error: 'Invalid date format' });
+      return;
+   }
+
+   if (start >= end) {
+      res.status(400).json({ error: 'endDate must be after startDate' });
+      return;
+   }
+
+   try {
+      const totalQuantity = await getRoomTypeTotalQuantity(roomTypeId as string);
+
+      const records = await getActualAvailabilityRecords(roomTypeId as string, start, end);
+      const availabilityMap = buildAvailabilityMap(records);
+
+      const dateRange = generateDateRange(start, end);
+      const unavailableDates: { date: string; isAvailable: false }[] = [];
+
+      for (const date of dateRange) {
+         const dateKey = date.toISOString().split('T')[0]; // 'YYYY-MM-DD'
+         const availableCount = availabilityMap.get(dateKey) ?? totalQuantity;
+
+         if (availableCount <= 0) {
+            unavailableDates.push({
+               date: dateKey,
+               isAvailable: false
+            });
+         }
+      }
+
+      // Return structured, clear data
+      res.json({ unavailableDates });
+      return;
+   } catch (error: any) {
+      console.error('Error generating availability calendar:', error);
+      res.status(500).json({ error: 'Failed to load availability' });
    }
 }

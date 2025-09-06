@@ -11,14 +11,14 @@ function buildWhereConditions(options) {
         whereConditions.userId = userId;
     }
     if (propertyId && propertyOwnerId) {
-        whereConditions.property = {
+        whereConditions.Property = {
             id: propertyId,
-            ownerId: propertyOwnerId
+            OwnerId: propertyOwnerId
         };
     }
     else {
         if (propertyId) {
-            whereConditions.propertyId = propertyId;
+            whereConditions.PropertyId = propertyId;
         }
         if (propertyOwnerId) {
             whereConditions.RoomType = buildPropertyOwnerFilter(propertyOwnerId);
