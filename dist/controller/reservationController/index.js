@@ -42,3 +42,4 @@ __exportStar(require("./reservationController"), exports);
 __exportStar(require("./reservationQueryController"), exports);
 exports.PaymentProofController = __importStar(require("./paymentProofController"));
 __exportStar(require("./xenditWebhookController"), exports);
+__exportStar(require("./reservationScheduleController"), exports);
