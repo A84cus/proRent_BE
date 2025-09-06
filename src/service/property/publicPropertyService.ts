@@ -94,7 +94,7 @@ type RoomTypeWithIncludes = Prisma.RoomTypeGetPayload<{
   };
 }>;
 
-import { PropertySearchParams } from "../../interfaces/property";
+import { PropertySearchParams } from "../../interfaces/publicProperty.interface";
 
 class PublicPropertyService {
   // Search properties with filters and pagination
@@ -132,8 +132,14 @@ class PublicPropertyService {
 
       const searchParams = {
         search: params.search?.trim(),
-        categoryId: params.category?.trim(),
-        sort: params.sort,
+        category: params.category?.trim(),
+        city: params.city?.trim(),
+        province: params.province?.trim(),
+        minPrice: params.minPrice,
+        maxPrice: params.maxPrice,
+        capacity: params.capacity,
+        sortBy: params.sortBy,
+        sortOrder: params.sortOrder,
         page,
         limit,
       };

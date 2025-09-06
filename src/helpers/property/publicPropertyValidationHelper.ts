@@ -37,8 +37,7 @@ class PublicPropertyValidationHelper {
       location,
       minPrice,
       maxPrice,
-      minRooms,
-      maxRooms,
+      capacity,
       sortBy,
       sortOrder,
       page,
@@ -54,10 +53,14 @@ class PublicPropertyValidationHelper {
       location: location ? String(location).trim() : undefined,
       minPrice: minPrice ? Number(minPrice) : undefined,
       maxPrice: maxPrice ? Number(maxPrice) : undefined,
-      minRooms: minRooms ? Number(minRooms) : undefined,
-      maxRooms: maxRooms ? Number(maxRooms) : undefined,
+      capacity: capacity ? Number(capacity) : undefined,
       sortBy: sortBy
-        ? (String(sortBy) as "createdAt" | "name" | "pricing")
+        ? (String(sortBy) as
+            | "createdAt"
+            | "name"
+            | "pricing"
+            | "price"
+            | "capacity")
         : "createdAt",
       sortOrder: sortOrder ? (String(sortOrder) as "asc" | "desc") : "desc",
       page: page ? Number(page) : 1,
@@ -90,34 +93,20 @@ class PublicPropertyValidationHelper {
       };
     }
 
-    // Room validations
-    if (searchQuery.minRooms !== undefined && searchQuery.minRooms < 1) {
+    // Capacity validation
+    if (searchQuery.capacity !== undefined && searchQuery.capacity < 1) {
       return {
         isValid: false,
-        error: PUBLIC_PROPERTY_ERROR_MESSAGES.MIN_ROOMS_TOO_LOW,
-      };
-    }
-
-    if (searchQuery.maxRooms !== undefined && searchQuery.maxRooms < 1) {
-      return {
-        isValid: false,
-        error: PUBLIC_PROPERTY_ERROR_MESSAGES.MAX_ROOMS_TOO_LOW,
-      };
-    }
-
-    if (
-      searchQuery.minRooms !== undefined &&
-      searchQuery.maxRooms !== undefined &&
-      searchQuery.minRooms > searchQuery.maxRooms
-    ) {
-      return {
-        isValid: false,
-        error: PUBLIC_PROPERTY_ERROR_MESSAGES.MIN_ROOMS_GREATER_THAN_MAX,
+        error: "Capacity must be at least 1",
       };
     }
 
     // Sort validations
-    if (!["createdAt", "name", "pricing"].includes(searchQuery.sortBy)) {
+    if (
+      !["createdAt", "name", "pricing", "price", "capacity"].includes(
+        searchQuery.sortBy
+      )
+    ) {
       return {
         isValid: false,
         error: PUBLIC_PROPERTY_ERROR_MESSAGES.INVALID_SORT_BY,
