@@ -22,7 +22,14 @@ import { rawBodyMiddleware } from './middleware/system/rawBody';
 const express = require('express');
 const app = express();
 
-// app.use(rawBodyMiddleware);
+app.use(
+   Express.json({
+      verify: (req, res, buf) => {
+         (req as any).rawBody = buf.toString();
+      },
+      limit: '10mb' // optional
+   })
+);
 
 app.use(cors(corsOptions));
 app.use(helmet());
@@ -30,7 +37,6 @@ app.use(helmet());
 app.use(httpLogger);
 
 app.use('/api/webhooks', xenditRoute);
-app.use(Express.json());
 
 app.use('/api/auth', authRoute);
 app.use('/api/public/properties', publicPropertyRoute);

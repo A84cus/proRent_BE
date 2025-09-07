@@ -24,12 +24,16 @@ const corsOption_1 = __importDefault(require("./config/app/corsOption"));
 const xenditRoute_1 = __importDefault(require("./route/webhooks/xenditRoute"));
 const express = require('express');
 const app = express();
-// app.use(rawBodyMiddleware);
+app.use(express_1.default.json({
+    verify: (req, res, buf) => {
+        req.rawBody = buf.toString();
+    },
+    limit: '10mb' // optional
+}));
 app.use((0, cors_1.default)(corsOption_1.default));
 app.use((0, helmet_1.default)());
 app.use(loggerMwr_1.default);
 app.use('/api/webhooks', xenditRoute_1.default);
-app.use(express_1.default.json());
 app.use('/api/auth', authRoute_1.default);
 app.use('/api/public/properties', publicPropertyRoutes_1.default);
 app.use('/api/upload', uploadRoute_1.default);
