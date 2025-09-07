@@ -1,6 +1,6 @@
 // routes/xendit.ts
 
-import express from 'express';
+import * as express from 'express';
 import { handleXenditInvoiceCallback } from '../../controller'; // Adjust path if needed
 
 const router = express.Router();

@@ -25,8 +25,7 @@ const handleXenditInvoiceCallback = (req, res) => __awaiter(void 0, void 0, void
     // --- Log ALL incoming headers for maximum debugging ---
     console.log('DEBUG: [3] FULL INCOMING HEADERS:', JSON.stringify(req.headers, null, 2));
     // --- 1. Retrieve Raw Body and Signature ---
-    const rawBody = req.rawBody; // Provided by express.raw middleware
-    // const signature = req.get('Xendit-Signature');
+    const rawBody = req.rawBody;
     const callbackToken = req.get('X-CALLBACK-TOKEN');
     console.log('DEBUG: [4] Extracted X-CALLBACK-TOKEN header value is:', callbackToken);
     console.log('DEBUG: [5] Raw Body (first 200 chars):', rawBody ? rawBody.toString('utf8').substring(0, 200) : 'NO RAW BODY');
