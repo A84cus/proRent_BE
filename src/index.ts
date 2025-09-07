@@ -17,9 +17,12 @@ import publicPropertyRoute from './route/property/publicPropertyRoutes';
 import reportRoute from './route/report/reportRoutes';
 import corsOptions from './config/app/corsOption';
 import xenditRoute from './route/webhooks/xenditRoute';
+import { rawBodyMiddleware } from './middleware/system/rawBody';
 
 const express = require('express');
 const app = express();
+
+app.use(rawBodyMiddleware);
 
 app.use(cors(corsOptions));
 app.use(helmet());

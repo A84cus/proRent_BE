@@ -13,7 +13,6 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.handleXenditInvoiceCallback = void 0;
-const crypto_1 = __importDefault(require("crypto"));
 const prisma_1 = __importDefault(require("../../prisma"));
 const client_1 = require("@prisma/client");
 const config_1 = require("../../config");
@@ -24,9 +23,9 @@ const handleXenditInvoiceCallback = (req, res) => __awaiter(void 0, void 0, void
     console.log('DEBUG: [2] Received Xendit Invoice Callback at:', new Date().toISOString());
     // --- Log ALL incoming headers for maximum debugging ---
     console.log('DEBUG: [3] FULL INCOMING HEADERS:', JSON.stringify(req.headers, null, 2));
-    // --- 1. Retrieve Raw Body and Signature ---
-    const rawBody = req.rawBody;
-    const callbackToken = req.get('X-CALLBACK-TOKEN');
+    // --- 1. Retrieve Raw Body and Token ---
+    const rawBody = req.rawBody; // Provided by our custom rawBodyMiddleware
+    const callbackToken = req.get('X-CALLBACK-TOKEN'); // Xendit sends the token in this header
     console.log('DEBUG: [4] Extracted X-CALLBACK-TOKEN header value is:', callbackToken);
     console.log('DEBUG: [5] Raw Body (first 200 chars):', rawBody ? rawBody.toString('utf8').substring(0, 200) : 'NO RAW BODY');
     // --- 2. Basic Request Validation ---
@@ -42,30 +41,31 @@ const handleXenditInvoiceCallback = (req, res) => __awaiter(void 0, void 0, void
         console.warn('WARNING: [8] Missing request body.');
         return res.status(400).send(reservationMessages_1.RESERVATION_ERROR_MESSAGES.MISSING_REQUEST_BODY);
     }
-    // --- 3. Verify Webhook Signature ---
+    // --- 3. Verify Webhook Token (Direct String Comparison) ---
     try {
-        console.log('DEBUG: [9] Starting signature verification process.');
-        const expectedSignature = crypto_1.default.createHmac('sha256', config_1.XENDIT_WEBHOOK_TOKEN).update(rawBody, 'utf8').digest('hex');
-        console.log('DEBUG: [10] Computed Expected Signature:', expectedSignature);
-        console.log('DEBUG: [11] Received Signature from Header:', callbackToken);
-        const trusted = crypto_1.default.timingSafeEqual(Buffer.from(callbackToken, 'hex'), Buffer.from(expectedSignature, 'hex'));
-        if (!trusted) {
-            console.warn('WARNING: [12] SIGNATURE MISMATCH!');
-            console.warn('WARNING: [13] Expected:', expectedSignature);
+        console.log('DEBUG: [9] Starting token verification process.');
+        console.log('DEBUG: [10] Token from Environment:', config_1.XENDIT_WEBHOOK_TOKEN);
+        console.log('DEBUG: [11] Token from Header:', callbackToken);
+        // Perform a direct string comparison for the token
+        if (config_1.XENDIT_WEBHOOK_TOKEN !== callbackToken) {
+            console.warn('WARNING: [12] TOKEN MISMATCH!');
+            console.warn('WARNING: [13] Expected:', config_1.XENDIT_WEBHOOK_TOKEN);
             console.warn('WARNING: [14] Received:', callbackToken);
             return res.status(401).send(reservationMessages_1.RESERVATION_ERROR_MESSAGES.INVALID_WEBHOOK_SIGNATURE);
         }
-        console.log('SUCCESS: [15] Xendit webhook signature verified.');
+        console.log('SUCCESS: [15] Xendit webhook token verified.');
     }
     catch (verifyError) {
-        console.error('ERROR: [16] Error during signature verification:', verifyError);
+        console.error('ERROR: [16] Error during token verification:', verifyError);
         console.error('ERROR: [17] Stack Trace:', verifyError.stack);
         return res.status(500).send(reservationMessages_1.RESERVATION_ERROR_MESSAGES.SIGNATURE_VERIFICATION_ERROR);
     }
     // --- 4. Parse and Validate Callback Payload ---
     let callbackData;
     try {
-        callbackData = JSON.parse(rawBody.toString('utf8'));
+        // Convert the rawBody buffer to a string and parse JSON
+        const bodyString = rawBody.toString('utf8');
+        callbackData = JSON.parse(bodyString);
         console.log('SUCCESS: [18] Parsed callback data successfully:', JSON.stringify(callbackData, null, 2));
     }
     catch (parseError) {
@@ -87,7 +87,7 @@ const handleXenditInvoiceCallback = (req, res) => __awaiter(void 0, void 0, void
         const paymentRecord = yield prisma_1.default.payment.findUnique({
             where: { xenditInvoiceId },
             include: {
-                reservation: true
+                reservation: true // Include reservation for status update
             }
         });
         if (!paymentRecord) {
@@ -112,7 +112,7 @@ const handleXenditInvoiceCallback = (req, res) => __awaiter(void 0, void 0, void
             yield tx.payment.update({
                 where: { id: paymentRecord.id },
                 data: {
-                    xenditCallback: callbackData,
+                    xenditCallback: callbackData, // Store raw data for reference
                     callbackStatus: invoiceStatus,
                     paymentStatus: internalPaymentStatus,
                     paidAt: callbackData.paidAt ? new Date(callbackData.paidAt) : paymentRecord.paidAt
@@ -122,9 +122,7 @@ const handleXenditInvoiceCallback = (req, res) => __awaiter(void 0, void 0, void
             if (newReservationStatus && paymentRecord.reservationId) {
                 yield tx.reservation.update({
                     where: { id: paymentRecord.reservationId },
-                    data: {
-                        orderStatus: newReservationStatus
-                    }
+                    data: { orderStatus: newReservationStatus }
                 });
                 console.log(`SUCCESS: [29] Updated reservation ${paymentRecord.reservationId} status to ${newReservationStatus}`);
             }
