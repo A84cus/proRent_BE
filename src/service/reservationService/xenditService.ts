@@ -65,7 +65,8 @@ export async function createXenditInvoice (paymentId: string) {
             quantity: 1,
             price: paymentRecord.amount,
             category: 'Accommodation',
-            url: `${BASE_FE_URL || BASE_FE_URL_ALT}/property/${property?.id}`
+            url: `${BASE_FE_URL || BASE_FE_URL_ALT}/property/${property?.id}`,
+            currency: 'IDR'
          }
       ] as PaymentRequestBasketItem[],
       // --- Metadata ---

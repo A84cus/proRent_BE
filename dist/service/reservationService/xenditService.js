@@ -71,7 +71,8 @@ function createXenditInvoice(paymentId) {
                     quantity: 1,
                     price: paymentRecord.amount,
                     category: 'Accommodation',
-                    url: `${index_1.BASE_FE_URL || index_1.BASE_FE_URL_ALT}/property/${property === null || property === void 0 ? void 0 : property.id}`
+                    url: `${index_1.BASE_FE_URL || index_1.BASE_FE_URL_ALT}/property/${property === null || property === void 0 ? void 0 : property.id}`,
+                    currency: 'IDR'
                 }
             ],
             // --- Metadata ---
