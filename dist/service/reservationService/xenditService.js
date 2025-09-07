@@ -62,8 +62,8 @@ function createXenditInvoice(paymentId) {
                 mobile_number: ((_d = user.profile) === null || _d === void 0 ? void 0 : _d.phone) || ''
             },
             // --- Redirect URLs ---
-            success_redirect_url: `${index_1.BASE_FE_URL || index_1.BASE_FE_URL_ALT}/payment/success?reservationId=${reservation.id}`,
-            failure_redirect_url: `${index_1.BASE_FE_URL || index_1.BASE_FE_URL_ALT}/payment/failure?reservationId=${reservation.id}`,
+            successRedirectURL: `${index_1.BASE_FE_URL || index_1.BASE_FE_URL_ALT}/payment/success?reservationId=${reservation.id}`,
+            failureRedirectURL: `${index_1.BASE_FE_URL || index_1.BASE_FE_URL_ALT}/payment/failure?reservationId=${reservation.id}`,
             // --- Items ---
             items: [
                 {

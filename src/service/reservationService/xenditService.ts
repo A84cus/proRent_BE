@@ -56,8 +56,8 @@ export async function createXenditInvoice (paymentId: string) {
          mobile_number: user.profile?.phone || ''
       },
       // --- Redirect URLs ---
-      success_redirect_url: `${BASE_FE_URL || BASE_FE_URL_ALT}/payment/success?reservationId=${reservation.id}`,
-      failure_redirect_url: `${BASE_FE_URL || BASE_FE_URL_ALT}/payment/failure?reservationId=${reservation.id}`,
+      successRedirectURL: `${BASE_FE_URL || BASE_FE_URL_ALT}/payment/success?reservationId=${reservation.id}`,
+      failureRedirectURL: `${BASE_FE_URL || BASE_FE_URL_ALT}/payment/failure?reservationId=${reservation.id}`,
       // --- Items ---
       items: [
          {
