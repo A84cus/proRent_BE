@@ -18,10 +18,10 @@ const xendit_node_1 = __importDefault(require("xendit-node"));
 const prisma_1 = __importDefault(require("../../prisma"));
 const index_1 = require("../../config/index");
 const xenditClient = new xendit_node_1.default({ secretKey: index_1.XENDIT_SECRET_KEY });
-const { PaymentRequest } = xenditClient; // Use PaymentRequest for the v2 structure
+const { Invoice } = xenditClient;
 function createXenditInvoice(paymentId) {
     return __awaiter(this, void 0, void 0, function* () {
-        var _a, _b, _c, _d, _e, _f, _g;
+        var _a, _b, _c, _d;
         const paymentRecord = yield prisma_1.default.payment.findUnique({
             where: { id: paymentId },
             include: {
@@ -48,9 +48,9 @@ function createXenditInvoice(paymentId) {
         const user = reservation.User;
         const roomType = reservation.RoomType;
         const property = reservation.Property;
-        // --- Use the Payment Request API v2 structure ---
-        const paymentRequestData = {
-            reference_id: `invoice-${paymentRecord.id}-${Date.now()}`,
+        // --- Use the Invoice API structure ---
+        const invoiceData = {
+            externalId: `invoice-${paymentRecord.id}-${Date.now()}`,
             amount: paymentRecord.amount,
             currency: 'IDR',
             description: `Booking for ${(roomType === null || roomType === void 0 ? void 0 : roomType.name) || 'Accommodation'} at ${(property === null || property === void 0 ? void 0 : property.name) || 'Property'} from ${reservation.startDate.toLocaleDateString()} to ${reservation.endDate.toLocaleDateString()}`,
@@ -61,9 +61,9 @@ function createXenditInvoice(paymentId) {
                 email: user.email || paymentRecord.payerEmail || '',
                 mobile_number: ((_d = user.profile) === null || _d === void 0 ? void 0 : _d.phone) || ''
             },
-            // --- Redirect URLs (Top-level for Payment Request v2) ---
-            success_redirect_url: `${(_e = (index_1.BASE_FE_URL || index_1.BASE_FE_URL_ALT)) === null || _e === void 0 ? void 0 : _e.trim()}/payment/success?reservationId=${reservation.id}`,
-            failure_redirect_url: `${(_f = (index_1.BASE_FE_URL || index_1.BASE_FE_URL_ALT)) === null || _f === void 0 ? void 0 : _f.trim()}/payment/failure?reservationId=${reservation.id}`,
+            // --- Redirect URLs ---
+            success_redirect_url: `${index_1.BASE_FE_URL || index_1.BASE_FE_URL_ALT}/payment/success?reservationId=${reservation.id}`,
+            failure_redirect_url: `${index_1.BASE_FE_URL || index_1.BASE_FE_URL_ALT}/payment/failure?reservationId=${reservation.id}`,
             // --- Items ---
             items: [
                 {
@@ -71,8 +71,7 @@ function createXenditInvoice(paymentId) {
                     quantity: 1,
                     price: paymentRecord.amount,
                     category: 'Accommodation',
-                    url: `${index_1.BASE_FE_URL || index_1.BASE_FE_URL_ALT}/property/${property === null || property === void 0 ? void 0 : property.id}`,
-                    currency: 'IDR'
+                    url: `${index_1.BASE_FE_URL || index_1.BASE_FE_URL_ALT}/property/${property === null || property === void 0 ? void 0 : property.id}`
                 }
             ],
             // --- Metadata ---
@@ -81,47 +80,37 @@ function createXenditInvoice(paymentId) {
                 propertyId: property === null || property === void 0 ? void 0 : property.id,
                 roomTypeId: roomType === null || roomType === void 0 ? void 0 : roomType.id,
                 userId: user.id
-            }
+            },
+            // --- Invoice Duration (24 hours) ---
+            invoice_duration: 86400
         };
         try {
-            console.log('DEBUG: Creating Xendit Payment Request with ', JSON.stringify(paymentRequestData, null, 2));
-            // --- Use the correct method: createPaymentRequest ---
-            const xenditPaymentRequest = yield PaymentRequest.createPaymentRequest({ data: paymentRequestData });
-            console.log('Xendit Payment Request Created:', xenditPaymentRequest.id);
-            // --- Extract the web URL from the actions array ---
-            const webAction = (_g = xenditPaymentRequest.actions) === null || _g === void 0 ? void 0 : _g.find(action => action.urlType === 'WEB');
-            const paymentUrl = webAction
-                ? webAction.url
-                : xenditPaymentRequest.actions &&
-                    xenditPaymentRequest.actions[0] &&
-                    xenditPaymentRequest.actions[0].urlType === 'WEB'
-                    ? xenditPaymentRequest.actions[0].url
-                    : undefined;
-            if (!paymentUrl) {
-                throw new Error('No payment URL found in Xendit response');
-            }
+            console.log('DEBUG: Creating Xendit Invoice with ', JSON.stringify(invoiceData, null, 2));
+            // --- Use Invoice.createInvoice for Invoice API ---
+            const xenditInvoice = yield Invoice.createInvoice({ data: invoiceData });
+            console.log('Xendit Invoice Created:', xenditInvoice.id);
             yield prisma_1.default.payment.update({
                 where: { id: paymentId },
                 data: {
-                    xenditInvoiceId: xenditPaymentRequest.id,
-                    externalInvoiceUrl: paymentUrl
+                    xenditInvoiceId: xenditInvoice.id,
+                    externalInvoiceUrl: xenditInvoice.invoiceUrl
                 }
             });
             return {
-                invoiceId: xenditPaymentRequest.id,
-                invoiceUrl: paymentUrl
+                invoiceId: xenditInvoice.id,
+                invoiceUrl: xenditInvoice.invoiceUrl
             };
         }
         catch (error) {
-            console.error('Error creating Xendit Payment Request:', error);
+            console.error('Error creating Xendit Invoice:', error);
             yield prisma_1.default.transactionLog.create({
                 data: {
                     paymentId,
                     status: 'XENDIT_INVOICE_ERROR',
-                    message: error.message || 'Unknown error creating Xendit payment request'
+                    message: error.message || 'Unknown error creating Xendit invoice'
                 }
             });
-            throw new Error(`Failed to create Xendit payment request: ${error.message}`);
+            throw new Error(`Failed to create Xendit invoice: ${error.message}`);
         }
     });
 }
