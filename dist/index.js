@@ -22,10 +22,9 @@ const publicPropertyRoutes_1 = __importDefault(require("./route/property/publicP
 const reportRoutes_1 = __importDefault(require("./route/report/reportRoutes"));
 const corsOption_1 = __importDefault(require("./config/app/corsOption"));
 const xenditRoute_1 = __importDefault(require("./route/webhooks/xenditRoute"));
-const rawBody_1 = require("./middleware/system/rawBody");
 const express = require('express');
 const app = express();
-app.use(rawBody_1.rawBodyMiddleware);
+// app.use(rawBodyMiddleware);
 app.use((0, cors_1.default)(corsOption_1.default));
 app.use((0, helmet_1.default)());
 app.use(loggerMwr_1.default);

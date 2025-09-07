@@ -22,7 +22,7 @@ import { rawBodyMiddleware } from './middleware/system/rawBody';
 const express = require('express');
 const app = express();
 
-app.use(rawBodyMiddleware);
+// app.use(rawBodyMiddleware);
 
 app.use(cors(corsOptions));
 app.use(helmet());
