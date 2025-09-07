@@ -49,12 +49,12 @@ function createXenditInvoice(paymentId) {
             payerEmail: user.email || paymentRecord.payerEmail || '', // Prefer user email from relation
             description: `Booking for ${(roomType === null || roomType === void 0 ? void 0 : roomType.name) || 'Accommodation'} at ${(property === null || property === void 0 ? void 0 : property.name) || 'Property'} from ${reservation.startDate.toLocaleDateString()} to ${reservation.endDate.toLocaleDateString()}`,
             invoiceDuration: 60 * 60 * 24,
-            successRedirectURL: `${index_1.BASE_FE_URL || index_1.BASE_FE_URL_ALT}/payment/success?reservationId=${reservation.id}`,
-            failureRedirectURL: `${index_1.BASE_FE_URL || index_1.BASE_FE_URL_ALT}/payment/failure?reservationId=${reservation.id}`
+            success_redirect_url: `${index_1.BASE_FE_URL || index_1.BASE_FE_URL_ALT}/payment/success?reservationId=${reservation.id}`,
+            failure_redirect_url: `${index_1.BASE_FE_URL || index_1.BASE_FE_URL_ALT}/payment/failure?reservationId=${reservation.id}`
         };
         try {
-            console.log('DEBUG: Success Redirect URL:', `${index_1.BASE_FE_URL || index_1.BASE_FE_URL_ALT}/payment/success?reservationId=${reservation.id}`);
-            console.log('DEBUG: Failure Redirect URL:', `${index_1.BASE_FE_URL || index_1.BASE_FE_URL_ALT}/payment/failure?reservationId=${reservation.id}`);
+            console.log('DEBUG: success_redirect_url:', `${index_1.BASE_FE_URL || index_1.BASE_FE_URL_ALT}/payment/success?reservationId=${reservation.id}`);
+            console.log('DEBUG: failure_redirect_url:', `${index_1.BASE_FE_URL || index_1.BASE_FE_URL_ALT}/payment/failure?reservationId=${reservation.id}`);
             const xenditInvoice = yield Invoice.createInvoice({ data: invoiceData });
             console.log('Xendit Invoice Created:', xenditInvoice.id);
             yield prisma_1.default.payment.update({
