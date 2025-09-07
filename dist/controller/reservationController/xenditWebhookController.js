@@ -19,6 +19,7 @@ const client_1 = require("@prisma/client");
 const config_1 = require("../../config"); // Adjust path to your environment config
 const reservationMessages_1 = require("../../constants/controllers/reservation/reservationMessages");
 const handleXenditInvoiceCallback = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    console.log('DEBUG: XENDIT_WEBHOOK_TOKEN value is:', config_1.XENDIT_WEBHOOK_TOKEN);
     console.log('Received Xendit Invoice Callback');
     // --- 1. Retrieve Raw Body and Signature ---
     const rawBody = req.rawBody; // Provided by express.raw middleware

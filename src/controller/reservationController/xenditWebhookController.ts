@@ -1,15 +1,16 @@
 // controllers/xenditController.ts
 import { Request, Response } from 'express';
 import crypto from 'crypto';
-import prisma from '../../prisma'; // Adjust the path to your Prisma client instance
+import prisma from '../../prisma';
 import { Status } from '@prisma/client';
-import { XENDIT_WEBHOOK_TOKEN } from '../../config'; // Adjust path to your environment config
+import { XENDIT_WEBHOOK_TOKEN } from '../../config';
 import {
    RESERVATION_ERROR_MESSAGES,
    RESERVATION_SUCCESS_MESSAGES
 } from '../../constants/controllers/reservation/reservationMessages';
 
 export const handleXenditInvoiceCallback = async (req: Request, res: Response) => {
+   console.log('DEBUG: XENDIT_WEBHOOK_TOKEN value is:', XENDIT_WEBHOOK_TOKEN);
    console.log('Received Xendit Invoice Callback');
 
    // --- 1. Retrieve Raw Body and Signature ---
