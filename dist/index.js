@@ -3,7 +3,6 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-const express_1 = __importDefault(require("express"));
 const cors_1 = __importDefault(require("cors"));
 const helmet_1 = __importDefault(require("helmet"));
 const logger_1 = __importDefault(require("./utils/system/logger"));
@@ -22,18 +21,15 @@ const publicPropertyRoutes_1 = __importDefault(require("./route/property/publicP
 const reportRoutes_1 = __importDefault(require("./route/report/reportRoutes"));
 const corsOption_1 = __importDefault(require("./config/app/corsOption"));
 const xenditRoute_1 = __importDefault(require("./route/webhooks/xenditRoute"));
+const rawBody_1 = require("./middleware/system/rawBody");
 const express = require('express');
 const app = express();
-app.use(express_1.default.json({
-    verify: (req, res, buf) => {
-        req.rawBody = buf.toString();
-    },
-    limit: '10mb' // optional
-}));
+app.use(rawBody_1.rawBodyMiddleware);
+app.use('/api/webhooks', xenditRoute_1.default);
+app.use(express.json());
 app.use((0, cors_1.default)(corsOption_1.default));
 app.use((0, helmet_1.default)());
 app.use(loggerMwr_1.default);
-app.use('/api/webhooks', xenditRoute_1.default);
 app.use('/api/auth', authRoute_1.default);
 app.use('/api/public/properties', publicPropertyRoutes_1.default);
 app.use('/api/upload', uploadRoute_1.default);
