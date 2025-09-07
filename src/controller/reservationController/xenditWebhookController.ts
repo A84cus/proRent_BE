@@ -19,8 +19,9 @@ export const handleXenditInvoiceCallback = async (req: Request, res: Response) =
 
    // --- 1. Retrieve Raw Body and Signature ---
    const rawBody = (req as any).rawBody; // Provided by express.raw middleware
-   const signature = req.get('Xendit-Signature');
-   console.log('DEBUG: [4] Extracted Xendit-Signature header value is:', signature);
+   // const signature = req.get('Xendit-Signature');
+   const callbackToken = req.get('X-CALLBACK-TOKEN');
+   console.log('DEBUG: [4] Extracted X-CALLBACK-TOKEN header value is:', callbackToken);
    console.log(
       'DEBUG: [5] Raw Body (first 200 chars):',
       rawBody ? rawBody.toString('utf8').substring(0, 200) : 'NO RAW BODY'
@@ -32,8 +33,8 @@ export const handleXenditInvoiceCallback = async (req: Request, res: Response) =
       return res.status(500).send(RESERVATION_ERROR_MESSAGES.WEBHOOK_TOKEN_MISSING);
    }
 
-   if (!signature) {
-      console.warn('WARNING: [7] Missing Xendit-Signature header. Full headers were logged above.');
+   if (!callbackToken) {
+      console.warn('WARNING: [7] Missing X-CALLBACK-TOKEN header. Full headers were logged above.');
       return res.status(400).send(RESERVATION_ERROR_MESSAGES.MISSING_SIGNATURE_HEADER);
    }
 
@@ -48,14 +49,14 @@ export const handleXenditInvoiceCallback = async (req: Request, res: Response) =
       const expectedSignature = crypto.createHmac('sha256', XENDIT_WEBHOOK_TOKEN).update(rawBody, 'utf8').digest('hex');
 
       console.log('DEBUG: [10] Computed Expected Signature:', expectedSignature);
-      console.log('DEBUG: [11] Received Signature from Header:', signature);
+      console.log('DEBUG: [11] Received Signature from Header:', callbackToken);
 
-      const trusted = crypto.timingSafeEqual(Buffer.from(signature, 'hex'), Buffer.from(expectedSignature, 'hex'));
+      const trusted = crypto.timingSafeEqual(Buffer.from(callbackToken, 'hex'), Buffer.from(expectedSignature, 'hex'));
 
       if (!trusted) {
          console.warn('WARNING: [12] SIGNATURE MISMATCH!');
          console.warn('WARNING: [13] Expected:', expectedSignature);
-         console.warn('WARNING: [14] Received:', signature);
+         console.warn('WARNING: [14] Received:', callbackToken);
          return res.status(401).send(RESERVATION_ERROR_MESSAGES.INVALID_WEBHOOK_SIGNATURE);
       }
       console.log('SUCCESS: [15] Xendit webhook signature verified.');
