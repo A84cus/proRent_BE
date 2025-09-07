@@ -7,6 +7,6 @@ const router = express.Router();
 
 // Apply express.raw() middleware ONLY to the Xendit webhook route
 // This is crucial for verifying the Xendit-Signature
-router.post('/xendit/invoice', express.raw({ type: 'application/json' }), handleXenditInvoiceCallback);
+router.post('/', express.raw({ type: 'application/json' }), handleXenditInvoiceCallback);
 
 export default router;
