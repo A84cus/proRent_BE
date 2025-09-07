@@ -17,15 +17,20 @@ import publicPropertyRoute from './route/property/publicPropertyRoutes';
 import reportRoute from './route/report/reportRoutes';
 import corsOptions from './config/app/corsOption';
 import xenditRoute from './route/webhooks/xenditRoute';
+import { rawBodyMiddleware } from './middleware/system/rawBody';
 
 const express = require('express');
 const app = express();
 
-app.use(Express.json());
+app.use(rawBodyMiddleware);
+
 app.use(cors(corsOptions));
 app.use(helmet());
 
 app.use(httpLogger);
+
+app.use('/api/webhooks', xenditRoute);
+app.use(Express.json());
 
 app.use('/api/auth', authRoute);
 app.use('/api/public/properties', publicPropertyRoute);
@@ -38,7 +43,6 @@ app.use('/api/cronjob', cronJobRoute);
 app.use('/api/report', reportRoute);
 app.use('/api/owner', ownerRoutes);
 app.use('/api/rooms', roomOperationsRoutes);
-app.use('/api/webhooks', xenditRoute);
 
 app.get('/', (req: Request, res: Response) => {
    logger.info('Homepage accessed');

@@ -123,11 +123,7 @@ function getOrderBy(sortBy, sortDir) {
 function computeSummary(filters) {
     return __awaiter(this, void 0, void 0, function* () {
         const baseWhere = Object.assign(Object.assign(Object.assign(Object.assign({}, (filters.propertyId && { propertyId: filters.propertyId })), (filters.roomTypeId && { roomTypeId: filters.roomTypeId })), (filters.startDate && { startDate: { lte: filters.endDate || new Date() } })), (filters.endDate && { endDate: { gte: filters.startDate || new Date('1970-01-01') } }));
-        const [draft, pendingPayment, pendingConfirmation, confirmed, cancelled] = yield Promise.all([
-            prisma_1.default.reservation.findMany({
-                where: Object.assign(Object.assign({}, baseWhere), { orderStatus: 'DRAFT', payment: { amount: { gt: 0 } } }),
-                select: { payment: { select: { amount: true } } }
-            }),
+        const [pendingPayment, pendingConfirmation, confirmed, cancelled] = yield Promise.all([
             prisma_1.default.reservation.findMany({
                 where: Object.assign(Object.assign({}, baseWhere), { orderStatus: 'PENDING_PAYMENT', payment: { amount: { gt: 0 } } }),
                 select: { payment: { select: { amount: true } } }
