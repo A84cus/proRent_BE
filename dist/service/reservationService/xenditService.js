@@ -21,7 +21,7 @@ const xenditClient = new xendit_node_1.default({ secretKey: index_1.XENDIT_SECRE
 const { PaymentRequest } = xenditClient; // Use PaymentRequest for the v2 structure
 function createXenditInvoice(paymentId) {
     return __awaiter(this, void 0, void 0, function* () {
-        var _a, _b, _c, _d, _e;
+        var _a, _b, _c, _d, _e, _f, _g;
         const paymentRecord = yield prisma_1.default.payment.findUnique({
             where: { id: paymentId },
             include: {
@@ -62,8 +62,8 @@ function createXenditInvoice(paymentId) {
                 mobile_number: ((_d = user.profile) === null || _d === void 0 ? void 0 : _d.phone) || ''
             },
             // --- Redirect URLs (Top-level for Payment Request v2) ---
-            success_redirect_url: `${index_1.BASE_FE_URL || index_1.BASE_FE_URL_ALT}/payment/success?reservationId=${reservation.id}`,
-            failure_redirect_url: `${index_1.BASE_FE_URL || index_1.BASE_FE_URL_ALT}/payment/failure?reservationId=${reservation.id}`,
+            success_redirect_url: `${(_e = (index_1.BASE_FE_URL || index_1.BASE_FE_URL_ALT)) === null || _e === void 0 ? void 0 : _e.trim()}/payment/success?reservationId=${reservation.id}`,
+            failure_redirect_url: `${(_f = (index_1.BASE_FE_URL || index_1.BASE_FE_URL_ALT)) === null || _f === void 0 ? void 0 : _f.trim()}/payment/failure?reservationId=${reservation.id}`,
             // --- Items ---
             items: [
                 {
@@ -89,7 +89,7 @@ function createXenditInvoice(paymentId) {
             const xenditPaymentRequest = yield PaymentRequest.createPaymentRequest({ data: paymentRequestData });
             console.log('Xendit Payment Request Created:', xenditPaymentRequest.id);
             // --- Extract the web URL from the actions array ---
-            const webAction = (_e = xenditPaymentRequest.actions) === null || _e === void 0 ? void 0 : _e.find(action => action.urlType === 'WEB');
+            const webAction = (_g = xenditPaymentRequest.actions) === null || _g === void 0 ? void 0 : _g.find(action => action.urlType === 'WEB');
             const paymentUrl = webAction
                 ? webAction.url
                 : xenditPaymentRequest.actions &&
