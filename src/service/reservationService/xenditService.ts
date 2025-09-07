@@ -2,7 +2,7 @@
 import Xendit from 'xendit-node';
 import prisma from '../../prisma'; // Adjust path
 import { Status } from '@prisma/client';
-import { BASE_FE_URL, XENDIT_SECRET_KEY } from '../../config/index'; // Assuming you use this for env vars
+import { BASE_FE_URL, BASE_FE_URL_ALT, XENDIT_SECRET_KEY } from '../../config/index'; // Assuming you use this for env vars
 
 const xenditClient = new Xendit({ secretKey: XENDIT_SECRET_KEY! });
 const { Invoice } = xenditClient;
@@ -42,8 +42,8 @@ export async function createXenditInvoice (paymentId: string) {
          property?.name || 'Property'
       } from ${reservation.startDate.toLocaleDateString()} to ${reservation.endDate.toLocaleDateString()}`,
       invoiceDuration: 60 * 60 * 24, // 24 hours in seconds (adjust if needed)
-      successRedirectURL: `${BASE_FE_URL}/payment/success?reservationId=${reservation.id}`,
-      failureRedirectURL: `${BASE_FE_URL}/payment/failure?reservationId=${reservation.id}`
+      successRedirectURL: `${BASE_FE_URL || BASE_FE_URL_ALT}/payment/success?reservationId=${reservation.id}`,
+      failureRedirectURL: `${BASE_FE_URL || BASE_FE_URL_ALT}/payment/failure?reservationId=${reservation.id}`
    };
 
    try {
