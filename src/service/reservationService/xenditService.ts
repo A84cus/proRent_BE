@@ -41,12 +41,21 @@ export async function createXenditInvoice (paymentId: string) {
       description: `Booking for ${roomType?.name || 'Accommodation'} at ${
          property?.name || 'Property'
       } from ${reservation.startDate.toLocaleDateString()} to ${reservation.endDate.toLocaleDateString()}`,
-      invoiceDuration: 60 * 60 * 24, // 24 hours in seconds (adjust if needed)
+      invoiceDuration: 60 * 60 * 24,
       successRedirectURL: `${BASE_FE_URL || BASE_FE_URL_ALT}/payment/success?reservationId=${reservation.id}`,
       failureRedirectURL: `${BASE_FE_URL || BASE_FE_URL_ALT}/payment/failure?reservationId=${reservation.id}`
    };
 
    try {
+      console.log(
+         'DEBUG: Success Redirect URL:',
+         `${BASE_FE_URL || BASE_FE_URL_ALT}/payment/success?reservationId=${reservation.id}`
+      );
+      console.log(
+         'DEBUG: Failure Redirect URL:',
+         `${BASE_FE_URL || BASE_FE_URL_ALT}/payment/failure?reservationId=${reservation.id}`
+      );
+
       const xenditInvoice = await Invoice.createInvoice({ data: invoiceData });
       console.log('Xendit Invoice Created:', xenditInvoice.id);
 
