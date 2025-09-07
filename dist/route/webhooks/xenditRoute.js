@@ -36,7 +36,9 @@ var __importStar = (this && this.__importStar) || (function () {
 Object.defineProperty(exports, "__esModule", { value: true });
 const express = __importStar(require("express"));
 const controller_1 = require("../../controller"); // Adjust path if needed
+const rawBody_1 = require("../../middleware/system/rawBody");
 const router = express.Router();
+router.use(rawBody_1.rawBodyMiddleware);
 // Apply express.raw() middleware ONLY to the Xendit webhook route
 // This is crucial for verifying the Xendit-Signature
 router.post('/xendit/invoice', controller_1.handleXenditInvoiceCallback);
