@@ -10,55 +10,29 @@ import {
 } from '../../constants/controllers/reservation/reservationMessages';
 
 export const handleXenditInvoiceCallback = async (req: Request, res: Response) => {
-   console.log('=== START: XENDIT WEBHOOK CALLBACK ===');
-   console.log('DEBUG: [1] XENDIT_WEBHOOK_TOKEN value is:', XENDIT_WEBHOOK_TOKEN);
-   console.log('DEBUG: [2] Received Xendit Invoice Callback at:', new Date().toISOString());
-
-   // --- Log ALL incoming headers for maximum debugging ---
-   console.log('DEBUG: [3] FULL INCOMING HEADERS:', JSON.stringify(req.headers, null, 2));
-
    // --- 1. Retrieve Raw Body and Token ---
-   const rawBody = (req as any).rawBody; // Provided by our custom rawBodyMiddleware
-   const callbackToken = req.get('X-CALLBACK-TOKEN'); // Xendit sends the token in this header
-   console.log('DEBUG: [4] Extracted X-CALLBACK-TOKEN header value is:', callbackToken);
-   console.log(
-      'DEBUG: [5] Raw Body (first 200 chars):',
-      rawBody ? rawBody.toString('utf8').substring(0, 200) : 'NO RAW BODY'
-   );
+   const rawBody = (req as any).rawBody;
+   const callbackToken = req.get('X-CALLBACK-TOKEN');
 
    // --- 2. Basic Request Validation ---
    if (!XENDIT_WEBHOOK_TOKEN) {
-      console.error('ERROR: [6] XENDIT_WEBHOOK_TOKEN is not configured.');
       return res.status(500).send(RESERVATION_ERROR_MESSAGES.WEBHOOK_TOKEN_MISSING);
    }
 
    if (!callbackToken) {
-      console.warn('WARNING: [7] Missing X-CALLBACK-TOKEN header. Full headers were logged above.');
       return res.status(400).send(RESERVATION_ERROR_MESSAGES.MISSING_SIGNATURE_HEADER);
    }
 
    if (!rawBody) {
-      console.warn('WARNING: [8] Missing request body.');
       return res.status(400).send(RESERVATION_ERROR_MESSAGES.MISSING_REQUEST_BODY);
    }
 
    // --- 3. Verify Webhook Token (Direct String Comparison) ---
    try {
-      console.log('DEBUG: [9] Starting token verification process.');
-      console.log('DEBUG: [10] Token from Environment:', XENDIT_WEBHOOK_TOKEN);
-      console.log('DEBUG: [11] Token from Header:', callbackToken);
-
-      // Perform a direct string comparison for the token
       if (XENDIT_WEBHOOK_TOKEN !== callbackToken) {
-         console.warn('WARNING: [12] TOKEN MISMATCH!');
-         console.warn('WARNING: [13] Expected:', XENDIT_WEBHOOK_TOKEN);
-         console.warn('WARNING: [14] Received:', callbackToken);
          return res.status(401).send(RESERVATION_ERROR_MESSAGES.INVALID_WEBHOOK_SIGNATURE);
       }
-      console.log('SUCCESS: [15] Xendit webhook token verified.');
    } catch (verifyError: any) {
-      console.error('ERROR: [16] Error during token verification:', verifyError);
-      console.error('ERROR: [17] Stack Trace:', verifyError.stack);
       return res.status(500).send(RESERVATION_ERROR_MESSAGES.SIGNATURE_VERIFICATION_ERROR);
    }
 
@@ -68,10 +42,7 @@ export const handleXenditInvoiceCallback = async (req: Request, res: Response) =
       // Convert the rawBody buffer to a string and parse JSON
       const bodyString = rawBody.toString('utf8');
       callbackData = JSON.parse(bodyString);
-      console.log('SUCCESS: [18] Parsed callback data successfully:', JSON.stringify(callbackData, null, 2));
    } catch (parseError: any) {
-      console.error('ERROR: [19] Error parsing Xendit callback JSON:', parseError);
-      console.error('ERROR: [20] Raw Body that failed to parse:', rawBody.toString('utf8'));
       return res.status(400).send(RESERVATION_ERROR_MESSAGES.INVALID_JSON_PAYLOAD);
    }
 
@@ -79,33 +50,25 @@ export const handleXenditInvoiceCallback = async (req: Request, res: Response) =
    const invoiceStatus = callbackData.status;
 
    if (!xenditInvoiceId) {
-      console.warn('WARNING: [21] Callback payload missing invoice ID.');
       return res.status(400).send(RESERVATION_ERROR_MESSAGES.MISSING_INVOICE_ID_PAYLOAD);
    }
-
-   console.log('DEBUG: [22] Processing invoice ID:', xenditInvoiceId, 'with status:', invoiceStatus);
 
    // --- 5. Process the Callback ---
    try {
       // --- a. Find the corresponding Payment record ---
-      console.log('DEBUG: [23] Querying database for Payment with xenditInvoiceId:', xenditInvoiceId);
       const paymentRecord = await prisma.payment.findUnique({
          where: { xenditInvoiceId },
          include: {
-            reservation: true // Include reservation for status update
+            reservation: true
          }
       });
 
       if (!paymentRecord) {
-         console.warn(`WARNING: [24] Payment record NOT FOUND for Xendit invoice ID: ${xenditInvoiceId}`);
          return res.status(200).send(RESERVATION_ERROR_MESSAGES.INVOICE_ID_NOT_FOUND);
       }
 
-      console.log(`SUCCESS: [25] Found payment record ${paymentRecord.id} for invoice ${xenditInvoiceId}`);
-
       // --- b. Map Xendit Status to Internal Status ---
       const internalPaymentStatus = mapXenditInvoiceStatusToInternal(invoiceStatus);
-      console.log(`DEBUG: [26] Mapped Xendit status '${invoiceStatus}' to internal status '${internalPaymentStatus}'`);
 
       // --- c. Determine corresponding Reservation status ---
       let newReservationStatus: Status | undefined;
@@ -116,7 +79,6 @@ export const handleXenditInvoiceCallback = async (req: Request, res: Response) =
       }
 
       // --- d. Update Database Records Atomically ---
-      console.log('DEBUG: [27] Starting database transaction to update records.');
       await prisma.$transaction(async tx => {
          await tx.payment.update({
             where: { id: paymentRecord.id },
@@ -127,27 +89,18 @@ export const handleXenditInvoiceCallback = async (req: Request, res: Response) =
                paidAt: callbackData.paidAt ? new Date(callbackData.paidAt) : paymentRecord.paidAt
             }
          });
-         console.log(`SUCCESS: [28] Updated payment record ${paymentRecord.id} status to ${internalPaymentStatus}`);
 
          if (newReservationStatus && paymentRecord.reservationId) {
             await tx.reservation.update({
                where: { id: paymentRecord.reservationId },
                data: { orderStatus: newReservationStatus }
             });
-            console.log(
-               `SUCCESS: [29] Updated reservation ${paymentRecord.reservationId} status to ${newReservationStatus}`
-            );
          }
       });
 
-      console.log(`SUCCESS: [30] Successfully processed Xendit callback for invoice ${xenditInvoiceId}`);
       return res.status(200).send(RESERVATION_SUCCESS_MESSAGES.WEBHOOK_PROCESSED_SUCCESSFULLY);
    } catch (error: any) {
-      console.error('CRITICAL ERROR: [31] Error processing Xendit callback:', error);
-      console.error('CRITICAL ERROR: [32] Error Stack:', error.stack);
       return res.status(200).send(RESERVATION_ERROR_MESSAGES.WEBHOOK_ERROR_LOGGED);
-   } finally {
-      console.log('=== END: XENDIT WEBHOOK CALLBACK ===\n\n');
    }
 };
 
