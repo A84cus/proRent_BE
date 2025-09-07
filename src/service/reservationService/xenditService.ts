@@ -4,7 +4,7 @@ import Xendit from 'xendit-node';
 import prisma from '../../prisma';
 import { Status } from '@prisma/client';
 import { BASE_FE_URL, BASE_FE_URL_ALT, XENDIT_SECRET_KEY } from '../../config/index';
-import { PaymentRequestCurrency } from 'xendit-node/payment_request/models';
+import { PaymentRequestBasketItem, PaymentRequestCurrency } from 'xendit-node/payment_request/models';
 
 const xenditClient = new Xendit({ secretKey: XENDIT_SECRET_KEY! });
 const { PaymentRequest } = xenditClient; // Use PaymentRequest for the v2 structure
@@ -65,10 +65,9 @@ export async function createXenditInvoice (paymentId: string) {
             quantity: 1,
             price: paymentRecord.amount,
             category: 'Accommodation',
-            url: `${BASE_FE_URL || BASE_FE_URL_ALT}/property/${property?.id}`,
-            currency: 'IDR' as PaymentRequestCurrency
+            url: `${BASE_FE_URL || BASE_FE_URL_ALT}/property/${property?.id}`
          }
-      ],
+      ] as PaymentRequestBasketItem[],
       // --- Metadata ---
       metadata: {
          reservationId: reservation.id,
