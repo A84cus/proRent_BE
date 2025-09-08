@@ -11,6 +11,7 @@ interface PropertySearchParams {
   capacity?: number;
   sortBy?: "name" | "price" | "createdAt" | "capacity";
   sortOrder?: "asc" | "desc";
+  ownerId?: string; // Add owner filter
   page?: number;
   limit?: number;
 }
@@ -88,6 +89,11 @@ class PublicPropertyRepository {
       };
     }
 
+    // Filter by owner ID (for owner dashboard)
+    if (params.ownerId) {
+      where.OwnerId = params.ownerId;
+    }
+
     // Build order by
     let orderBy: Prisma.PropertyOrderByWithRelationInput = {
       createdAt: "desc",
@@ -124,13 +130,44 @@ class PublicPropertyRepository {
             },
           },
           mainPicture: true,
+          rooms: {
+            include: {
+              roomType: {
+                select: {
+                  id: true,
+                  name: true,
+                  description: true,
+                  basePrice: true,
+                  capacity: true,
+                  totalQuantity: true,
+                  isWholeUnit: true,
+                  createdAt: true,
+                  updatedAt: true,
+                },
+              },
+            },
+            orderBy: { name: "asc" },
+          },
           roomTypes: {
             select: {
               id: true,
               name: true,
+              description: true,
               basePrice: true,
               capacity: true,
               totalQuantity: true,
+              isWholeUnit: true,
+              createdAt: true,
+              updatedAt: true,
+              rooms: {
+                select: {
+                  id: true,
+                  name: true,
+                  isAvailable: true,
+                  createdAt: true,
+                  updatedAt: true,
+                },
+              },
             },
             orderBy: { basePrice: "asc" },
           },

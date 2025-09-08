@@ -246,5 +246,114 @@ class PublicPropertyService {
             }
         });
     }
+    // Get properties by owner ID (for owner dashboard)
+    getOwnerProperties(params) {
+        return __awaiter(this, void 0, void 0, function* () {
+            var _a, _b, _c, _d;
+            try {
+                // Validate and sanitize parameters
+                const page = Math.max(1, params.page || 1);
+                const limit = Math.min(50, Math.max(1, params.limit || 10)); // Max 50 per page
+                const searchParams = {
+                    search: (_a = params.search) === null || _a === void 0 ? void 0 : _a.trim(),
+                    category: (_b = params.category) === null || _b === void 0 ? void 0 : _b.trim(),
+                    city: (_c = params.city) === null || _c === void 0 ? void 0 : _c.trim(),
+                    province: (_d = params.province) === null || _d === void 0 ? void 0 : _d.trim(),
+                    minPrice: params.minPrice,
+                    maxPrice: params.maxPrice,
+                    capacity: params.capacity,
+                    sortBy: params.sortBy,
+                    sortOrder: params.sortOrder,
+                    ownerId: params.ownerId, // Add owner filter
+                    page,
+                    limit,
+                };
+                const result = yield publicPropertyRepository_1.default.searchProperties(searchParams);
+                // Transform the data for owner consumption (same as public but with owner context)
+                const transformedProperties = result.properties.map((property) => {
+                    var _a, _b;
+                    // Type assertion since repository returns expanded data
+                    const expandedProperty = property;
+                    return {
+                        id: expandedProperty.id,
+                        name: expandedProperty.name,
+                        description: expandedProperty.description,
+                        rentalType: expandedProperty.rentalType, // Add rental type
+                        category: expandedProperty.category,
+                        location: {
+                            address: expandedProperty.location.address,
+                            city: expandedProperty.location.city.name,
+                            province: expandedProperty.location.city.province.name,
+                        },
+                        mainPicture: expandedProperty.mainPicture,
+                        // Add rooms data for ROOM_BY_ROOM properties
+                        rooms: ((_a = expandedProperty.rooms) === null || _a === void 0 ? void 0 : _a.map((room) => ({
+                            id: room.id,
+                            name: room.name,
+                            roomTypeId: room.roomTypeId,
+                            propertyId: room.propertyId,
+                            isAvailable: room.isAvailable,
+                            createdAt: room.createdAt,
+                            updatedAt: room.updatedAt,
+                            roomType: room.roomType
+                                ? {
+                                    id: room.roomType.id,
+                                    propertyId: room.roomType.propertyId,
+                                    name: room.roomType.name,
+                                    description: room.roomType.description,
+                                    basePrice: String(room.roomType.basePrice), // Convert to string as expected by frontend
+                                    capacity: room.roomType.capacity,
+                                    totalQuantity: room.roomType.totalQuantity,
+                                    isWholeUnit: room.roomType.isWholeUnit,
+                                    createdAt: room.roomType.createdAt,
+                                    updatedAt: room.roomType.updatedAt,
+                                }
+                                : undefined,
+                        }))) || [],
+                        // Add room types data
+                        roomTypes: ((_b = expandedProperty.roomTypes) === null || _b === void 0 ? void 0 : _b.map((roomType) => ({
+                            id: roomType.id,
+                            propertyId: expandedProperty.id,
+                            name: roomType.name,
+                            description: roomType.description,
+                            basePrice: String(roomType.basePrice), // Convert to string as expected by frontend
+                            capacity: roomType.capacity,
+                            totalQuantity: roomType.totalQuantity,
+                            isWholeUnit: roomType.isWholeUnit,
+                            createdAt: roomType.createdAt,
+                            updatedAt: roomType.updatedAt,
+                            rooms: roomType.rooms || [],
+                        }))) || [],
+                        priceRange: {
+                            min: expandedProperty.roomTypes.length > 0
+                                ? Math.min(...expandedProperty.roomTypes.map((rt) => Number(rt.basePrice)))
+                                : 0,
+                            max: expandedProperty.roomTypes.length > 0
+                                ? Math.max(...expandedProperty.roomTypes.map((rt) => Number(rt.basePrice)))
+                                : 0,
+                        },
+                        roomCount: expandedProperty._count.rooms,
+                        capacity: expandedProperty.roomTypes.length > 0
+                            ? Math.max(...expandedProperty.roomTypes.map((rt) => rt.capacity))
+                            : 0,
+                        createdAt: expandedProperty.createdAt,
+                    };
+                });
+                return {
+                    properties: transformedProperties,
+                    pagination: {
+                        total: result.total,
+                        page: result.page,
+                        limit: result.limit,
+                        totalPages: result.totalPages,
+                    },
+                };
+            }
+            catch (error) {
+                logger_1.default.error("Error searching owner properties:", error);
+                throw new Error("Failed to search owner properties");
+            }
+        });
+    }
 }
 exports.default = new PublicPropertyService();

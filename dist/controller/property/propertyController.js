@@ -30,8 +30,55 @@ class PropertyController extends BaseController_1.default {
                     responseHelper_1.default.error(res, errorResponse.message, undefined, errorResponse.status);
                     return;
                 }
-                const properties = yield propertyService_1.default.getAllPropertiesByOwner(userValidation.userId);
-                responseHelper_1.default.success(res, property_1.PROPERTY_SUCCESS_MESSAGES.PROPERTIES_RETRIEVED, properties);
+                // Extract query parameters for filtering
+                const { search, category, city, province, minPrice, maxPrice, capacity, sortBy, sortOrder, page, limit, } = req.query;
+                // Build search params if any filters are provided
+                let searchParams = undefined;
+                if (search ||
+                    category ||
+                    city ||
+                    province ||
+                    minPrice ||
+                    maxPrice ||
+                    capacity ||
+                    sortBy ||
+                    sortOrder ||
+                    page ||
+                    limit) {
+                    searchParams = {
+                        search: search ? String(search) : undefined,
+                        category: category ? String(category) : undefined,
+                        city: city ? String(city) : undefined,
+                        province: province ? String(province) : undefined,
+                        minPrice: minPrice ? Number(minPrice) : undefined,
+                        maxPrice: maxPrice ? Number(maxPrice) : undefined,
+                        capacity: capacity ? Number(capacity) : undefined,
+                        sortBy: sortBy
+                            ? String(sortBy)
+                            : undefined,
+                        sortOrder: sortOrder
+                            ? String(sortOrder)
+                            : undefined,
+                        page: page ? Number(page) : 1,
+                        limit: limit ? Number(limit) : 10,
+                    };
+                }
+                const result = yield propertyService_1.default.getAllPropertiesByOwner(userValidation.userId, searchParams);
+                if (result.pagination) {
+                    // Return paginated response
+                    responseHelper_1.default.paginated(res, property_1.PROPERTY_SUCCESS_MESSAGES.PROPERTIES_RETRIEVED, result.properties, {
+                        currentPage: result.pagination.page,
+                        totalItems: result.pagination.total,
+                        itemsPerPage: result.pagination.limit,
+                        totalPages: result.pagination.totalPages,
+                        hasNextPage: result.pagination.page < result.pagination.totalPages,
+                        hasPrevPage: result.pagination.page > 1,
+                    });
+                }
+                else {
+                    // Return simple response
+                    responseHelper_1.default.success(res, property_1.PROPERTY_SUCCESS_MESSAGES.PROPERTIES_RETRIEVED, result.properties);
+                }
             }
             catch (error) {
                 logger_1.default.error("Error in getAllProperties:", error);
@@ -151,7 +198,9 @@ class PropertyController extends BaseController_1.default {
                     return;
                 }
                 yield propertyService_1.default.deleteProperty(req.params.id, userValidation.userId);
-                responseHelper_1.default.success(res, property_1.PROPERTY_SUCCESS_MESSAGES.PROPERTY_DELETED, { id: req.params.id });
+                responseHelper_1.default.success(res, property_1.PROPERTY_SUCCESS_MESSAGES.PROPERTY_DELETED, {
+                    id: req.params.id,
+                });
             }
             catch (error) {
                 logger_1.default.error("Error in deleteProperty:", error);
