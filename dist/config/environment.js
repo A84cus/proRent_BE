@@ -15,14 +15,14 @@ var __exportStar = (this && this.__exportStar) || function(m, exports) {
 };
 var _a;
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.JWT_SECRET = exports.USE_GMAIL = exports.GMAIL_PASS = exports.GMAIL_USER = exports.LOGO_URL = exports.SMTP_FROM = exports.SMTP_PASS = exports.SMTP_USER = exports.SMTP_PORT = exports.SMTP_HOST = exports.XENDIT_CALLBACK_BASE_URL = exports.XENDIT_WEBHOOK_TOKEN = exports.XENDIT_SECRET_KEY = exports.NODE_ENV = exports.CLOUDINARY_CLOUD_NAME = exports.CLOUDINARY_API_SECRET = exports.CLOUDINARY_API_KEY = exports.BASE_FE_URL = exports.PORT = exports.THIRD_PARTY_CONFIG = exports.APP_CONFIG = void 0;
+exports.JWT_SECRET = exports.USE_GMAIL = exports.GMAIL_PASS = exports.GMAIL_USER = exports.LOGO_URL = exports.SMTP_FROM = exports.SMTP_PASS = exports.SMTP_USER = exports.SMTP_PORT = exports.SMTP_HOST = exports.XENDIT_CALLBACK_BASE_URL = exports.XENDIT_WEBHOOK_TOKEN = exports.XENDIT_SECRET_KEY = exports.NODE_ENV = exports.CLOUDINARY_CLOUD_NAME = exports.CLOUDINARY_API_SECRET = exports.CLOUDINARY_API_KEY = exports.BASE_FE_URL_ALT = exports.BASE_FE_URL = exports.PORT = exports.THIRD_PARTY_CONFIG = exports.APP_CONFIG = void 0;
 // Environment Variables Configuration
 require("dotenv/config");
 // App Configuration
 exports.APP_CONFIG = {
     PORT: process.env.PORT,
     NODE_ENV: process.env.NODE_ENV,
-    JWT_SECRET: process.env.JWT_SECRET || "fallback-secret-key",
+    JWT_SECRET: process.env.JWT_SECRET || 'fallback-secret-key'
 };
 // Third-party Service Configuration
 exports.THIRD_PARTY_CONFIG = {
@@ -46,12 +46,13 @@ exports.THIRD_PARTY_CONFIG = {
     USE_GMAIL: process.env.USE_GMAIL,
     USE_DISPOSABLE: process.env.USE_DISPOSABLE,
     BASE_FE_URL: process.env.BASE_FE_URL,
-    CRON_API_KEY: process.env.CRON_API_KEY,
+    BASE_FE_URL_ALT: process.env.BASE_FE_URL_ALT,
+    CRON_API_KEY: process.env.CRON_API_KEY
 };
 // CronJob
 // Legacy exports for backward compatibility
-_a = process.env, exports.PORT = _a.PORT, exports.BASE_FE_URL = _a.BASE_FE_URL, exports.CLOUDINARY_API_KEY = _a.CLOUDINARY_API_KEY, exports.CLOUDINARY_API_SECRET = _a.CLOUDINARY_API_SECRET, exports.CLOUDINARY_CLOUD_NAME = _a.CLOUDINARY_CLOUD_NAME, exports.NODE_ENV = _a.NODE_ENV, exports.XENDIT_SECRET_KEY = _a.XENDIT_SECRET_KEY, exports.XENDIT_WEBHOOK_TOKEN = _a.XENDIT_WEBHOOK_TOKEN, exports.XENDIT_CALLBACK_BASE_URL = _a.XENDIT_CALLBACK_BASE_URL, exports.SMTP_HOST = _a.SMTP_HOST, exports.SMTP_PORT = _a.SMTP_PORT, exports.SMTP_USER = _a.SMTP_USER, exports.SMTP_PASS = _a.SMTP_PASS, exports.SMTP_FROM = _a.SMTP_FROM, exports.LOGO_URL = _a.LOGO_URL, exports.GMAIL_USER = _a.GMAIL_USER, exports.GMAIL_PASS = _a.GMAIL_PASS, exports.USE_GMAIL = _a.USE_GMAIL;
-exports.JWT_SECRET = process.env.JWT_SECRET || "fallback-secret-key";
+_a = process.env, exports.PORT = _a.PORT, exports.BASE_FE_URL = _a.BASE_FE_URL, exports.BASE_FE_URL_ALT = _a.BASE_FE_URL_ALT, exports.CLOUDINARY_API_KEY = _a.CLOUDINARY_API_KEY, exports.CLOUDINARY_API_SECRET = _a.CLOUDINARY_API_SECRET, exports.CLOUDINARY_CLOUD_NAME = _a.CLOUDINARY_CLOUD_NAME, exports.NODE_ENV = _a.NODE_ENV, exports.XENDIT_SECRET_KEY = _a.XENDIT_SECRET_KEY, exports.XENDIT_WEBHOOK_TOKEN = _a.XENDIT_WEBHOOK_TOKEN, exports.XENDIT_CALLBACK_BASE_URL = _a.XENDIT_CALLBACK_BASE_URL, exports.SMTP_HOST = _a.SMTP_HOST, exports.SMTP_PORT = _a.SMTP_PORT, exports.SMTP_USER = _a.SMTP_USER, exports.SMTP_PASS = _a.SMTP_PASS, exports.SMTP_FROM = _a.SMTP_FROM, exports.LOGO_URL = _a.LOGO_URL, exports.GMAIL_USER = _a.GMAIL_USER, exports.GMAIL_PASS = _a.GMAIL_PASS, exports.USE_GMAIL = _a.USE_GMAIL;
+exports.JWT_SECRET = process.env.JWT_SECRET || 'fallback-secret-key';
 // Re-export domain configurations
 __exportStar(require("./app"), exports);
 __exportStar(require("./third-party"), exports);

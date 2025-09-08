@@ -1,54 +1,87 @@
 // services/xenditService.ts
+
 import Xendit from 'xendit-node';
-import prisma from '../../prisma'; // Adjust path
+import prisma from '../../prisma';
 import { Status } from '@prisma/client';
-import { BASE_FE_URL, XENDIT_SECRET_KEY } from '../../config/index'; // Assuming you use this for env vars
+import { BASE_FE_URL, BASE_FE_URL_ALT, XENDIT_SECRET_KEY } from '../../config/index';
+import { InvoiceCurrency } from 'xendit-node/invoice/models';
 
 const xenditClient = new Xendit({ secretKey: XENDIT_SECRET_KEY! });
 const { Invoice } = xenditClient;
 
 export async function createXenditInvoice (paymentId: string) {
-   const paymentRecord = await prisma.payment.findUnique({
-      where: { id: paymentId },
-      include: {
-         reservation: {
-            include: {
-               User: true,
-               RoomType: true,
-               Property: true
+   try {
+      const paymentRecord = await prisma.payment.findUnique({
+         where: { id: paymentId },
+         include: {
+            reservation: {
+               include: {
+                  User: {
+                     include: {
+                        profile: true
+                     }
+                  },
+                  RoomType: true,
+                  Property: true
+               }
             }
          }
+      });
+
+      if (!paymentRecord || paymentRecord.method !== 'XENDIT') {
+         throw new Error('Invalid payment record for Xendit invoice creation.');
       }
-   });
 
-   if (!paymentRecord || paymentRecord.method !== 'XENDIT') {
-      throw new Error('Invalid payment record for Xendit invoice creation.');
-   }
+      if (!paymentRecord.reservation || !paymentRecord.reservation.User) {
+         throw new Error('Reservation or user data missing for Xendit invoice.');
+      }
 
-   if (!paymentRecord.reservation || !paymentRecord.reservation.User) {
-      throw new Error('Reservation or user data missing for Xendit invoice.');
-   }
+      const reservation = paymentRecord.reservation;
+      const user = reservation.User;
+      const roomType = reservation.RoomType;
+      const property = reservation.Property;
 
-   const reservation = paymentRecord.reservation;
-   const user = reservation.User;
-   const roomType = reservation.RoomType;
-   const property = reservation.Property;
+      // --- Use the Invoice API structure with CORRECT camelCase parameters ---
+      const invoiceData = {
+         externalId: `invoice-${paymentRecord.id}-${Date.now()}`,
+         amount: paymentRecord.amount,
+         currency: 'IDR' as InvoiceCurrency,
+         description: `Booking for ${roomType?.name || 'Accommodation'} at ${
+            property?.name || 'Property'
+         } from ${reservation.startDate.toLocaleDateString()} to ${reservation.endDate.toLocaleDateString()}`,
+         // --- Customer Information ---
+         customer: {
+            given_names: user.profile?.firstName || user.email?.split('@')[0] || 'Guest',
+            surname: user.profile?.lastName || 'Customer',
+            email: user.email || paymentRecord.payerEmail || '',
+            mobile_number: user.profile?.phone || ''
+         },
 
-   const invoiceData = {
-      externalId: `invoice-${paymentRecord.id}-${Date.now()}`, // Unique ID for Xendit
-      amount: paymentRecord.amount,
-      payerEmail: user.email || paymentRecord.payerEmail || '', // Prefer user email from relation
-      description: `Booking for ${roomType?.name || 'Accommodation'} at ${
-         property?.name || 'Property'
-      } from ${reservation.startDate.toLocaleDateString()} to ${reservation.endDate.toLocaleDateString()}`,
-      invoiceDuration: 60 * 60 * 24, // 24 hours in seconds (adjust if needed)
-      successRedirectURL: `${BASE_FE_URL}/payment/success?reservationId=${reservation.id}`,
-      failureRedirectURL: `${BASE_FE_URL}/payment/failure?reservationId=${reservation.id}`
-   };
+         failure_redirect_url: `${BASE_FE_URL || BASE_FE_URL_ALT}/payment/failure?reservationId=${reservation.id}`,
+         success_redirect_url: `${BASE_FE_URL || BASE_FE_URL_ALT}/payment/success?reservationId=${reservation.id}`,
+         // --- Items ---
+         items: [
+            {
+               name: `${roomType?.name || 'Accommodation'} at ${property?.name || 'Property'}`,
+               quantity: 1,
+               price: paymentRecord.amount,
+               category: 'Accommodation',
+               url: `${BASE_FE_URL || BASE_FE_URL_ALT}/property/${property?.id}`
+            }
+         ],
+         // --- Metadata ---
+         metadata: {
+            reservationId: reservation.id,
+            propertyId: property?.id,
+            roomTypeId: roomType?.id,
+            userId: user.id
+         },
+         // --- Invoice Duration (camelCase, not snake_case) ---
+         invoiceDuration: 86400 // <-- CHANGED FROM invoice_duration to invoiceDuration
+      };
 
-   try {
+      // --- Use Invoice.createInvoice for Invoice API ---
       const xenditInvoice = await Invoice.createInvoice({ data: invoiceData });
-      console.log('Xendit Invoice Created:', xenditInvoice.id);
 
       await prisma.payment.update({
          where: { id: paymentId },
@@ -63,14 +96,6 @@ export async function createXenditInvoice (paymentId: string) {
          invoiceUrl: xenditInvoice.invoiceUrl
       };
    } catch (error: any) {
-      console.error('Error creating Xendit Invoice:', error);
-      await prisma.transactionLog.create({
-         data: {
-            paymentId,
-            status: 'XENDIT_INVOICE_ERROR',
-            message: error.message || 'Unknown error creating Xendit invoice'
-         }
-      });
       throw new Error(`Failed to create Xendit invoice: ${error.message}`);
    }
 }

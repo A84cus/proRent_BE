@@ -11,7 +11,7 @@ export const emailConfig: EmailConfig =
            user: THIRD_PARTY_CONFIG.GMAIL_USER || '',
            pass: THIRD_PARTY_CONFIG.GMAIL_PASS || '',
            from: THIRD_PARTY_CONFIG.SMTP_FROM || '',
-           frontendUrl: THIRD_PARTY_CONFIG.BASE_FE_URL || 'http://localhost:3000'
+           frontendUrl: THIRD_PARTY_CONFIG.BASE_FE_URL || THIRD_PARTY_CONFIG.BASE_FE_URL_ALT || 'http://localhost:3000'
         }
       : {
            host: THIRD_PARTY_CONFIG.SMTP_HOST || '',
@@ -20,7 +20,7 @@ export const emailConfig: EmailConfig =
            user: THIRD_PARTY_CONFIG.SMTP_USER || '',
            pass: THIRD_PARTY_CONFIG.SMTP_PASS || '',
            from: THIRD_PARTY_CONFIG.SMTP_FROM || '',
-           frontendUrl: THIRD_PARTY_CONFIG.BASE_FE_URL || 'http://localhost:3000'
+           frontendUrl: THIRD_PARTY_CONFIG.BASE_FE_URL || THIRD_PARTY_CONFIG.BASE_FE_URL_ALT || 'http://localhost:3000'
         };
 
 export const createEmailTransporter = () => {

@@ -3,7 +3,6 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-const express_1 = __importDefault(require("express"));
 const cors_1 = __importDefault(require("cors"));
 const helmet_1 = __importDefault(require("helmet"));
 const logger_1 = __importDefault(require("./utils/system/logger"));
@@ -24,7 +23,8 @@ const corsOption_1 = __importDefault(require("./config/app/corsOption"));
 const xenditRoute_1 = __importDefault(require("./route/webhooks/xenditRoute"));
 const express = require('express');
 const app = express();
-app.use(express_1.default.json());
+app.use('/api/webhooks', xenditRoute_1.default);
+app.use(express.json());
 app.use((0, cors_1.default)(corsOption_1.default));
 app.use((0, helmet_1.default)());
 app.use(loggerMwr_1.default);
@@ -39,7 +39,6 @@ app.use('/api/cronjob', cronjobRoute_1.default);
 app.use('/api/report', reportRoutes_1.default);
 app.use('/api/owner', ownerRoutes_1.default);
 app.use('/api/rooms', roomOperationsRoutes_1.default);
-app.use('/api/webhooks', xenditRoute_1.default);
 app.get('/', (req, res) => {
     logger_1.default.info('Homepage accessed');
     res.send('Express on Vercel');

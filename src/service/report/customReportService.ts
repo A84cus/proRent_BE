@@ -149,15 +149,7 @@ async function computeSummary (
       ...(filters.endDate && { endDate: { gte: filters.startDate || new Date('1970-01-01') } })
    };
 
-   const [ draft, pendingPayment, pendingConfirmation, confirmed, cancelled ] = await Promise.all([
-      prisma.reservation.findMany({
-         where: {
-            ...baseWhere,
-            orderStatus: 'DRAFT',
-            payment: { amount: { gt: 0 } }
-         },
-         select: { payment: { select: { amount: true } } }
-      }),
+   const [ pendingPayment, pendingConfirmation, confirmed, cancelled ] = await Promise.all([
       prisma.reservation.findMany({
          where: {
             ...baseWhere,

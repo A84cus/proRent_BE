@@ -21,7 +21,10 @@ import xenditRoute from './route/webhooks/xenditRoute';
 const express = require('express');
 const app = express();
 
-app.use(Express.json());
+app.use('/api/webhooks', xenditRoute);
+
+app.use(express.json());
+
 app.use(cors(corsOptions));
 app.use(helmet());
 
@@ -38,7 +41,6 @@ app.use('/api/cronjob', cronJobRoute);
 app.use('/api/report', reportRoute);
 app.use('/api/owner', ownerRoutes);
 app.use('/api/rooms', roomOperationsRoutes);
-app.use('/api/webhooks', xenditRoute);
 
 app.get('/', (req: Request, res: Response) => {
    logger.info('Homepage accessed');

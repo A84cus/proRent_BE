@@ -19,7 +19,7 @@ const reservationQueryService_1 = require("../../service/reservationService/rese
 const reservation_1 = require("../../constants/controllers/reservation");
 const system_1 = require("../../constants/controllers/system");
 const paymentProofController_1 = require("./paymentProofController");
-const availabilityService_1 = require("../../service/reservationService/availabilityService");
+const queryAvailabilityDateService_1 = require("../../service/reservationService/queryAvailabilityDateService");
 // Main query endpoint
 function getReservations(req, res) {
     return __awaiter(this, void 0, void 0, function* () {
@@ -234,50 +234,30 @@ function getReservationWithPaymentHandler(req, res) {
 }
 function getAvailabilityCalendarHandler(req, res) {
     return __awaiter(this, void 0, void 0, function* () {
-        var _a;
         const { roomTypeId } = req.params;
         const { startDate, endDate } = req.query;
-        // Validate roomTypeId
         if (!roomTypeId) {
             res.status(400).json({ error: 'roomTypeId is required' });
             return;
         }
-        // Parse or default to current year
-        const now = new Date();
-        const currentYear = now.getFullYear();
-        const start = startDate ? new Date(startDate) : new Date(currentYear, 0, 1); // Jan 1
-        const end = endDate ? new Date(endDate) : new Date(currentYear + 1, 0, 1); // Jan 1 next year
-        // Validate dates
-        if (isNaN(start.getTime()) || isNaN(end.getTime())) {
-            res.status(400).json({ error: 'Invalid date format' });
-            return;
-        }
-        if (start >= end) {
-            res.status(400).json({ error: 'endDate must be after startDate' });
-            return;
-        }
         try {
-            const totalQuantity = yield (0, availabilityService_1.getRoomTypeTotalQuantity)(roomTypeId);
-            const records = yield (0, availabilityService_1.getActualAvailabilityRecords)(roomTypeId, start, end);
-            const availabilityMap = (0, availabilityService_1.buildAvailabilityMap)(records);
-            const dateRange = (0, availabilityService_1.generateDateRange)(start, end);
-            const unavailableDates = [];
-            for (const date of dateRange) {
-                const dateKey = date.toISOString().split('T')[0]; // 'YYYY-MM-DD'
-                const availableCount = (_a = availabilityMap.get(dateKey)) !== null && _a !== void 0 ? _a : totalQuantity;
-                if (availableCount <= 0) {
-                    unavailableDates.push({
-                        date: dateKey,
-                        isAvailable: false
-                    });
-                }
+            const now = new Date();
+            const currentYear = now.getFullYear();
+            const start = startDate ? new Date(startDate) : new Date(currentYear, 0, 1);
+            const end = endDate ? new Date(endDate) : new Date(currentYear + 1, 0, 1);
+            if (isNaN(start.getTime()) || isNaN(end.getTime())) {
+                res.status(400).json({ error: 'Invalid date format' });
+                return;
             }
-            // Return structured, clear data
+            if (start >= end) {
+                res.status(400).json({ error: 'endDate must be after startDate' });
+                return;
+            }
+            const unavailableDates = yield (0, queryAvailabilityDateService_1.getUnavailableDates)(roomTypeId, start, end);
             res.json({ unavailableDates });
-            return;
         }
         catch (error) {
-            console.error('Error generating availability calendar:', error);
+            console.error('Error fetching unavailable dates:', error);
             res.status(500).json({ error: 'Failed to load availability' });
         }
     });
