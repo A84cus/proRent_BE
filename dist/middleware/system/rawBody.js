@@ -1,23 +1,24 @@
 "use strict";
-// src/middleware/system/rawBodyMiddleware.ts
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.rawBodyMiddleware = rawBodyMiddleware;
+const stream_1 = require("stream");
 function rawBodyMiddleware(req, res, next) {
-    // Array to hold chunks of data
     const chunks = [];
-    // Listen for data events
     req.on('data', chunk => {
         chunks.push(chunk);
     });
-    // Listen for end event
     req.on('end', () => {
-        // Concatenate all chunks into a single buffer
         const rawBody = Buffer.concat(chunks);
-        // Attach it to the request object
         req.rawBody = rawBody;
+        // 👇 Reconstruct stream so express.json() can still parse body later (if needed)
+        const pass = new stream_1.PassThrough();
+        pass.end(rawBody);
+        // Override pipe to use our reconstructed stream
+        req.pipe = pass.pipe.bind(pass);
+        // Optional: Update content-length if needed (some parsers check this)
+        req.headers['content-length'] = String(rawBody.length);
         next();
     });
-    // Listen for error event
     req.on('error', err => {
         console.error('Error reading raw body:', err);
         next(err);

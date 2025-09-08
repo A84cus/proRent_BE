@@ -45,7 +45,7 @@ function getDailyPrice(roomType, date) {
             return basePrice;
         }
         if (peakRate.rateType === 'FIXED') {
-            return basePrice + Number(peakRate.value);
+            return Number(peakRate.value);
         }
         else if (peakRate.rateType === 'PERCENTAGE') {
             return basePrice * (1 + Number(peakRate.value) / 100);
