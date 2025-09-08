@@ -13,9 +13,109 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const roomTypeRepository_1 = __importDefault(require("../../repository/property/roomTypeRepository"));
+const roomRepository_1 = __importDefault(require("../../repository/property/roomRepository"));
 const logger_1 = __importDefault(require("../../utils/system/logger"));
 const roomServiceErrors_1 = require("../../constants/services/roomServiceErrors");
 class RoomTypeService {
+    // Helper function to auto-generate rooms for a room type
+    autoGenerateRooms(roomType, quantity) {
+        return __awaiter(this, void 0, void 0, function* () {
+            try {
+                // For whole property, quantity is always 1 and we don't create rooms
+                if (roomType.isWholeUnit) {
+                    return;
+                }
+                // Create rooms based on quantity
+                const roomPromises = [];
+                for (let i = 1; i <= quantity; i++) {
+                    const roomName = `${roomType.name}-${String(i).padStart(3, "0")}`;
+                    const roomData = {
+                        name: roomName,
+                        propertyId: roomType.propertyId,
+                        roomTypeId: roomType.id,
+                        pictures: [],
+                    };
+                    roomPromises.push(roomRepository_1.default.create(roomData));
+                }
+                yield Promise.all(roomPromises);
+                // Update roomType totalQuantity to reflect actual room count
+                yield this.updateRoomTypeQuantityByCount(roomType.id);
+            }
+            catch (error) {
+                logger_1.default.error("Error auto-generating rooms:", error);
+                throw new Error("Failed to auto-generate rooms for room type");
+            }
+        });
+    }
+    // Helper function to update roomType quantity based on actual room count
+    updateRoomTypeQuantityByCount(roomTypeId) {
+        return __awaiter(this, void 0, void 0, function* () {
+            try {
+                const roomCount = yield roomRepository_1.default.countRoomsByRoomType(roomTypeId);
+                yield roomTypeRepository_1.default.update(roomTypeId, { totalQuantity: roomCount });
+            }
+            catch (error) {
+                logger_1.default.error("Error updating room type quantity:", error);
+                throw new Error("Failed to update room type quantity");
+            }
+        });
+    }
+    // Helper function to manage rooms quantity when roomType quantity changes
+    manageRoomsQuantity(roomType, newQuantity) {
+        return __awaiter(this, void 0, void 0, function* () {
+            try {
+                // Skip for whole unit properties
+                if (roomType.isWholeUnit) {
+                    return;
+                }
+                const currentRoomCount = yield roomRepository_1.default.countRoomsByRoomType(roomType.id);
+                if (newQuantity > currentRoomCount) {
+                    // Need to create more rooms
+                    const roomsToCreate = newQuantity - currentRoomCount;
+                    const roomPromises = [];
+                    for (let i = currentRoomCount + 1; i <= newQuantity; i++) {
+                        const roomName = `${roomType.name}-${String(i).padStart(3, "0")}`;
+                        const roomData = {
+                            name: roomName,
+                            propertyId: roomType.propertyId,
+                            roomTypeId: roomType.id,
+                            pictures: [],
+                        };
+                        roomPromises.push(roomRepository_1.default.create(roomData));
+                    }
+                    yield Promise.all(roomPromises);
+                }
+                else if (newQuantity < currentRoomCount) {
+                    // Need to remove excess rooms (remove rooms that don't have active bookings)
+                    const roomsToRemove = currentRoomCount - newQuantity;
+                    const allRooms = yield roomRepository_1.default.findAllByRoomType(roomType.id);
+                    // Sort by created date (newest first) to remove the most recently created rooms
+                    allRooms.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+                    let removedCount = 0;
+                    for (const room of allRooms) {
+                        if (removedCount >= roomsToRemove)
+                            break;
+                        // Check if room has active bookings
+                        const hasActiveBookings = yield roomRepository_1.default.hasActiveBookings(room.id);
+                        if (!hasActiveBookings) {
+                            yield roomRepository_1.default.delete(room.id);
+                            removedCount++;
+                        }
+                    }
+                    // If couldn't remove enough rooms due to active bookings, log warning
+                    if (removedCount < roomsToRemove) {
+                        logger_1.default.warn(`Could only remove ${removedCount} out of ${roomsToRemove} rooms due to active bookings`);
+                    }
+                }
+                // Update the quantity to reflect actual count
+                yield this.updateRoomTypeQuantityByCount(roomType.id);
+            }
+            catch (error) {
+                logger_1.default.error("Error managing rooms quantity:", error);
+                throw new Error("Failed to manage rooms quantity");
+            }
+        });
+    }
     // Get all room types by property ID
     getRoomTypesByProperty(propertyId, ownerId) {
         return __awaiter(this, void 0, void 0, function* () {
@@ -84,7 +184,17 @@ class RoomTypeService {
                     totalQuantity: data.totalQuantity,
                     isWholeUnit: data.isWholeUnit || false,
                 };
-                return yield roomTypeRepository_1.default.create(roomTypeData);
+                // For whole property, set quantity to 1
+                if (data.isWholeUnit) {
+                    roomTypeData.totalQuantity = 1;
+                }
+                // Create room type first
+                const createdRoomType = yield roomTypeRepository_1.default.create(roomTypeData);
+                // Auto-generate rooms based on quantity (except for whole unit)
+                if (!data.isWholeUnit) {
+                    yield this.autoGenerateRooms(createdRoomType, data.totalQuantity);
+                }
+                return createdRoomType;
             }
             catch (error) {
                 logger_1.default.error("Error creating room type:", error);
@@ -141,7 +251,14 @@ class RoomTypeService {
                     updateData.capacity = data.capacity;
                 if (data.totalQuantity !== undefined)
                     updateData.totalQuantity = data.totalQuantity;
-                return yield roomTypeRepository_1.default.update(id, updateData);
+                // Update room type
+                const updatedRoomType = yield roomTypeRepository_1.default.update(id, updateData);
+                // Handle quantity changes (create/remove rooms as needed)
+                if (data.totalQuantity !== undefined &&
+                    data.totalQuantity !== existingRoomType.totalQuantity) {
+                    yield this.manageRoomsQuantity(updatedRoomType, data.totalQuantity);
+                }
+                return updatedRoomType;
             }
             catch (error) {
                 logger_1.default.error(`Error updating room type with ID ${id}:`, error);

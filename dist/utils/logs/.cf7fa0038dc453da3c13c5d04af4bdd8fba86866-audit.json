@@ -1,0 +1,15 @@
+{
+    "keep": {
+        "days": true,
+        "amount": 14
+    },
+    "auditLog": "C:\\Users\\muhfa\\Documents\\freelance\\proRent\\proRent_BE\\dist\\utils\\logs\\.cf7fa0038dc453da3c13c5d04af4bdd8fba86866-audit.json",
+    "files": [
+        {
+            "date": 1757326374596,
+            "name": "C:\\Users\\muhfa\\Documents\\freelance\\proRent\\proRent_BE\\dist\\utils\\logs\\application-2025-09-08.log",
+            "hash": "97efa0e7006f59e31b5f1ef02f0fc3b0390837881151aeccbaa7475f452469ff"
+        }
+    ],
+    "hashType": "sha256"
+}

@@ -1,8 +1,10 @@
 import { Property, Prisma } from "@prisma/client";
 import propertyRepository from "../../repository/property/propertyRepository";
 import categoryRepository from "../../repository/property/categoryRepository";
+import publicPropertyService from "./publicPropertyService";
 import logger from "../../utils/system/logger";
 import { PROPERTY_SERVICE_ERRORS } from "../../constants/services/propertyServiceErrors";
+import { PropertySearchParams } from "../../interfaces/publicProperty.interface";
 import {
   validatePropertyLocation,
   validatePropertyOwnership,
@@ -17,10 +19,87 @@ import {
 } from "../../interfaces/property";
 
 class PropertyService {
-  // Get all properties owned by owner
-  async getAllPropertiesByOwner(ownerId: string): Promise<Property[]> {
+  // Get all properties owned by owner with filtering and pagination
+  async getAllPropertiesByOwner(
+    ownerId: string,
+    searchParams?: PropertySearchParams
+  ): Promise<{
+    properties: Array<{
+      id: string;
+      name: string;
+      description: string;
+      category: { id: string; name: string };
+      location: {
+        address: string | null;
+        city: string;
+        province: string;
+      };
+      mainPicture: { id: string; url: string } | null;
+      priceRange: {
+        min: number;
+        max: number;
+      };
+      roomCount: number;
+      capacity: number;
+      createdAt: Date;
+    }>;
+    pagination?: {
+      total: number;
+      page: number;
+      limit: number;
+      totalPages: number;
+    };
+  }> {
     try {
-      return await propertyRepository.findAllByOwner(ownerId);
+      // If search params provided, use filtered search with pagination
+      if (searchParams) {
+        return await publicPropertyService.getOwnerProperties({
+          ...searchParams,
+          ownerId,
+        });
+      }
+
+      // Otherwise, get all properties (backward compatibility)
+      const properties = await propertyRepository.findAllByOwner(ownerId);
+
+      // Transform to match the expected format
+      const transformedProperties = properties.map((property: any) => ({
+        id: property.id,
+        name: property.name,
+        description: property.description,
+        rentalType: property.rentalType,
+        category: property.category,
+        location: {
+          address: property.location?.address || null,
+          city: property.location?.city?.name || "",
+          province: property.location?.city?.province?.name || "",
+        },
+        mainPicture: property.mainPicture,
+        priceRange: {
+          min:
+            property.roomTypes?.length > 0
+              ? Math.min(
+                  ...property.roomTypes.map((rt: any) => Number(rt.basePrice))
+                )
+              : 0,
+          max:
+            property.roomTypes?.length > 0
+              ? Math.max(
+                  ...property.roomTypes.map((rt: any) => Number(rt.basePrice))
+                )
+              : 0,
+        },
+        roomCount: property._count?.rooms || 0,
+        capacity:
+          property.roomTypes?.length > 0
+            ? Math.max(...property.roomTypes.map((rt: any) => rt.capacity))
+            : 0,
+        rooms: property.rooms || [],
+        roomTypes: property.roomTypes || [],
+        createdAt: property.createdAt,
+      }));
+
+      return { properties: transformedProperties };
     } catch (error) {
       logger.error("Error fetching owner properties:", error);
       throw new Error(PROPERTY_SERVICE_ERRORS.FAILED_TO_FETCH_PROPERTIES);

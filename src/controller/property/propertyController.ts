@@ -13,21 +13,104 @@ class PropertyController extends BaseController {
     try {
       const userValidation = this.validateUser(req);
       if (!userValidation.isValid) {
-        const errorResponse = PropertyErrorHelper.createUnauthorizedError(userValidation.error);
-        ResponseHelper.error(res, errorResponse.message, undefined, errorResponse.status);
+        const errorResponse = PropertyErrorHelper.createUnauthorizedError(
+          userValidation.error
+        );
+        ResponseHelper.error(
+          res,
+          errorResponse.message,
+          undefined,
+          errorResponse.status
+        );
         return;
       }
 
-      const properties = await propertyService.getAllPropertiesByOwner(userValidation.userId!);
-      ResponseHelper.success(
-        res,
-        PROPERTY_SUCCESS_MESSAGES.PROPERTIES_RETRIEVED,
-        properties
+      // Extract query parameters for filtering
+      const {
+        search,
+        category,
+        city,
+        province,
+        minPrice,
+        maxPrice,
+        capacity,
+        sortBy,
+        sortOrder,
+        page,
+        limit,
+      } = req.query;
+
+      // Build search params if any filters are provided
+      let searchParams = undefined;
+      if (
+        search ||
+        category ||
+        city ||
+        province ||
+        minPrice ||
+        maxPrice ||
+        capacity ||
+        sortBy ||
+        sortOrder ||
+        page ||
+        limit
+      ) {
+        searchParams = {
+          search: search ? String(search) : undefined,
+          category: category ? String(category) : undefined,
+          city: city ? String(city) : undefined,
+          province: province ? String(province) : undefined,
+          minPrice: minPrice ? Number(minPrice) : undefined,
+          maxPrice: maxPrice ? Number(maxPrice) : undefined,
+          capacity: capacity ? Number(capacity) : undefined,
+          sortBy: sortBy
+            ? (String(sortBy) as "name" | "price" | "createdAt" | "capacity")
+            : undefined,
+          sortOrder: sortOrder
+            ? (String(sortOrder) as "asc" | "desc")
+            : undefined,
+          page: page ? Number(page) : 1,
+          limit: limit ? Number(limit) : 10,
+        };
+      }
+
+      const result = await propertyService.getAllPropertiesByOwner(
+        userValidation.userId!,
+        searchParams
       );
+
+      if (result.pagination) {
+        // Return paginated response
+        ResponseHelper.paginated(
+          res,
+          PROPERTY_SUCCESS_MESSAGES.PROPERTIES_RETRIEVED,
+          result.properties,
+          {
+            currentPage: result.pagination.page,
+            totalItems: result.pagination.total,
+            itemsPerPage: result.pagination.limit,
+            totalPages: result.pagination.totalPages,
+            hasNextPage: result.pagination.page < result.pagination.totalPages,
+            hasPrevPage: result.pagination.page > 1,
+          }
+        );
+      } else {
+        // Return simple response
+        ResponseHelper.success(
+          res,
+          PROPERTY_SUCCESS_MESSAGES.PROPERTIES_RETRIEVED,
+          result.properties
+        );
+      }
     } catch (error) {
       logger.error("Error in getAllProperties:", error);
       const errorResponse = PropertyErrorHelper.mapError(error, "fetch");
-      ResponseHelper.error(res, errorResponse.message, undefined, errorResponse.status);
+      ResponseHelper.error(
+        res,
+        errorResponse.message,
+        undefined,
+        errorResponse.status
+      );
     }
   }
 
@@ -36,15 +119,31 @@ class PropertyController extends BaseController {
     try {
       const userValidation = this.validateUser(req);
       if (!userValidation.isValid) {
-        const errorResponse = PropertyErrorHelper.createUnauthorizedError(userValidation.error);
-        ResponseHelper.error(res, errorResponse.message, undefined, errorResponse.status);
+        const errorResponse = PropertyErrorHelper.createUnauthorizedError(
+          userValidation.error
+        );
+        ResponseHelper.error(
+          res,
+          errorResponse.message,
+          undefined,
+          errorResponse.status
+        );
         return;
       }
 
-      const idValidation = PropertyValidationHelper.validatePropertyId(req.params.id);
+      const idValidation = PropertyValidationHelper.validatePropertyId(
+        req.params.id
+      );
       if (!idValidation.isValid) {
-        const errorResponse = PropertyErrorHelper.createValidationError(idValidation.error!);
-        ResponseHelper.error(res, errorResponse.message, undefined, errorResponse.status);
+        const errorResponse = PropertyErrorHelper.createValidationError(
+          idValidation.error!
+        );
+        ResponseHelper.error(
+          res,
+          errorResponse.message,
+          undefined,
+          errorResponse.status
+        );
         return;
       }
 
@@ -55,7 +154,12 @@ class PropertyController extends BaseController {
 
       if (!property) {
         const errorResponse = PropertyErrorHelper.createNotFoundError();
-        ResponseHelper.error(res, errorResponse.message, undefined, errorResponse.status);
+        ResponseHelper.error(
+          res,
+          errorResponse.message,
+          undefined,
+          errorResponse.status
+        );
         return;
       }
 
@@ -67,7 +171,12 @@ class PropertyController extends BaseController {
     } catch (error) {
       logger.error("Error in getPropertyById:", error);
       const errorResponse = PropertyErrorHelper.mapError(error, "fetchById");
-      ResponseHelper.error(res, errorResponse.message, undefined, errorResponse.status);
+      ResponseHelper.error(
+        res,
+        errorResponse.message,
+        undefined,
+        errorResponse.status
+      );
     }
   }
 
@@ -76,15 +185,30 @@ class PropertyController extends BaseController {
     try {
       const userValidation = this.validateUser(req);
       if (!userValidation.isValid) {
-        const errorResponse = PropertyErrorHelper.createUnauthorizedError(userValidation.error);
-        ResponseHelper.error(res, errorResponse.message, undefined, errorResponse.status);
+        const errorResponse = PropertyErrorHelper.createUnauthorizedError(
+          userValidation.error
+        );
+        ResponseHelper.error(
+          res,
+          errorResponse.message,
+          undefined,
+          errorResponse.status
+        );
         return;
       }
 
-      const dataValidation = PropertyValidationHelper.validateCreatePropertyData(req.body);
+      const dataValidation =
+        PropertyValidationHelper.validateCreatePropertyData(req.body);
       if (!dataValidation.isValid) {
-        const errorResponse = PropertyErrorHelper.createValidationError(dataValidation.error!);
-        ResponseHelper.error(res, errorResponse.message, undefined, errorResponse.status);
+        const errorResponse = PropertyErrorHelper.createValidationError(
+          dataValidation.error!
+        );
+        ResponseHelper.error(
+          res,
+          errorResponse.message,
+          undefined,
+          errorResponse.status
+        );
         return;
       }
 
@@ -102,7 +226,12 @@ class PropertyController extends BaseController {
     } catch (error) {
       logger.error("Error in createProperty:", error);
       const errorResponse = PropertyErrorHelper.mapError(error, "create");
-      ResponseHelper.error(res, errorResponse.message, undefined, errorResponse.status);
+      ResponseHelper.error(
+        res,
+        errorResponse.message,
+        undefined,
+        errorResponse.status
+      );
     }
   }
 
@@ -111,22 +240,46 @@ class PropertyController extends BaseController {
     try {
       const userValidation = this.validateUser(req);
       if (!userValidation.isValid) {
-        const errorResponse = PropertyErrorHelper.createUnauthorizedError(userValidation.error);
-        ResponseHelper.error(res, errorResponse.message, undefined, errorResponse.status);
+        const errorResponse = PropertyErrorHelper.createUnauthorizedError(
+          userValidation.error
+        );
+        ResponseHelper.error(
+          res,
+          errorResponse.message,
+          undefined,
+          errorResponse.status
+        );
         return;
       }
 
-      const idValidation = PropertyValidationHelper.validatePropertyId(req.params.id);
+      const idValidation = PropertyValidationHelper.validatePropertyId(
+        req.params.id
+      );
       if (!idValidation.isValid) {
-        const errorResponse = PropertyErrorHelper.createValidationError(idValidation.error!);
-        ResponseHelper.error(res, errorResponse.message, undefined, errorResponse.status);
+        const errorResponse = PropertyErrorHelper.createValidationError(
+          idValidation.error!
+        );
+        ResponseHelper.error(
+          res,
+          errorResponse.message,
+          undefined,
+          errorResponse.status
+        );
         return;
       }
 
-      const dataValidation = PropertyValidationHelper.validateUpdatePropertyData(req.body);
+      const dataValidation =
+        PropertyValidationHelper.validateUpdatePropertyData(req.body);
       if (!dataValidation.isValid) {
-        const errorResponse = PropertyErrorHelper.createValidationError(dataValidation.error!);
-        ResponseHelper.error(res, errorResponse.message, undefined, errorResponse.status);
+        const errorResponse = PropertyErrorHelper.createValidationError(
+          dataValidation.error!
+        );
+        ResponseHelper.error(
+          res,
+          errorResponse.message,
+          undefined,
+          errorResponse.status
+        );
         return;
       }
 
@@ -138,7 +291,12 @@ class PropertyController extends BaseController {
 
       if (!updatedProperty) {
         const errorResponse = PropertyErrorHelper.createNotFoundError();
-        ResponseHelper.error(res, errorResponse.message, undefined, errorResponse.status);
+        ResponseHelper.error(
+          res,
+          errorResponse.message,
+          undefined,
+          errorResponse.status
+        );
         return;
       }
 
@@ -150,7 +308,12 @@ class PropertyController extends BaseController {
     } catch (error) {
       logger.error("Error in updateProperty:", error);
       const errorResponse = PropertyErrorHelper.mapError(error, "update");
-      ResponseHelper.error(res, errorResponse.message, undefined, errorResponse.status);
+      ResponseHelper.error(
+        res,
+        errorResponse.message,
+        undefined,
+        errorResponse.status
+      );
     }
   }
 
@@ -159,15 +322,31 @@ class PropertyController extends BaseController {
     try {
       const userValidation = this.validateUser(req);
       if (!userValidation.isValid) {
-        const errorResponse = PropertyErrorHelper.createUnauthorizedError(userValidation.error);
-        ResponseHelper.error(res, errorResponse.message, undefined, errorResponse.status);
+        const errorResponse = PropertyErrorHelper.createUnauthorizedError(
+          userValidation.error
+        );
+        ResponseHelper.error(
+          res,
+          errorResponse.message,
+          undefined,
+          errorResponse.status
+        );
         return;
       }
 
-      const idValidation = PropertyValidationHelper.validatePropertyId(req.params.id);
+      const idValidation = PropertyValidationHelper.validatePropertyId(
+        req.params.id
+      );
       if (!idValidation.isValid) {
-        const errorResponse = PropertyErrorHelper.createValidationError(idValidation.error!);
-        ResponseHelper.error(res, errorResponse.message, undefined, errorResponse.status);
+        const errorResponse = PropertyErrorHelper.createValidationError(
+          idValidation.error!
+        );
+        ResponseHelper.error(
+          res,
+          errorResponse.message,
+          undefined,
+          errorResponse.status
+        );
         return;
       }
 
@@ -176,15 +355,18 @@ class PropertyController extends BaseController {
         userValidation.userId!
       );
 
-      ResponseHelper.success(
-        res,
-        PROPERTY_SUCCESS_MESSAGES.PROPERTY_DELETED,
-        { id: req.params.id }
-      );
+      ResponseHelper.success(res, PROPERTY_SUCCESS_MESSAGES.PROPERTY_DELETED, {
+        id: req.params.id,
+      });
     } catch (error) {
       logger.error("Error in deleteProperty:", error);
       const errorResponse = PropertyErrorHelper.mapError(error, "delete");
-      ResponseHelper.error(res, errorResponse.message, undefined, errorResponse.status);
+      ResponseHelper.error(
+        res,
+        errorResponse.message,
+        undefined,
+        errorResponse.status
+      );
     }
   }
 }
