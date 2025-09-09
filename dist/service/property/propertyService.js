@@ -14,15 +14,54 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const propertyRepository_1 = __importDefault(require("../../repository/property/propertyRepository"));
 const categoryRepository_1 = __importDefault(require("../../repository/property/categoryRepository"));
+const publicPropertyService_1 = __importDefault(require("./publicPropertyService"));
 const logger_1 = __importDefault(require("../../utils/system/logger"));
 const propertyServiceErrors_1 = require("../../constants/services/propertyServiceErrors");
 const propertyValidation_1 = require("../../validations/property/propertyValidation");
 class PropertyService {
-    // Get all properties owned by owner
-    getAllPropertiesByOwner(ownerId) {
+    // Get all properties owned by owner with filtering and pagination
+    getAllPropertiesByOwner(ownerId, searchParams) {
         return __awaiter(this, void 0, void 0, function* () {
             try {
-                return yield propertyRepository_1.default.findAllByOwner(ownerId);
+                // If search params provided, use filtered search with pagination
+                if (searchParams) {
+                    return yield publicPropertyService_1.default.getOwnerProperties(Object.assign(Object.assign({}, searchParams), { ownerId }));
+                }
+                // Otherwise, get all properties (backward compatibility)
+                const properties = yield propertyRepository_1.default.findAllByOwner(ownerId);
+                // Transform to match the expected format
+                const transformedProperties = properties.map((property) => {
+                    var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k;
+                    return ({
+                        id: property.id,
+                        name: property.name,
+                        description: property.description,
+                        rentalType: property.rentalType,
+                        category: property.category,
+                        location: {
+                            address: ((_a = property.location) === null || _a === void 0 ? void 0 : _a.address) || null,
+                            city: ((_c = (_b = property.location) === null || _b === void 0 ? void 0 : _b.city) === null || _c === void 0 ? void 0 : _c.name) || "",
+                            province: ((_f = (_e = (_d = property.location) === null || _d === void 0 ? void 0 : _d.city) === null || _e === void 0 ? void 0 : _e.province) === null || _f === void 0 ? void 0 : _f.name) || "",
+                        },
+                        mainPicture: property.mainPicture,
+                        priceRange: {
+                            min: ((_g = property.roomTypes) === null || _g === void 0 ? void 0 : _g.length) > 0
+                                ? Math.min(...property.roomTypes.map((rt) => Number(rt.basePrice)))
+                                : 0,
+                            max: ((_h = property.roomTypes) === null || _h === void 0 ? void 0 : _h.length) > 0
+                                ? Math.max(...property.roomTypes.map((rt) => Number(rt.basePrice)))
+                                : 0,
+                        },
+                        roomCount: ((_j = property._count) === null || _j === void 0 ? void 0 : _j.rooms) || 0,
+                        capacity: ((_k = property.roomTypes) === null || _k === void 0 ? void 0 : _k.length) > 0
+                            ? Math.max(...property.roomTypes.map((rt) => rt.capacity))
+                            : 0,
+                        rooms: property.rooms || [],
+                        roomTypes: property.roomTypes || [],
+                        createdAt: property.createdAt,
+                    });
+                });
+                return { properties: transformedProperties };
             }
             catch (error) {
                 logger_1.default.error("Error fetching owner properties:", error);

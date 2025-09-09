@@ -25,22 +25,22 @@ class RoomRepository {
                         select: {
                             id: true,
                             name: true,
-                            OwnerId: true
-                        }
+                            OwnerId: true,
+                        },
                     },
                     gallery: {
                         include: {
-                            picture: true
-                        }
+                            picture: true,
+                        },
                     },
                     _count: {
                         select: {
                             reservations: true,
-                            availabilities: true
-                        }
-                    }
+                            availabilities: true,
+                        },
+                    },
                 },
-                orderBy: { createdAt: 'desc' }
+                orderBy: { createdAt: "desc" },
             });
         });
     }
@@ -56,32 +56,32 @@ class RoomRepository {
                             Owner: {
                                 select: {
                                     id: true,
-                                    email: true
-                                }
-                            }
-                        }
+                                    email: true,
+                                },
+                            },
+                        },
                     },
                     gallery: {
                         include: {
-                            picture: true
-                        }
+                            picture: true,
+                        },
                     },
                     reservations: {
                         where: {
                             orderStatus: {
-                                in: ['PENDING_PAYMENT', 'PENDING_CONFIRMATION', 'CONFIRMED']
+                                in: ["PENDING_PAYMENT", "PENDING_CONFIRMATION", "CONFIRMED"],
                             },
-                            deletedAt: null
-                        }
+                            deletedAt: null,
+                        },
                     },
                     availabilities: true,
                     _count: {
                         select: {
                             reservations: true,
-                            availabilities: true
-                        }
-                    }
-                }
+                            availabilities: true,
+                        },
+                    },
+                },
             });
         });
     }
@@ -92,18 +92,18 @@ class RoomRepository {
                 where: {
                     id,
                     property: {
-                        OwnerId: ownerId
-                    }
+                        OwnerId: ownerId,
+                    },
                 },
                 include: {
                     roomType: true,
                     property: true,
                     gallery: {
                         include: {
-                            picture: true
-                        }
-                    }
-                }
+                            picture: true,
+                        },
+                    },
+                },
             });
         });
     }
@@ -115,8 +115,8 @@ class RoomRepository {
                 const roomType = yield tx.roomType.findFirst({
                     where: {
                         id: roomData.roomTypeId,
-                        propertyId: roomData.propertyId
-                    }
+                        propertyId: roomData.propertyId,
+                    },
                 });
                 if (!roomType) {
                     throw new Error("Room type not found or doesn't belong to this property");
@@ -126,23 +126,23 @@ class RoomRepository {
                     data: {
                         name: roomData.name,
                         propertyId: roomData.propertyId,
-                        roomTypeId: roomData.roomTypeId
+                        roomTypeId: roomData.roomTypeId,
                     },
                     include: {
                         roomType: true,
-                        property: true
-                    }
+                        property: true,
+                    },
                 });
                 // Note: totalQuantity in RoomType represents the maximum capacity
                 // and should be set when creating the RoomType, not automatically incremented
                 // Add pictures if provided
                 if (roomData.pictures && roomData.pictures.length > 0) {
-                    const roomPictures = roomData.pictures.map(pictureId => ({
+                    const roomPictures = roomData.pictures.map((pictureId) => ({
                         roomId: room.id,
-                        pictureId
+                        pictureId,
                     }));
                     yield tx.roomPicture.createMany({
-                        data: roomPictures
+                        data: roomPictures,
                     });
                 }
                 return room;
@@ -155,43 +155,43 @@ class RoomRepository {
             return prisma_1.default.$transaction((tx) => __awaiter(this, void 0, void 0, function* () {
                 const room = yield tx.room.findUnique({
                     where: { id },
-                    include: { roomType: true }
+                    include: { roomType: true },
                 });
                 if (!room) {
-                    throw new Error('Room not found');
+                    throw new Error("Room not found");
                 }
                 // Update room fields
                 const updatedRoom = yield tx.room.update({
                     where: { id },
                     data: Object.assign(Object.assign(Object.assign({}, (updateData.name !== undefined && { name: updateData.name })), (updateData.isAvailable !== undefined && {
-                        isAvailable: updateData.isAvailable
+                        isAvailable: updateData.isAvailable,
                     })), (updateData.roomTypeId !== undefined && {
-                        roomTypeId: updateData.roomTypeId
+                        roomTypeId: updateData.roomTypeId,
                     })),
                     include: {
                         roomType: true,
                         property: true,
                         gallery: {
                             include: {
-                                picture: true
-                            }
-                        }
-                    }
+                                picture: true,
+                            },
+                        },
+                    },
                 });
                 // Update pictures if provided
                 if (updateData.pictures !== undefined) {
                     // Delete existing pictures
                     yield tx.roomPicture.deleteMany({
-                        where: { roomId: id }
+                        where: { roomId: id },
                     });
                     // Add new pictures
                     if (updateData.pictures.length > 0) {
-                        const roomPictures = updateData.pictures.map(pictureId => ({
+                        const roomPictures = updateData.pictures.map((pictureId) => ({
                             roomId: id,
-                            pictureId
+                            pictureId,
                         }));
                         yield tx.roomPicture.createMany({
-                            data: roomPictures
+                            data: roomPictures,
                         });
                     }
                 }
@@ -207,9 +207,9 @@ class RoomRepository {
                     id: roomTypeId,
                     propertyId,
                     property: {
-                        OwnerId: ownerId
-                    }
-                }
+                        OwnerId: ownerId,
+                    },
+                },
             });
             return !!roomType;
         });
@@ -220,38 +220,38 @@ class RoomRepository {
             yield prisma_1.default.$transaction((tx) => __awaiter(this, void 0, void 0, function* () {
                 const room = yield tx.room.findUnique({
                     where: { id },
-                    include: { roomType: true }
+                    include: { roomType: true },
                 });
                 if (!room) {
-                    throw new Error('Room not found');
+                    throw new Error("Room not found");
                 }
                 // Delete room pictures first
                 yield tx.roomPicture.deleteMany({
-                    where: { roomId: id }
+                    where: { roomId: id },
                 });
                 // Delete room availabilities
                 yield tx.availability.deleteMany({
-                    where: { roomId: id }
+                    where: { roomId: id },
                 });
                 // Delete the room
                 yield tx.room.delete({
-                    where: { id }
+                    where: { id },
                 });
                 // Note: We don't automatically decrease totalQuantity in RoomType
                 // because totalQuantity represents the capacity, not actual count
                 // If this was the last room of this type, consider deleting the room type
                 const remainingRooms = yield tx.room.count({
-                    where: { roomTypeId: room.roomTypeId }
+                    where: { roomTypeId: room.roomTypeId },
                 });
                 // Optional: Clean up room type if no rooms remain
                 // This is business logic decision - maybe keep room types for future use
                 if (remainingRooms === 0) {
                     // Delete room type availabilities and peak rates
                     yield tx.availability.deleteMany({
-                        where: { roomTypeId: room.roomTypeId }
+                        where: { roomTypeId: room.roomTypeId },
                     });
                     yield tx.peakRate.deleteMany({
-                        where: { roomTypeId: room.roomTypeId }
+                        where: { roomTypeId: room.roomTypeId },
                     });
                     // Note: We don't auto-delete room type here
                     // That should be a separate business decision
@@ -266,10 +266,10 @@ class RoomRepository {
                 where: {
                     roomId,
                     orderStatus: {
-                        in: ['PENDING_PAYMENT', 'PENDING_CONFIRMATION', 'CONFIRMED']
+                        in: ["PENDING_PAYMENT", "PENDING_CONFIRMATION", "CONFIRMED"],
                     },
-                    deletedAt: null
-                }
+                    deletedAt: null,
+                },
             });
             return activeBookingCount > 0;
         });
@@ -280,10 +280,27 @@ class RoomRepository {
             const property = yield prisma_1.default.property.findFirst({
                 where: {
                     id: propertyId,
-                    OwnerId: ownerId
-                }
+                    OwnerId: ownerId,
+                },
             });
             return !!property;
+        });
+    }
+    // Count rooms by room type ID
+    countRoomsByRoomType(roomTypeId) {
+        return __awaiter(this, void 0, void 0, function* () {
+            return prisma_1.default.room.count({
+                where: { roomTypeId },
+            });
+        });
+    }
+    // Find all rooms by room type ID
+    findAllByRoomType(roomTypeId) {
+        return __awaiter(this, void 0, void 0, function* () {
+            return prisma_1.default.room.findMany({
+                where: { roomTypeId },
+                orderBy: { createdAt: "desc" },
+            });
         });
     }
 }

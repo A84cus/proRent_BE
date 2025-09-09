@@ -70,13 +70,43 @@ type PropertySearchResult = Prisma.PropertyGetPayload<{
       };
     };
     mainPicture: true;
+    rooms: {
+      include: {
+        roomType: {
+          select: {
+            id: true;
+            name: true;
+            description: true;
+            basePrice: true;
+            capacity: true;
+            totalQuantity: true;
+            isWholeUnit: true;
+            createdAt: true;
+            updatedAt: true;
+          };
+        };
+      };
+    };
     roomTypes: {
       select: {
         id: true;
         name: true;
+        description: true;
         basePrice: true;
         capacity: true;
         totalQuantity: true;
+        isWholeUnit: true;
+        createdAt: true;
+        updatedAt: true;
+        rooms: {
+          select: {
+            id: true;
+            name: true;
+            isAvailable: true;
+            createdAt: true;
+            updatedAt: true;
+          };
+        };
       };
     };
     _count: {
@@ -480,6 +510,159 @@ class PublicPropertyService {
     } catch (error) {
       logger.error(`Error getting room type with ID ${roomTypeId}:`, error);
       throw new Error("Failed to get room type");
+    }
+  }
+
+  // Get properties by owner ID (for owner dashboard)
+  async getOwnerProperties(
+    params: PropertySearchParams & { ownerId: string }
+  ): Promise<{
+    properties: Array<{
+      id: string;
+      name: string;
+      description: string;
+      category: { id: string; name: string };
+      location: {
+        address: string | null;
+        city: string;
+        province: string;
+      };
+      mainPicture: { id: string; url: string } | null;
+      priceRange: {
+        min: number;
+        max: number;
+      };
+      roomCount: number;
+      capacity: number;
+      createdAt: Date;
+    }>;
+    pagination: {
+      total: number;
+      page: number;
+      limit: number;
+      totalPages: number;
+    };
+  }> {
+    try {
+      // Validate and sanitize parameters
+      const page = Math.max(1, params.page || 1);
+      const limit = Math.min(50, Math.max(1, params.limit || 10)); // Max 50 per page
+
+      const searchParams = {
+        search: params.search?.trim(),
+        category: params.category?.trim(),
+        city: params.city?.trim(),
+        province: params.province?.trim(),
+        minPrice: params.minPrice,
+        maxPrice: params.maxPrice,
+        capacity: params.capacity,
+        sortBy: params.sortBy,
+        sortOrder: params.sortOrder,
+        ownerId: params.ownerId, // Add owner filter
+        page,
+        limit,
+      };
+
+      const result = await publicPropertyRepository.searchProperties(
+        searchParams
+      );
+
+      // Transform the data for owner consumption (same as public but with owner context)
+      const transformedProperties = result.properties.map((property) => {
+        // Type assertion since repository returns expanded data
+        const expandedProperty = property as PropertySearchResult;
+
+        return {
+          id: expandedProperty.id,
+          name: expandedProperty.name,
+          description: expandedProperty.description,
+          rentalType: expandedProperty.rentalType, // Add rental type
+          category: expandedProperty.category,
+          location: {
+            address: expandedProperty.location.address,
+            city: expandedProperty.location.city.name,
+            province: expandedProperty.location.city.province.name,
+          },
+          mainPicture: expandedProperty.mainPicture,
+          // Add rooms data for ROOM_BY_ROOM properties
+          rooms:
+            expandedProperty.rooms?.map((room: any) => ({
+              id: room.id,
+              name: room.name,
+              roomTypeId: room.roomTypeId,
+              propertyId: room.propertyId,
+              isAvailable: room.isAvailable,
+              createdAt: room.createdAt,
+              updatedAt: room.updatedAt,
+              roomType: room.roomType
+                ? {
+                    id: room.roomType.id,
+                    propertyId: room.roomType.propertyId,
+                    name: room.roomType.name,
+                    description: room.roomType.description,
+                    basePrice: String(room.roomType.basePrice), // Convert to string as expected by frontend
+                    capacity: room.roomType.capacity,
+                    totalQuantity: room.roomType.totalQuantity,
+                    isWholeUnit: room.roomType.isWholeUnit,
+                    createdAt: room.roomType.createdAt,
+                    updatedAt: room.roomType.updatedAt,
+                  }
+                : undefined,
+            })) || [],
+          // Add room types data
+          roomTypes:
+            expandedProperty.roomTypes?.map((roomType: any) => ({
+              id: roomType.id,
+              propertyId: expandedProperty.id,
+              name: roomType.name,
+              description: roomType.description,
+              basePrice: String(roomType.basePrice), // Convert to string as expected by frontend
+              capacity: roomType.capacity,
+              totalQuantity: roomType.totalQuantity,
+              isWholeUnit: roomType.isWholeUnit,
+              createdAt: roomType.createdAt,
+              updatedAt: roomType.updatedAt,
+              rooms: roomType.rooms || [],
+            })) || [],
+          priceRange: {
+            min:
+              expandedProperty.roomTypes.length > 0
+                ? Math.min(
+                    ...expandedProperty.roomTypes.map((rt) =>
+                      Number(rt.basePrice)
+                    )
+                  )
+                : 0,
+            max:
+              expandedProperty.roomTypes.length > 0
+                ? Math.max(
+                    ...expandedProperty.roomTypes.map((rt) =>
+                      Number(rt.basePrice)
+                    )
+                  )
+                : 0,
+          },
+          roomCount: expandedProperty._count.rooms,
+          capacity:
+            expandedProperty.roomTypes.length > 0
+              ? Math.max(...expandedProperty.roomTypes.map((rt) => rt.capacity))
+              : 0,
+          createdAt: expandedProperty.createdAt,
+        };
+      });
+
+      return {
+        properties: transformedProperties,
+        pagination: {
+          total: result.total,
+          page: result.page,
+          limit: result.limit,
+          totalPages: result.totalPages,
+        },
+      };
+    } catch (error) {
+      logger.error("Error searching owner properties:", error);
+      throw new Error("Failed to search owner properties");
     }
   }
 }

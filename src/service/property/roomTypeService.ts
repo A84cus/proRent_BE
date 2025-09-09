@@ -1,5 +1,6 @@
 import { RoomType } from "@prisma/client";
 import roomTypeRepository from "../../repository/property/roomTypeRepository";
+import roomRepository from "../../repository/property/roomRepository";
 import logger from "../../utils/system/logger";
 import { ROOM_TYPE_SERVICE_ERRORS } from "../../constants/services/roomServiceErrors";
 import {
@@ -8,6 +9,129 @@ import {
 } from "../../interfaces/property/roomType.interface";
 
 class RoomTypeService {
+  // Helper function to auto-generate rooms for a room type
+  private async autoGenerateRooms(
+    roomType: RoomType,
+    quantity: number
+  ): Promise<void> {
+    try {
+      // For whole property, quantity is always 1 and we don't create rooms
+      if (roomType.isWholeUnit) {
+        return;
+      }
+
+      // Create rooms based on quantity
+      const roomPromises = [];
+      for (let i = 1; i <= quantity; i++) {
+        const roomName = `${roomType.name}-${String(i).padStart(3, "0")}`;
+
+        const roomData = {
+          name: roomName,
+          propertyId: roomType.propertyId,
+          roomTypeId: roomType.id,
+          pictures: [],
+        };
+
+        roomPromises.push(roomRepository.create(roomData));
+      }
+
+      await Promise.all(roomPromises);
+
+      // Update roomType totalQuantity to reflect actual room count
+      await this.updateRoomTypeQuantityByCount(roomType.id);
+    } catch (error) {
+      logger.error("Error auto-generating rooms:", error);
+      throw new Error("Failed to auto-generate rooms for room type");
+    }
+  }
+
+  // Helper function to update roomType quantity based on actual room count
+  private async updateRoomTypeQuantityByCount(
+    roomTypeId: string
+  ): Promise<void> {
+    try {
+      const roomCount = await roomRepository.countRoomsByRoomType(roomTypeId);
+      await roomTypeRepository.update(roomTypeId, { totalQuantity: roomCount });
+    } catch (error) {
+      logger.error("Error updating room type quantity:", error);
+      throw new Error("Failed to update room type quantity");
+    }
+  }
+
+  // Helper function to manage rooms quantity when roomType quantity changes
+  private async manageRoomsQuantity(
+    roomType: RoomType,
+    newQuantity: number
+  ): Promise<void> {
+    try {
+      // Skip for whole unit properties
+      if (roomType.isWholeUnit) {
+        return;
+      }
+
+      const currentRoomCount = await roomRepository.countRoomsByRoomType(
+        roomType.id
+      );
+
+      if (newQuantity > currentRoomCount) {
+        // Need to create more rooms
+        const roomsToCreate = newQuantity - currentRoomCount;
+        const roomPromises = [];
+
+        for (let i = currentRoomCount + 1; i <= newQuantity; i++) {
+          const roomName = `${roomType.name}-${String(i).padStart(3, "0")}`;
+
+          const roomData = {
+            name: roomName,
+            propertyId: roomType.propertyId,
+            roomTypeId: roomType.id,
+            pictures: [],
+          };
+
+          roomPromises.push(roomRepository.create(roomData));
+        }
+
+        await Promise.all(roomPromises);
+      } else if (newQuantity < currentRoomCount) {
+        // Need to remove excess rooms (remove rooms that don't have active bookings)
+        const roomsToRemove = currentRoomCount - newQuantity;
+        const allRooms = await roomRepository.findAllByRoomType(roomType.id);
+
+        // Sort by created date (newest first) to remove the most recently created rooms
+        allRooms.sort(
+          (a: any, b: any) =>
+            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+        );
+
+        let removedCount = 0;
+        for (const room of allRooms) {
+          if (removedCount >= roomsToRemove) break;
+
+          // Check if room has active bookings
+          const hasActiveBookings = await roomRepository.hasActiveBookings(
+            room.id
+          );
+          if (!hasActiveBookings) {
+            await roomRepository.delete(room.id);
+            removedCount++;
+          }
+        }
+
+        // If couldn't remove enough rooms due to active bookings, log warning
+        if (removedCount < roomsToRemove) {
+          logger.warn(
+            `Could only remove ${removedCount} out of ${roomsToRemove} rooms due to active bookings`
+          );
+        }
+      }
+
+      // Update the quantity to reflect actual count
+      await this.updateRoomTypeQuantityByCount(roomType.id);
+    } catch (error) {
+      logger.error("Error managing rooms quantity:", error);
+      throw new Error("Failed to manage rooms quantity");
+    }
+  }
   // Get all room types by property ID
   async getRoomTypesByProperty(
     propertyId: string,
@@ -98,7 +222,20 @@ class RoomTypeService {
         isWholeUnit: data.isWholeUnit || false,
       };
 
-      return await roomTypeRepository.create(roomTypeData);
+      // For whole property, set quantity to 1
+      if (data.isWholeUnit) {
+        roomTypeData.totalQuantity = 1;
+      }
+
+      // Create room type first
+      const createdRoomType = await roomTypeRepository.create(roomTypeData);
+
+      // Auto-generate rooms based on quantity (except for whole unit)
+      if (!data.isWholeUnit) {
+        await this.autoGenerateRooms(createdRoomType, data.totalQuantity);
+      }
+
+      return createdRoomType;
     } catch (error) {
       logger.error("Error creating room type:", error);
       if (error instanceof Error) {
@@ -170,7 +307,18 @@ class RoomTypeService {
       if (data.totalQuantity !== undefined)
         updateData.totalQuantity = data.totalQuantity;
 
-      return await roomTypeRepository.update(id, updateData);
+      // Update room type
+      const updatedRoomType = await roomTypeRepository.update(id, updateData);
+
+      // Handle quantity changes (create/remove rooms as needed)
+      if (
+        data.totalQuantity !== undefined &&
+        data.totalQuantity !== existingRoomType.totalQuantity
+      ) {
+        await this.manageRoomsQuantity(updatedRoomType, data.totalQuantity);
+      }
+
+      return updatedRoomType;
     } catch (error) {
       logger.error(`Error updating room type with ID ${id}:`, error);
       if (error instanceof Error) {
